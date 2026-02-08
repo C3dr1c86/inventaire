@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(py -m venv:*)",
+      "Bash(curl:*)",
+      "Bash(venvScriptsactivate)",
+      "Bash(uvicorn:*)",
+      "Bash(npm run dev:*)",
+      "Bash(./venv/Scripts/python.exe:*)",
+      "Bash(dir:*)",
+      "Bash(python -c:*)",
+      "Bash(npm install:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(timeout /t 3)",
+      "Bash(venv/Scripts/pip install:*)",
+      "Bash(tasklist:*)",
+      "Bash(venv/Scripts/python:*)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\cedri\\\\Desktop\\\\inventaire\" -Recurse -Name)",
+      "Bash(Sort-Object)",
+      "Bash(docker-compose ps:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(docker-compose exec backend python:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(scriptsbuild-images.bat:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(docker build:*)",
+      "Bash(powershell -Command \"$key = -join \\(\\(48..57\\) + \\(97..102\\) | Get-Random -Count 64 | ForEach-Object {[char]$_\\); @\"\"\n# Configuration pour NAS Ugreen\nSECRET_KEY=$key\nHOST_IP=192.168.1.37\nCORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost,http://localhost:80,http://192.168.1.37,http://192.168.1.37:80\n\"\"@ | Out-File -FilePath .env.nas -Encoding ASCII; type .env.nas\")",
+      "Bash(docker save:*)",
+      "Bash(echo:*)",
+      "Bash(source:*)",
+      "Bash(timeout 5 bash:*)",
+      "Bash(python -m py_compile:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(pip install:*)",
+      "Bash(venv/Scripts/activate:*)",
+      "Bash(chmod:*)"
+    ]
+  }
+}

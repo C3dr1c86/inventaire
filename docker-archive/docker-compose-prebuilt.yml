@@ -1,0 +1,49 @@
+# Docker Compose pour images pré-construites
+# Utilisez ce fichier si vous avez chargé les images avec docker load
+
+services:
+  # Backend FastAPI
+  backend:
+    image: inventaire-backend:latest  # Utilise l'image locale (pas de build)
+    container_name: inventaire_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persister la base de données SQLite
+      - ./data/database:/app/database
+      # Persister les exports
+      - ./data/exports:/app/exports
+    environment:
+      # Variables d'environnement pour le backend
+      - SECRET_KEY=${SECRET_KEY:-changez-cette-cle-secrete-en-production}
+      - DATABASE_URL=sqlite:///database/inventaire.db
+    restart: unless-stopped
+    networks:
+      - inventaire_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend React
+  frontend:
+    image: inventaire-frontend:latest  # Utilise l'image locale (pas de build)
+    container_name: inventaire_frontend
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=http://${HOST_IP:-localhost}:8000/api
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - inventaire_network
+
+networks:
+  inventaire_network:
+    driver: bridge
+
+volumes:
+  database_data:
+  exports_data:
