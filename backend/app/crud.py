@@ -299,7 +299,7 @@ def validate_hierarchy(db: Session, categorie_id: Optional[int], parent_id: Opti
 
 def get_article(db: Session, article_id: int) -> Optional[models.Article]:
     """
-    Récupère un article par son ID avec sa catégorie et ses tags.
+    Récupère un article par son ID avec sa catégorie, ses tags et ses photos.
 
     Args:
         db: Session de base de données
@@ -311,6 +311,7 @@ def get_article(db: Session, article_id: int) -> Optional[models.Article]:
     return db.query(models.Article)\
         .options(joinedload(models.Article.categorie))\
         .options(joinedload(models.Article.tags))\
+        .options(joinedload(models.Article.photos))\
         .filter(models.Article.id == article_id)\
         .first()
 
@@ -359,7 +360,8 @@ def get_articles(
     """
     query = db.query(models.Article)\
         .options(joinedload(models.Article.categorie))\
-        .options(joinedload(models.Article.tags))
+        .options(joinedload(models.Article.tags))\
+        .options(joinedload(models.Article.photos))
 
     # Filtre de recherche
     if search:
@@ -372,9 +374,22 @@ def get_articles(
             )
         )
 
-    # Filtre par catégorie
+    # Filtre par catégorie (inclut les sous-catégories si la catégorie est parente)
     if categorie_id:
-        query = query.filter(models.Article.categorie_id == categorie_id)
+        # Récupérer la catégorie sélectionnée
+        categorie = db.query(models.Categorie).filter(models.Categorie.id == categorie_id).first()
+        if categorie:
+            # Si la catégorie a des sous-catégories, inclure leur ID dans le filtre
+            if categorie.children:
+                # Créer une liste avec l'ID de la catégorie parente + tous les IDs des enfants
+                categorie_ids = [categorie_id] + [child.id for child in categorie.children]
+                query = query.filter(models.Article.categorie_id.in_(categorie_ids))
+            else:
+                # Pas de sous-catégories, filtre simple
+                query = query.filter(models.Article.categorie_id == categorie_id)
+        else:
+            # La catégorie n'existe pas, filtre simple pour éviter erreur
+            query = query.filter(models.Article.categorie_id == categorie_id)
 
     # Filtre par tag
     if tag_id:
@@ -1120,3 +1135,133 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[mod
         return None
 
     return user
+
+
+# ============================================================================
+# CRUD PHOTOS
+# ============================================================================
+
+def get_photos_by_article(db: Session, article_id: int) -> List[models.Photo]:
+    """
+    Récupère toutes les photos d'un article.
+
+    Args:
+        db: Session de base de données
+        article_id: ID de l'article
+
+    Returns:
+        Liste des photos de l'article, ordonnées par date de création
+    """
+    return db.query(models.Photo)\
+        .filter(models.Photo.article_id == article_id)\
+        .order_by(models.Photo.created_at)\
+        .all()
+
+
+def get_photo(db: Session, photo_id: int) -> Optional[models.Photo]:
+    """
+    Récupère une photo par son ID.
+
+    Args:
+        db: Session de base de données
+        photo_id: ID de la photo
+
+    Returns:
+        La photo si trouvée, None sinon
+    """
+    return db.query(models.Photo).filter(models.Photo.id == photo_id).first()
+
+
+def create_photo(
+    db: Session,
+    article_id: int,
+    filename: str,
+    filepath: str,
+    thumbnail_path: str,
+    file_size: int,
+    mime_type: str
+) -> models.Photo:
+    """
+    Crée un enregistrement de photo en base de données.
+
+    Valide que :
+    - L'article existe
+    - Le nombre de photos n'excède pas 5 par article
+
+    Args:
+        db: Session de base de données
+        article_id: ID de l'article
+        filename: Nom du fichier original
+        filepath: Chemin relatif du fichier
+        thumbnail_path: Chemin relatif de la miniature
+        file_size: Taille du fichier en octets
+        mime_type: Type MIME du fichier
+
+    Returns:
+        La photo créée
+
+    Raises:
+        HTTPException: Si l'article n'existe pas ou si la limite de 5 photos est atteinte
+    """
+    from fastapi import HTTPException
+
+    # Vérifier que l'article existe
+    article = get_article(db, article_id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article introuvable")
+
+    # Vérifier limite de 5 photos par article
+    current_photos_count = db.query(models.Photo)\
+        .filter(models.Photo.article_id == article_id)\
+        .count()
+
+    if current_photos_count >= 5:
+        raise HTTPException(
+            status_code=400,
+            detail="Limite de 5 photos par article atteinte. Supprimez une photo existante avant d'en ajouter une nouvelle."
+        )
+
+    # Créer la photo
+    db_photo = models.Photo(
+        article_id=article_id,
+        filename=filename,
+        filepath=filepath,
+        thumbnail_path=thumbnail_path,
+        file_size=file_size,
+        mime_type=mime_type
+    )
+
+    db.add(db_photo)
+    db.commit()
+    db.refresh(db_photo)
+
+    return db_photo
+
+
+def delete_photo(db: Session, photo_id: int) -> bool:
+    """
+    Supprime une photo de la base de données.
+
+    Note : Les fichiers doivent être supprimés séparément via photo_service.delete_photo_files()
+
+    Args:
+        db: Session de base de données
+        photo_id: ID de la photo à supprimer
+
+    Returns:
+        True si la suppression a réussi
+
+    Raises:
+        HTTPException: Si la photo n'existe pas
+    """
+    from fastapi import HTTPException
+
+    db_photo = get_photo(db, photo_id)
+
+    if not db_photo:
+        raise HTTPException(status_code=404, detail="Photo introuvable")
+
+    db.delete(db_photo)
+    db.commit()
+
+    return True

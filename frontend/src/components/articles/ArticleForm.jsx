@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getCategories, getCategoriesRacines, getSousCategories } from '../../services/categorieService'
 import TagInput from '../tags/TagInput'
+import PhotoUpload from './PhotoUpload'
 
 function ArticleForm({ article, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState({
@@ -359,6 +360,21 @@ function ArticleForm({ article, onSubmit, onCancel, isSubmitting }) {
           disabled={isSubmitting}
         />
       </div>
+
+      {/* Photos - UNIQUEMENT en mode édition (article existant) */}
+      {article?.id && (
+        <PhotoUpload
+          articleId={article.id}
+          photos={article.photos || []}
+        />
+      )}
+
+      {/* Message informatif en mode création */}
+      {!article?.id && (
+        <div className="info-message" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#e7f3ff', borderRadius: '8px', border: '1px solid #b3d9ff' }}>
+          <span style={{ fontSize: '1rem' }}>ℹ️</span> <strong>Astuce :</strong> Vous pourrez ajouter des photos après avoir créé l'article.
+        </div>
+      )}
 
       <div className="form-actions">
         <button

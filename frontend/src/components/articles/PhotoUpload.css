@@ -1,0 +1,291 @@
+/* PhotoUpload - Styles pour la gestion des photos */
+
+.photo-upload {
+  margin: 1.5rem 0;
+}
+
+.photo-upload h3 {
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+/* ========================================
+   ZONE UPLOAD
+   ======================================== */
+
+.upload-zone {
+  border: 2px dashed #007bff;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  background-color: #f8f9fa;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.upload-zone:hover {
+  background-color: #e7f3ff;
+  border-color: #0056b3;
+}
+
+.upload-zone.drag-active {
+  background-color: #cfe2ff;
+  border-color: #0056b3;
+  border-style: solid;
+  transform: scale(1.02);
+}
+
+.upload-label {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #007bff;
+}
+
+.upload-label:hover {
+  color: #0056b3;
+}
+
+.upload-label strong {
+  color: #007bff;
+  font-weight: 600;
+}
+
+.upload-label small {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+/* ========================================
+   GALERIE PHOTOS
+   ======================================== */
+
+.photo-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.photo-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #dee2e6;
+  transition: all 0.2s ease;
+  background-color: #f8f9fa;
+}
+
+.photo-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  border-color: #007bff;
+}
+
+.photo-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.photo-item:hover .photo-thumbnail {
+  opacity: 0.9;
+}
+
+/* ========================================
+   BOUTON SUPPRESSION
+   ======================================== */
+
+.delete-photo-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: rgba(220, 53, 69, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.photo-item:hover .delete-photo-btn {
+  opacity: 1;
+}
+
+.delete-photo-btn:hover {
+  background-color: rgba(200, 35, 51, 1);
+  transform: scale(1.1);
+}
+
+.delete-photo-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========================================
+   PAS DE PHOTOS
+   ======================================== */
+
+.no-photos {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #dee2e6;
+}
+
+.no-photos p {
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+}
+
+/* ========================================
+   LIGHTBOX
+   ======================================== */
+
+.lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  cursor: pointer;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lightbox-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  cursor: default;
+  animation: zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.lightbox-content img {
+  max-width: 100%;
+  max-height: 80vh;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background-color: transparent;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.lightbox-close:hover {
+  color: #dc3545;
+  transform: scale(1.1);
+}
+
+.lightbox-filename {
+  color: white;
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   ANIMATION SPINNER
+   ======================================== */
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+  .photo-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .upload-zone {
+    padding: 1.5rem;
+  }
+
+  .lightbox-content img {
+    max-height: 70vh;
+  }
+}
+
+@media (max-width: 576px) {
+  .photo-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .upload-zone {
+    padding: 1rem;
+  }
+
+  .upload-label small {
+    font-size: 0.75rem;
+  }
+
+  .delete-photo-btn {
+    width: 24px;
+    height: 24px;
+    opacity: 1; /* Toujours visible sur mobile */
+  }
+}

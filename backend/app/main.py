@@ -6,6 +6,7 @@ VERSION NGINX PROXY : Pas besoin de CORS car tout vient de la même origine
 """
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from app.database import init_db
 import os
 
@@ -83,7 +84,7 @@ async def health_check():
 
 
 # Importer les routers
-from app.routers import categories, articles, mouvements, rapports, tags, auth
+from app.routers import categories, articles, mouvements, rapports, tags, auth, photos
 
 # Inclure les routers dans l'application
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
@@ -92,6 +93,13 @@ app.include_router(articles.router, prefix="/api/articles", tags=["Articles"])
 app.include_router(mouvements.router, prefix="/api/mouvements", tags=["Mouvements"])
 app.include_router(rapports.router, prefix="/api/rapports", tags=["Rapports"])
 app.include_router(tags.router, prefix="/api/tags", tags=["Tags"])
+app.include_router(photos.router, prefix="/api/articles", tags=["Photos"])
+
+# Configuration du serving de fichiers statiques pour les photos
+# IMPORTANT : Monter APRÈS tous les include_router() pour ne pas interférer avec les routes API
+UPLOAD_DIR = "uploads"
+os.makedirs(os.path.join(UPLOAD_DIR, "articles"), exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 
 if __name__ == "__main__":

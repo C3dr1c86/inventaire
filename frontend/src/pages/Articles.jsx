@@ -11,10 +11,11 @@ import { toast } from 'react-toastify'
 import { getArticles, createArticle, updateArticle, deleteArticle } from '../services/articleService'
 import { getCategoriesTree } from '../services/categorieService'
 import { getTags } from '../services/tagService'
-import { Plus, Search, Trash2, ChevronUp, ChevronDown, Barcode, Download } from 'lucide-react'
+import { Plus, Trash2, ChevronUp, ChevronDown, Barcode, Download, Image as ImageIcon } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import ArticleForm from '../components/articles/ArticleForm'
 import Pagination from '../components/common/Pagination'
+import SearchBar from '../components/common/SearchBar'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
@@ -22,7 +23,6 @@ function Articles() {
   const [searchParams] = useSearchParams()
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
-  const [scannerInput, setScannerInput] = useState('')
   const [showStockBas, setShowStockBas] = useState(searchParams.get('stock_bas') === 'true')
   const [selectedCategorie, setSelectedCategorie] = useState('')
   const [selectedTag, setSelectedTag] = useState('')
@@ -206,18 +206,6 @@ function Articles() {
       })
   }
 
-  const handleScannerSubmit = (e) => {
-    e.preventDefault()
-    if (scannerInput.trim()) {
-      // Lancer la recherche avec le SKU scanné
-      setSearchTerm(scannerInput.trim())
-      // Réinitialiser le champ et le refocus pour le prochain scan
-      setScannerInput('')
-      // Le champ se refocalisera automatiquement grâce à l'attribut autoFocus
-      toast.info(`Recherche du SKU : ${scannerInput.trim()}`)
-    }
-  }
-
   if (isLoading) {
     return (
       <div>
@@ -250,74 +238,17 @@ function Articles() {
         </button>
       </div>
 
-      {/* Barre de recherche et filtres */}
-      <div className="card">
-        {/* Champ scanner de code-barre */}
-        <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '2px dashed #007bff' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <Barcode size={20} style={{ color: '#007bff' }} />
-            <strong style={{ color: '#007bff' }}>Scanner de codes-barres</strong>
-          </div>
-          <form onSubmit={handleScannerSubmit} style={{ display: 'flex', gap: '0.5rem' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Scannez un code-barre ici (ou saisissez le SKU)..."
-                value={scannerInput}
-                onChange={(e) => setScannerInput(e.target.value)}
-                autoFocus
-                style={{
-                  paddingLeft: '2.5rem',
-                  fontSize: '1.1rem',
-                  fontWeight: '500',
-                  borderColor: '#007bff'
-                }}
-              />
-              <Search
-                size={18}
-                style={{
-                  position: 'absolute',
-                  left: '0.75rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#007bff'
-                }}
-              />
-            </div>
-            <button type="submit" className="btn btn-primary">
-              Rechercher
-            </button>
-          </form>
-          <p style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem', marginBottom: 0 }}>
-            💡 Placez le curseur dans ce champ et scannez le code-barre de votre article
-          </p>
-        </div>
+      {/* Barre de recherche */}
+      <SearchBar
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder="Rechercher un article ou scanner un code-barre..."
+        autoFocus={true}
+      />
 
-        {/* Filtres classiques */}
+      {/* Filtres */}
+      <div className="card">
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ flex: 1, minWidth: '250px' }}>
-            <div style={{ position: 'relative' }}>
-              <Search
-                size={18}
-                style={{
-                  position: 'absolute',
-                  left: '0.75rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#6c757d'
-                }}
-              />
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Rechercher un article..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ paddingLeft: '2.5rem' }}
-              />
-            </div>
-          </div>
           <div style={{ minWidth: '200px' }}>
             <select
               className="form-control"
@@ -390,6 +321,7 @@ function Articles() {
           <table className="table">
             <thead>
               <tr>
+                <th>Photo</th>
                 <th
                   onClick={() => handleSort('id')}
                   onKeyPress={(e) => e.key === 'Enter' && handleSort('id')}
@@ -481,6 +413,37 @@ function Articles() {
             <tbody>
               {articles.map((article) => (
                 <tr key={article.id}>
+                  <td data-label="Photo">
+                    {article.photos && article.photos.length > 0 ? (
+                      <img
+                        src={`${API_URL.replace('/api', '')}/uploads/${article.photos[0].thumbnail_path || article.photos[0].filepath}`}
+                        alt={article.nom}
+                        style={{
+                          width: '50px',
+                          height: '50px',
+                          objectFit: 'cover',
+                          borderRadius: '4px',
+                          border: '1px solid #dee2e6'
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '50px',
+                          height: '50px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: '#f8f9fa',
+                          borderRadius: '4px',
+                          border: '1px solid #dee2e6',
+                          color: '#6c757d'
+                        }}
+                      >
+                        <ImageIcon size={20} />
+                      </div>
+                    )}
+                  </td>
                   <td data-label="ID">{article.id}</td>
                   <td data-label="Nom">
                     <div>

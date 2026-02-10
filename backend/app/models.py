@@ -85,6 +85,7 @@ class Article(Base):
     categorie = relationship("Categorie", back_populates="articles")
     mouvements = relationship("Mouvement", back_populates="article", cascade="all, delete-orphan")
     tags = relationship("Tag", secondary="article_tags", back_populates="articles")
+    photos = relationship("Photo", back_populates="article", cascade="all, delete-orphan", order_by="Photo.created_at")
 
     @property
     def valeur_stock(self):
@@ -131,6 +132,32 @@ class Mouvement(Base):
 
     def __repr__(self):
         return f"<Mouvement(id={self.id}, type='{self.type}', quantite={self.quantite}, article_id={self.article_id})>"
+
+
+class Photo(Base):
+    """
+    Table des photos des articles.
+
+    Permet de stocker plusieurs photos par article pour identification visuelle.
+    Les photos sont stockées dans uploads/articles/{article_id}/ avec miniatures générées automatiquement.
+    """
+    __tablename__ = "photos"
+
+    # Colonnes
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    article_id = Column(Integer, ForeignKey("articles.id", ondelete="CASCADE"), nullable=False, index=True)
+    filename = Column(String(255), nullable=False)  # Nom original du fichier
+    filepath = Column(String(500), nullable=False)  # Chemin relatif depuis uploads/ (ex: articles/1/photo.jpg)
+    thumbnail_path = Column(String(500), nullable=True)  # Chemin miniature (ex: articles/1/thumbnails/photo.jpg)
+    file_size = Column(Integer, nullable=False)  # Taille en octets
+    mime_type = Column(String(50), nullable=False)  # image/jpeg, image/png, image/webp
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    # Relations
+    article = relationship("Article", back_populates="photos")
+
+    def __repr__(self):
+        return f"<Photo(id={self.id}, article_id={self.article_id}, filename='{self.filename}')>"
 
 
 # Table d'association pour la relation many-to-many entre Article et Tag

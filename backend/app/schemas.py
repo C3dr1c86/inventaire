@@ -104,6 +104,7 @@ class ArticleResponse(ArticleBase):
     updated_at: datetime
     categorie: Optional[CategorieResponse] = None
     tags: list["TagResponse"] = Field(default=[], description="Tags associés à l'article")
+    photos: list["PhotoResponse"] = Field(default=[], description="Photos de l'article")
     valeur_stock: float = Field(description="Valeur totale du stock (quantité × prix)")
     est_stock_bas: bool = Field(description="Indique si le stock est en dessous du seuil")
 
@@ -176,6 +177,29 @@ class TagResponse(TagBase):
     id: int
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ============================================================================
+# SCHÉMAS PHOTO
+# ============================================================================
+
+class PhotoBase(BaseModel):
+    """Schéma de base pour une photo."""
+    article_id: int = Field(..., description="ID de l'article")
+    filename: str = Field(..., max_length=255, description="Nom du fichier")
+    mime_type: str = Field(..., max_length=50, description="Type MIME (image/jpeg, image/png, image/webp)")
+
+
+class PhotoResponse(PhotoBase):
+    """Schéma de réponse pour une photo."""
+    id: int
+    filepath: str = Field(description="Chemin relatif du fichier")
+    thumbnail_path: Optional[str] = Field(None, description="Chemin de la miniature")
+    file_size: int = Field(description="Taille du fichier en octets")
+    created_at: datetime
 
     class Config:
         from_attributes = True

@@ -7,6 +7,130 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ---
 
+## [1.2.0] - 2026-02-10
+
+### Ajouté
+
+#### Backend
+- **Système de gestion de photos pour les articles**
+  - Nouveau modèle `Photo` avec relation one-to-many vers `Article`
+  - Upload jusqu'à **5 photos par article** (limite validée côté backend)
+  - Formats supportés : **JPEG, PNG, WEBP** (validation MIME type)
+  - Taille maximale : **5 MB par fichier** (validation côté serveur)
+  - Stockage organisé : `uploads/articles/{article_id}/`
+  - Génération automatique de miniatures **150x150** avec Pillow (LANCZOS resampling)
+  - Sauvegarde des miniatures dans `uploads/articles/{article_id}/thumbnails/`
+  - Suppression CASCADE : Suppression d'un article supprime ses photos en base et fichiers
+
+- **Nouveaux endpoints API** pour les photos :
+  - `POST /api/articles/{article_id}/photos` : Upload une photo (multipart/form-data)
+  - `DELETE /api/articles/{article_id}/photos/{photo_id}` : Supprime une photo
+  - `GET /api/articles/{article_id}/photos` : Liste toutes les photos d'un article
+
+- **Service de traitement d'images** (`services/photo_service.py`) :
+  - Validation des types MIME et tailles de fichiers
+  - Génération de noms de fichiers uniques avec timestamp
+  - Conversion RGBA/LA/P → RGB avec fond blanc pour compatibilité JPEG
+  - Compression intelligente (quality=85, optimize=True)
+  - Gestion de la suppression des fichiers (original + miniature)
+
+- **StaticFiles FastAPI** : Serving des uploads via `/uploads` (monté après tous les routers)
+
+#### Frontend
+- **Composant PhotoUpload** (`components/articles/PhotoUpload.jsx`) :
+  - Upload par **clic** ou **drag & drop** (HTML5 native)
+  - Zone d'upload avec états visuels (normal, hover, drag-active)
+  - Validation côté client (type, taille, limite 5 photos)
+  - Indicateur de chargement avec spinner pendant upload
+  - Galerie avec miniatures en grille responsive (CSS Grid)
+  - Bouton de suppression (X) visible au hover sur chaque miniature
+  - Confirmation avant suppression
+  - **Lightbox** pour visualisation plein écran
+    - Affichage de l'image originale (pas la miniature)
+    - Fermeture par clic extérieur ou bouton X
+    - Nom du fichier affiché sous l'image
+
+- **Intégration dans ArticleForm** :
+  - Composant PhotoUpload affiché **uniquement en mode édition** (article existant)
+  - Message informatif en mode création : "Vous pourrez ajouter des photos après avoir créé l'article"
+  - Invalidation automatique du cache React Query après upload/suppression
+
+- **Affichage dans la liste Articles** :
+  - Nouvelle colonne **"Photo"** avec miniature de la première photo
+  - Placeholder avec icône 📷 pour les articles sans photo
+  - Images 50x50 avec `object-fit: cover` et bordure arrondie
+
+- **Service API** (`services/photoService.js`) :
+  - `uploadPhoto(articleId, file)` : Upload avec FormData et Content-Type multipart/form-data
+  - `deletePhoto(articleId, photoId)` : Suppression
+  - Construction d'URLs complètes pour accès aux images
+
+#### Styles
+- **PhotoUpload.css** avec styles complets :
+  - Zone upload avec bordure pointillée bleue, transitions smooth
+  - Galerie responsive : 120px/100px/80px selon breakpoints
+  - Delete button avec opacity 0 → 1 au hover (sauf mobile : toujours visible)
+  - Lightbox avec animations fadeIn/zoomIn
+  - Media queries pour tablettes (768px) et mobiles (576px)
+
+### Modifié
+
+#### Backend
+- `models.py` : Ajout du modèle `Photo` et relation `photos` dans `Article`
+- `schemas.py` : Ajout de `PhotoBase`, `PhotoResponse`, et `photos: list[PhotoResponse]` dans `ArticleResponse`
+- `crud.py` :
+  - Ajout de `get_photos_by_article()`, `get_photo()`, `create_photo()`, `delete_photo()`
+  - Modification de `get_article()` et `get_articles()` avec `joinedload(models.Article.photos)` pour éviter N+1
+  - Validation de la limite de 5 photos dans `create_photo()`
+- `main.py` : Enregistrement du router `photos` et montage de StaticFiles pour `/uploads`
+
+#### Frontend
+- `components/articles/ArticleForm.jsx` : Intégration du composant PhotoUpload
+- `pages/Articles.jsx` : Ajout de la colonne Photo dans le tableau
+
+### Technique
+
+- **Optimisations** :
+  - Thumbnails 150x150 réduisent la bande passante (~80% de réduction de taille)
+  - React Query cache les photos, évite re-fetch inutiles
+  - `joinedload()` pour charger les photos avec l'article en 1 requête
+
+- **Sécurité** :
+  - Validation stricte des types MIME (pas de validation par extension uniquement)
+  - Vérification de la taille fichier côté serveur (pas de confiance au client)
+  - Noms de fichiers générés avec timestamp pour éviter collisions
+  - Chemins relatifs stockés en base (pas d'URLs absolues)
+
+- **UX** :
+  - Feedback immédiat avec toasts react-toastify
+  - Loader spinner pendant upload
+  - Drag & drop avec changement de couleur
+  - Lightbox pour consulter l'image sans quitter la page
+
+### Notes de migration
+
+⚠️ **Breaking Change** : Structure de base de données modifiée (ajout table `photos`)
+
+Pour migrer depuis v1.1.0 :
+1. Arrêter le serveur backend
+2. Supprimer `backend/database/inventaire.db`
+3. Redémarrer le serveur (la DB sera recréée automatiquement avec le nouveau schéma)
+4. Recréer un utilisateur avec `/api/auth/register`
+
+**Important** : Toutes les données précédentes seront perdues. En production, utiliser un outil de migration SQL (Alembic).
+
+### Tests effectués
+
+✅ Upload de photos (JPEG 7KB)
+✅ Génération de miniatures (1,5KB pour 150x150)
+✅ Limite de 5 photos par article (validation backend)
+✅ Validation taille fichier (max 5 MB)
+✅ Validation type MIME (JPEG/PNG/WEBP uniquement)
+✅ Suppression de photos (fichiers + base de données)
+✅ Affichage miniatures dans la liste Articles
+
+---
+
 ## [1.1.0] - 2026-02-08
 
 ### Ajouté
