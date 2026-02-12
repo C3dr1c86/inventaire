@@ -46,9 +46,11 @@ async def startup_event():
     Événement exécuté au démarrage de l'application.
     Initialise la base de données et crée les tables si nécessaire.
     """
-    print(">> Demarrage de l'application...")
-    init_db()
-    print(">> Application prete !")
+    # Skip init_db en mode test (la database de test est gérée par pytest)
+    if os.getenv("TESTING") != "1":
+        print(">> Demarrage de l'application...")
+        init_db()
+        print(">> Application prete !")
 
 
 @app.get("/")
@@ -84,16 +86,20 @@ async def health_check():
 
 
 # Importer les routers
-from app.routers import categories, articles, mouvements, rapports, tags, auth, photos
+from app.routers import categories, articles, mouvements, rapports, tags, fournisseurs, auth, photos, emplacements, commandes, users
 
 # Inclure les routers dans l'application
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(users.router, prefix="/api/users", tags=["Utilisateurs"])
 app.include_router(categories.router, prefix="/api/categories", tags=["Catégories"])
 app.include_router(articles.router, prefix="/api/articles", tags=["Articles"])
 app.include_router(mouvements.router, prefix="/api/mouvements", tags=["Mouvements"])
 app.include_router(rapports.router, prefix="/api/rapports", tags=["Rapports"])
 app.include_router(tags.router, prefix="/api/tags", tags=["Tags"])
+app.include_router(fournisseurs.router, prefix="/api/fournisseurs", tags=["Fournisseurs"])
+app.include_router(emplacements.router, prefix="/api/emplacements", tags=["Emplacements"])
 app.include_router(photos.router, prefix="/api/articles", tags=["Photos"])
+app.include_router(commandes.router, prefix="/api/commandes", tags=["Commandes"])
 
 # Configuration du serving de fichiers statiques pour les photos
 # IMPORTANT : Monter APRÈS tous les include_router() pour ne pas interférer avec les routes API

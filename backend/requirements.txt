@@ -24,8 +24,9 @@ fastapi-cors==0.0.6
 reportlab==4.0.9
 openpyxl==3.1.2
 
-# Génération de codes-barres
+# Génération de codes-barres et QR codes
 python-barcode==0.15.1
+qrcode==7.4.2
 Pillow>=11.0.0
 
 # Variables d'environnement
@@ -37,4 +38,7 @@ python-dateutil==2.8.2
 # Tests
 pytest==7.4.4
 pytest-asyncio==0.23.3
+pytest-cov==4.1.0
 httpx==0.26.0
+faker==20.1.0
+freezegun==1.4.0

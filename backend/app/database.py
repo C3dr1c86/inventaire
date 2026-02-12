@@ -11,8 +11,11 @@ from sqlalchemy.orm import sessionmaker
 import os
 
 # URL de connexion à la base de données SQLite
-# Le fichier sera créé dans le dossier database/
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./database/inventaire.db")
+# En mode test, utiliser une database en mémoire
+if os.getenv("TESTING") == "1":
+    DATABASE_URL = "sqlite:///:memory:"
+else:
+    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./database/inventaire.db")
 
 # Créer le moteur SQLAlchemy
 # check_same_thread=False est nécessaire pour SQLite avec FastAPI
