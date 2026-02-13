@@ -65,7 +65,8 @@
       "Bash(venvScriptspython.exe -m pytest:*)",
       "Bash(venv/Scripts/python.exe -m pytest tests/test_crud_articles.py -v)",
       "Bash(venv/Scripts/python.exe -m pytest tests/ -v --tb=short)",
-      "Bash(venv/Scripts/python.exe -m pytest:*)"
+      "Bash(venv/Scripts/python.exe -m pytest:*)",
+      "Bash(npm test:*)"
     ]
   }
 }
