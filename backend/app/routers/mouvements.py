@@ -15,6 +15,7 @@ from typing import Optional
 from app import crud, schemas, models
 from app.database import get_db
 from app.auth import get_current_user
+from app.permissions import require_permission
 
 # Créer le router
 router = APIRouter()
@@ -138,7 +139,7 @@ def lire_mouvement(
     return mouvement
 
 
-@router.post("/", response_model=schemas.MouvementWithArticle, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=schemas.MouvementWithArticle, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_permission("mouvements", "create"))])
 def creer_mouvement(
     mouvement: schemas.MouvementCreate,
     db: Session = Depends(get_db),
