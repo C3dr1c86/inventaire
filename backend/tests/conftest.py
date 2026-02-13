@@ -15,7 +15,7 @@ def pytest_configure(config):
 from fastapi.testclient import TestClient
 from app.main import app
 from app.database import Base, get_db, engine, SessionLocal
-from app.models import User, RoleEnum, Categorie, Article, Fournisseur
+from app.models import User, RoleEnum, Categorie, Article, Fournisseur, Commande, LigneCommande
 from app.auth import create_access_token, get_password_hash
 from faker import Faker
 
@@ -233,3 +233,34 @@ def sample_categorie_with_children(db, admin_user):
 
     db.refresh(parent)
     return parent
+
+
+@pytest.fixture
+def sample_commande(db, admin_user, sample_fournisseur, sample_article):
+    """Commande de test avec une ligne de commande"""
+    commande = Commande(
+        fournisseur_id=sample_fournisseur.id,
+        numero_commande="CMD-TEST-001",
+        statut="BROUILLON",
+        montant_total=199.90,
+        notes="Commande de test",
+        created_by=admin_user.id
+    )
+    db.add(commande)
+    db.commit()
+    db.refresh(commande)
+
+    # Ajouter une ligne de commande
+    ligne = LigneCommande(
+        commande_id=commande.id,
+        article_id=sample_article.id,
+        quantite_commandee=10,
+        quantite_recue=0,
+        prix_unitaire=19.99,
+        created_by=admin_user.id
+    )
+    db.add(ligne)
+    db.commit()
+
+    db.refresh(commande)
+    return commande
