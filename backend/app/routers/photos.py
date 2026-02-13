@@ -84,7 +84,8 @@ async def upload_photo(
         filepath=filepath,
         thumbnail_path=thumbnail_path,
         file_size=actual_file_size,
-        mime_type=file.content_type
+        mime_type=file.content_type,
+        current_user=current_user
     )
 
     return db_photo

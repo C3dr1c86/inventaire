@@ -11,27 +11,38 @@ import { toast } from 'react-toastify'
 import { getArticles, createArticle, updateArticle, deleteArticle } from '../services/articleService'
 import { getCategoriesTree } from '../services/categorieService'
 import { getTags } from '../services/tagService'
+import { getFournisseurs } from '../services/fournisseurService'
+import { getEmplacements } from '../services/emplacementService'
+import api from '../services/api'
 import { Plus, Trash2, ChevronUp, ChevronDown, Barcode, Download, Image as ImageIcon } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import ArticleForm from '../components/articles/ArticleForm'
+import ArticleDetailModal from '../components/articles/ArticleDetailModal'
 import Pagination from '../components/common/Pagination'
 import SearchBar from '../components/common/SearchBar'
+import { usePermissions } from '../hooks/usePermissions'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 function Articles() {
+  const { canCreate, canUpdate, canDelete } = usePermissions()
   const [searchParams] = useSearchParams()
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [showStockBas, setShowStockBas] = useState(searchParams.get('stock_bas') === 'true')
   const [selectedCategorie, setSelectedCategorie] = useState('')
   const [selectedTag, setSelectedTag] = useState('')
+  const [selectedFournisseur, setSelectedFournisseur] = useState('')
+  const [selectedEmplacement, setSelectedEmplacement] = useState(searchParams.get('emplacement_id') || '')
+  const [showSansEmplacement, setShowSansEmplacement] = useState(false)
   const [sortBy, setSortBy] = useState(null)
   const [sortOrder, setSortOrder] = useState('asc')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedArticle, setSelectedArticle] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [articleDetail, setArticleDetail] = useState(null)
   const [barcodeArticle, setBarcodeArticle] = useState(null)
+  const [barcodeUrl, setBarcodeUrl] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
@@ -48,7 +59,32 @@ function Articles() {
   // Réinitialiser la page à 1 quand les filtres ou le tri changent
   useEffect(() => {
     setCurrentPage(1)
-  }, [debouncedSearchTerm, showStockBas, selectedCategorie, selectedTag, sortBy, sortOrder])
+  }, [debouncedSearchTerm, showStockBas, selectedCategorie, selectedTag, selectedFournisseur, selectedEmplacement, showSansEmplacement, sortBy, sortOrder])
+
+  // Charger le code-barre quand le modal s'ouvre
+  useEffect(() => {
+    if (barcodeArticle) {
+      const loadBarcode = async () => {
+        try {
+          const response = await api.get(`/articles/${barcodeArticle.id}/barcode`, {
+            responseType: 'blob'
+          })
+          const url = window.URL.createObjectURL(new Blob([response.data]))
+          setBarcodeUrl(url)
+        } catch (error) {
+          console.error('Erreur lors du chargement du code-barre:', error)
+          toast.error('Erreur lors du chargement du code-barre')
+        }
+      }
+      loadBarcode()
+    } else {
+      // Nettoyer l'URL du blob quand le modal se ferme
+      if (barcodeUrl) {
+        window.URL.revokeObjectURL(barcodeUrl)
+        setBarcodeUrl(null)
+      }
+    }
+  }, [barcodeArticle])
 
   // Récupérer les catégories hiérarchiques pour le filtre
   const { data: categoriesTree } = useQuery({
@@ -62,15 +98,29 @@ function Articles() {
     queryFn: () => getTags()
   })
 
+  // Récupérer les fournisseurs pour le filtre
+  const { data: fournisseurs } = useQuery({
+    queryKey: ['fournisseurs'],
+    queryFn: () => getFournisseurs()
+  })
+
+  // Récupérer les emplacements pour le filtre
+  const { data: emplacements } = useQuery({
+    queryKey: ['emplacements'],
+    queryFn: () => getEmplacements()
+  })
+
   // Récupérer les articles
   const skip = (currentPage - 1) * itemsPerPage
   const { data, isLoading, error } = useQuery({
-    queryKey: ['articles', { search: debouncedSearchTerm, stock_bas: showStockBas, categorie_id: selectedCategorie, tag_id: selectedTag, sort_by: sortBy, order: sortOrder, skip, limit: itemsPerPage }],
+    queryKey: ['articles', { search: debouncedSearchTerm, stock_bas: showStockBas, categorie_id: selectedCategorie, tag_id: selectedTag, fournisseur_id: selectedFournisseur, emplacement_id: showSansEmplacement ? 'null' : selectedEmplacement, sort_by: sortBy, order: sortOrder, skip, limit: itemsPerPage }],
     queryFn: () => getArticles({
       search: debouncedSearchTerm || undefined,
       stock_bas: showStockBas,
       categorie_id: selectedCategorie || undefined,
       tag_id: selectedTag || undefined,
+      fournisseur_id: selectedFournisseur || undefined,
+      emplacement_id: showSansEmplacement ? 'null' : (selectedEmplacement || undefined),
       sort_by: sortBy || undefined,
       order: sortOrder,
       skip,
@@ -232,10 +282,12 @@ function Articles() {
     <div>
       <div className="flex-between" style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem' }}>Articles</h1>
-        <button className="btn btn-primary" onClick={handleCreateClick}>
-          <Plus size={18} />
-          Nouvel article
-        </button>
+        {canCreate('articles') && (
+          <button className="btn btn-primary" onClick={handleCreateClick}>
+            <Plus size={18} />
+            Nouvel article
+          </button>
+        )}
       </div>
 
       {/* Barre de recherche */}
@@ -288,6 +340,43 @@ function Articles() {
               {tags?.map(tag => (
                 <option key={tag.id} value={tag.id}>
                   {tag.nom}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ minWidth: '200px' }}>
+            <select
+              className="form-control"
+              value={selectedFournisseur}
+              onChange={(e) => setSelectedFournisseur(e.target.value)}
+            >
+              <option value="">Tous les fournisseurs</option>
+              {fournisseurs?.map(fournisseur => (
+                <option key={fournisseur.id} value={fournisseur.id}>
+                  {fournisseur.nom}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ minWidth: '200px' }}>
+            <select
+              className="form-control"
+              value={showSansEmplacement ? 'sans' : selectedEmplacement}
+              onChange={(e) => {
+                if (e.target.value === 'sans') {
+                  setShowSansEmplacement(true)
+                  setSelectedEmplacement('')
+                } else {
+                  setShowSansEmplacement(false)
+                  setSelectedEmplacement(e.target.value)
+                }
+              }}
+            >
+              <option value="">Tous les emplacements</option>
+              <option value="sans">📍 Sans emplacement</option>
+              {emplacements?.map(emplacement => (
+                <option key={emplacement.id} value={emplacement.id}>
+                  {emplacement.code_complet || emplacement.code}
                 </option>
               ))}
             </select>
@@ -407,6 +496,8 @@ function Articles() {
                   </div>
                 </th>
                 <th>Tags</th>
+                <th>Fournisseurs</th>
+                <th>Emplacement</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -447,7 +538,18 @@ function Articles() {
                   <td data-label="ID">{article.id}</td>
                   <td data-label="Nom">
                     <div>
-                      <strong>{article.nom}</strong>
+                      <strong
+                        onClick={() => setArticleDetail(article)}
+                        style={{
+                          cursor: 'pointer',
+                          color: 'var(--primary)',
+                          textDecoration: 'underline',
+                          textDecorationStyle: 'dotted'
+                        }}
+                        title="Cliquez pour voir les détails"
+                      >
+                        {article.nom}
+                      </strong>
                       {article.est_stock_bas && (
                         <span className="badge badge-danger" style={{ marginLeft: '0.5rem' }}>
                           Stock bas
@@ -501,21 +603,59 @@ function Articles() {
                       <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>-</span>
                     )}
                   </td>
+                  <td data-label="Fournisseurs">
+                    {article.fournisseurs && article.fournisseurs.length > 0 ? (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                        {article.fournisseurs.map(fournisseur => (
+                          <span
+                            key={fournisseur.id}
+                            style={{
+                              display: 'inline-block',
+                              padding: '0.125rem 0.5rem',
+                              fontSize: '0.75rem',
+                              borderRadius: '0.75rem',
+                              backgroundColor: '#6c757d',
+                              color: '#fff',
+                              fontWeight: 500
+                            }}
+                            title={fournisseur.contact || fournisseur.nom}
+                          >
+                            🚚 {fournisseur.nom}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>-</span>
+                    )}
+                  </td>
+                  <td data-label="Emplacement">
+                    {article.emplacement ? (
+                      <span title={article.emplacement.code_complet}>
+                        📍 {article.emplacement.code}
+                      </span>
+                    ) : (
+                      <span style={{ color: '#999', fontStyle: 'italic' }}>Non défini</span>
+                    )}
+                  </td>
                   <td data-label="Actions">
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        className="btn btn-sm btn-secondary"
-                        onClick={() => handleEditClick(article)}
-                      >
-                        Modifier
-                      </button>
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={() => handleDeleteClick(article)}
-                        aria-label="Supprimer l'article"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {canUpdate('articles') && (
+                        <button
+                          className="btn btn-sm btn-secondary"
+                          onClick={() => handleEditClick(article)}
+                        >
+                          Modifier
+                        </button>
+                      )}
+                      {canDelete('articles') && (
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => handleDeleteClick(article)}
+                          aria-label="Supprimer l'article"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -603,18 +743,22 @@ function Articles() {
               padding: '2rem',
               borderRadius: '8px',
               border: '1px solid #e0e0e0',
-              display: 'inline-block',
-              marginBottom: '1.5rem'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '1.5rem',
+              minWidth: '400px',
+              minHeight: '200px'
             }}>
-              <img
-                src={`${API_URL}/articles/${barcodeArticle.id}/barcode`}
-                alt={`Code-barre ${barcodeArticle.sku}`}
-                style={{ maxWidth: '100%', height: 'auto' }}
-                onError={(e) => {
-                  e.target.style.display = 'none'
-                  toast.error('Erreur lors du chargement du code-barre')
-                }}
-              />
+              {barcodeUrl ? (
+                <img
+                  src={barcodeUrl}
+                  alt={`Code-barre ${barcodeArticle.sku}`}
+                  style={{ maxWidth: '100%', height: 'auto' }}
+                />
+              ) : (
+                <p style={{ color: 'var(--text-secondary)' }}>Chargement du code-barre...</p>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
@@ -640,6 +784,14 @@ function Articles() {
           </div>
         )}
       </Modal>
+
+      {/* Modal détails article */}
+      {articleDetail && (
+        <ArticleDetailModal
+          article={articleDetail}
+          onClose={() => setArticleDetail(null)}
+        />
+      )}
     </div>
   )
 }

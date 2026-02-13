@@ -12,9 +12,11 @@ import { Plus, Edit2, Trash2, Tag } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import TagForm from '../components/tags/TagForm'
 import Loader from '../components/common/Loader'
+import { usePermissions } from '../hooks/usePermissions'
 
 function Tags() {
   const queryClient = useQueryClient()
+  const { canCreate, canUpdate, canDelete } = usePermissions()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedTag, setSelectedTag] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
@@ -118,14 +120,16 @@ function Tags() {
             Gérez les tags pour identifier et classer vos articles
           </p>
         </div>
-        <button
-          onClick={handleCreate}
-          className="btn btn-primary"
-          style={{ gap: '0.5rem' }}
-        >
-          <Plus size={20} />
-          Nouveau tag
-        </button>
+        {canCreate('tags') && (
+          <button
+            onClick={handleCreate}
+            className="btn btn-primary"
+            style={{ gap: '0.5rem' }}
+          >
+            <Plus size={20} />
+            Nouveau tag
+          </button>
+        )}
       </div>
 
       {/* Liste des tags */}
@@ -134,10 +138,12 @@ function Tags() {
           <Tag size={64} />
           <h2>Aucun tag</h2>
           <p>Créez votre premier tag pour identifier et classer vos articles</p>
-          <button onClick={handleCreate} className="btn btn-primary">
-            <Plus size={20} />
-            Créer un tag
-          </button>
+          {canCreate('tags') && (
+            <button onClick={handleCreate} className="btn btn-primary">
+              <Plus size={20} />
+              Créer un tag
+            </button>
+          )}
         </div>
       ) : (
         <div className="card">
@@ -184,22 +190,26 @@ function Tags() {
                     </td>
                     <td>
                       <div className="action-buttons">
-                        <button
-                          onClick={() => handleEdit(tag)}
-                          className="btn btn-sm btn-secondary"
-                          title="Modifier le tag"
-                          aria-label="Modifier le tag"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(tag)}
-                          className="btn btn-sm btn-danger"
-                          title="Supprimer le tag"
-                          aria-label="Supprimer le tag"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {canUpdate('tags') && (
+                          <button
+                            onClick={() => handleEdit(tag)}
+                            className="btn btn-sm btn-secondary"
+                            title="Modifier le tag"
+                            aria-label="Modifier le tag"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                        )}
+                        {canDelete('tags') && (
+                          <button
+                            onClick={() => handleDelete(tag)}
+                            className="btn btn-sm btn-danger"
+                            title="Supprimer le tag"
+                            aria-label="Supprimer le tag"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

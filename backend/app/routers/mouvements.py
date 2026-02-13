@@ -179,4 +179,4 @@ def creer_mouvement(
         }
         ```
     """
-    return crud.create_mouvement(db, mouvement)
+    return crud.create_mouvement(db, mouvement, current_user)

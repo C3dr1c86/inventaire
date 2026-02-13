@@ -13,8 +13,10 @@ import { format } from 'date-fns'
 import Modal from '../components/common/Modal'
 import MouvementForm from '../components/mouvements/MouvementForm'
 import Pagination from '../components/common/Pagination'
+import { usePermissions } from '../hooks/usePermissions'
 
 function Mouvements() {
+  const { canCreate } = usePermissions()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -86,10 +88,12 @@ function Mouvements() {
     <div>
       <div className="flex-between" style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem' }}>Mouvements de Stock</h1>
-        <button className="btn btn-primary" onClick={handleCreateClick}>
-          <Plus size={18} />
-          Nouveau mouvement
-        </button>
+        {canCreate('mouvements') && (
+          <button className="btn btn-primary" onClick={handleCreateClick}>
+            <Plus size={18} />
+            Nouveau mouvement
+          </button>
+        )}
       </div>
 
 

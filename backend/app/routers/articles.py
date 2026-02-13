@@ -21,6 +21,7 @@ from barcode.writer import ImageWriter
 from app import crud, schemas, models
 from app.database import get_db
 from app.auth import get_current_user
+from app.permissions import require_permission
 
 # Créer le router
 router = APIRouter()
@@ -33,6 +34,8 @@ def liste_articles(
     search: Optional[str] = Query(None, description="Terme de recherche (nom, description, SKU)"),
     categorie_id: Optional[int] = Query(None, description="Filtre par catégorie"),
     tag_id: Optional[int] = Query(None, description="Filtre par tag"),
+    fournisseur_id: Optional[int] = Query(None, description="Filtre par fournisseur"),
+    emplacement_id: Optional[str] = Query(None, description="Filtre par emplacement ('null' pour articles sans emplacement)"),
     stock_bas: bool = Query(False, description="Afficher uniquement les articles en stock bas"),
     sort_by: Optional[str] = Query(None, description="Colonne pour le tri (id, nom, sku, quantite, prix_unitaire, valeur, categorie)"),
     order: str = Query("asc", pattern="^(asc|desc)$", description="Ordre de tri (asc ou desc)"),
@@ -46,6 +49,8 @@ def liste_articles(
     - **search** : Recherche dans le nom, description et SKU
     - **categorie_id** : Filtre par catégorie
     - **tag_id** : Filtre par tag
+    - **fournisseur_id** : Filtre par fournisseur
+    - **emplacement_id** : Filtre par emplacement (utilisez 'null' pour les articles sans emplacement)
     - **stock_bas** : Si true, affiche uniquement les articles dont la quantité < quantite_min
 
     Paramètres de tri disponibles :
@@ -58,6 +63,7 @@ def liste_articles(
         search: Terme de recherche
         categorie_id: ID de la catégorie pour filtrer
         tag_id: ID du tag pour filtrer
+        fournisseur_id: ID du fournisseur pour filtrer
         stock_bas: Filtre stock bas
         sort_by: Colonne pour le tri
         order: Ordre de tri
@@ -66,6 +72,17 @@ def liste_articles(
     Returns:
         Liste paginée d'articles avec le total
     """
+    # Gérer le cas spécial emplacement_id='null' pour filtrer les articles sans emplacement
+    emplacement_filter = None
+    if emplacement_id is not None:
+        if emplacement_id == 'null':
+            emplacement_filter = 'null'  # Signal spécial pour articles sans emplacement
+        else:
+            try:
+                emplacement_filter = int(emplacement_id)
+            except ValueError:
+                pass  # Ignorer si la valeur n'est pas un entier valide
+
     articles, total = crud.get_articles(
         db,
         skip=skip,
@@ -73,6 +90,8 @@ def liste_articles(
         search=search,
         categorie_id=categorie_id,
         tag_id=tag_id,
+        fournisseur_id=fournisseur_id,
+        emplacement_id=emplacement_filter,
         stock_bas=stock_bas,
         sort_by=sort_by,
         order=order
@@ -114,7 +133,7 @@ def lire_article(
     return article
 
 
-@router.post("/", response_model=schemas.ArticleResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=schemas.ArticleResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_permission("articles", "create"))])
 def creer_article(
     article: schemas.ArticleCreate,
     db: Session = Depends(get_db),
@@ -134,10 +153,10 @@ def creer_article(
         HTTPException 400: Si le SKU existe déjà
         HTTPException 404: Si la catégorie spécifiée n'existe pas
     """
-    return crud.create_article(db, article)
+    return crud.create_article(db, article, current_user)
 
 
-@router.put("/{article_id}", response_model=schemas.ArticleResponse)
+@router.put("/{article_id}", response_model=schemas.ArticleResponse, dependencies=[Depends(require_permission("articles", "update"))])
 def modifier_article(
     article_id: int,
     article_update: schemas.ArticleUpdate,
@@ -163,10 +182,10 @@ def modifier_article(
         Pour modifier la quantité en stock, utilisez plutôt l'endpoint
         de création de mouvement (/api/mouvements) pour garder un historique.
     """
-    return crud.update_article(db, article_id, article_update)
+    return crud.update_article(db, article_id, article_update, current_user)
 
 
-@router.delete("/{article_id}", response_model=schemas.MessageResponse)
+@router.delete("/{article_id}", response_model=schemas.MessageResponse, dependencies=[Depends(require_permission("articles", "delete"))])
 def supprimer_article(
     article_id: int,
     db: Session = Depends(get_db),

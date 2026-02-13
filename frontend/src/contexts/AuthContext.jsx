@@ -1,10 +1,10 @@
 /**
  * Contexte d'authentification.
  *
- * Gère l'état global de l'authentification de l'utilisateur.
+ * Gère l'état global de l'authentification de l'utilisateur avec permissions.
  */
 
-import { createContext, useState, useEffect, useContext } from 'react'
+import { createContext, useState, useEffect, useContext, useCallback } from 'react'
 import { login, getCurrentUser, logout, getStoredToken, setStoredToken } from '../services/authService'
 
 const AuthContext = createContext()
@@ -16,6 +16,8 @@ const AuthContext = createContext()
  */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [role, setRole] = useState(null)
+  const [permissions, setPermissions] = useState([])
   const [loading, setLoading] = useState(true)
 
   // Charger l'utilisateur au montage si un token existe
@@ -25,6 +27,8 @@ export function AuthProvider({ children }) {
       getCurrentUser()
         .then((userData) => {
           setUser(userData)
+          setRole(userData.role)
+          setPermissions(userData.permissions || [])
         })
         .catch(() => {
           // Token invalide ou expiré
@@ -39,6 +43,25 @@ export function AuthProvider({ children }) {
   }, [])
 
   /**
+   * Vérifie si l'utilisateur a une permission spécifique.
+   *
+   * @param {string} resource - Ressource (ex: "articles", "users")
+   * @param {string} action - Action (ex: "read", "create", "update", "delete")
+   * @returns {boolean} True si l'utilisateur a la permission
+   */
+  const hasPermission = useCallback((resource, action) => {
+    if (!permissions.length) return false
+
+    const permissionString = `${resource}:${action}`
+    const wildcardResource = `${resource}:*`
+    const wildcardAll = '*:*'
+
+    return permissions.includes(permissionString) ||
+           permissions.includes(wildcardResource) ||
+           permissions.includes(wildcardAll)
+  }, [permissions])
+
+  /**
    * Connecte un utilisateur.
    *
    * @param {Object} credentials - Identifiants (username, password)
@@ -48,6 +71,8 @@ export function AuthProvider({ children }) {
     setStoredToken(access_token)
     const userData = await getCurrentUser()
     setUser(userData)
+    setRole(userData.role)
+    setPermissions(userData.permissions || [])
   }
 
   /**
@@ -56,10 +81,12 @@ export function AuthProvider({ children }) {
   const logoutUser = () => {
     logout()
     setUser(null)
+    setRole(null)
+    setPermissions([])
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginUser, logoutUser }}>
+    <AuthContext.Provider value={{ user, role, permissions, hasPermission, loading, loginUser, logoutUser }}>
       {children}
     </AuthContext.Provider>
   )

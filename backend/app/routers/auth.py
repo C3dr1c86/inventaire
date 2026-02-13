@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas, crud
 from app.database import get_db
 from app.auth import create_access_token, get_current_user
+from app.permissions import get_user_permissions
 
 
 router = APIRouter()
@@ -21,8 +22,8 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     """
     Créer un nouveau compte utilisateur.
 
-    **Mode mono-utilisateur** : Un seul utilisateur peut être créé.
-    Si un utilisateur existe déjà, retourne une erreur 400.
+    **Mode multi-utilisateurs** : Plusieurs utilisateurs peuvent être créés.
+    Les nouveaux utilisateurs sont créés avec le rôle par défaut (consultation).
 
     Args:
         user: Informations de l'utilisateur à créer
@@ -32,16 +33,8 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
         L'utilisateur créé (sans le mot de passe)
 
     Raises:
-        HTTPException 400: Si un utilisateur existe déjà ou si les données sont invalides
+        HTTPException 400: Si le username ou email existe déjà
     """
-    # Vérifier si un utilisateur existe déjà (mono-utilisateur)
-    existing_users = db.query(models.User).count()
-    if existing_users > 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Un utilisateur existe déjà. Cette application ne supporte qu'un seul compte."
-        )
-
     # Créer l'utilisateur (le CRUD gère la validation unicité username/email + hashage password)
     return crud.create_user(db, user)
 
@@ -78,23 +71,38 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             detail="Compte utilisateur inactif"
         )
 
-    # Créer le token JWT
-    access_token = create_access_token(data={"sub": user.username})
+    # Créer le token JWT enrichi (avec user_id et role)
+    access_token = create_access_token(data={"sub": user.username}, user=user)
 
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.get("/me", response_model=schemas.UserResponse)
+@router.get("/me", response_model=schemas.UserMeResponse)
 def read_users_me(current_user: models.User = Depends(get_current_user)):
     """
-    Récupérer les informations de l'utilisateur connecté.
+    Récupérer les informations de l'utilisateur connecté avec ses permissions.
 
     Nécessite un token JWT valide dans le header Authorization.
+    Retourne les informations de l'utilisateur ainsi que la liste complète
+    de ses permissions (combinaison du rôle par défaut et permissions custom).
 
     Args:
         current_user: Utilisateur actuel (extrait du token)
 
     Returns:
-        Informations de l'utilisateur connecté
+        Informations de l'utilisateur connecté + permissions calculées
     """
-    return current_user
+    # Calculer les permissions de l'utilisateur
+    permissions = get_user_permissions(current_user)
+
+    # Retourner les données utilisateur enrichies avec permissions
+    return schemas.UserMeResponse(
+        id=current_user.id,
+        username=current_user.username,
+        email=current_user.email,
+        is_active=current_user.is_active,
+        role=current_user.role,
+        created_at=current_user.created_at,
+        updated_at=current_user.updated_at,
+        permissions=permissions
+    )

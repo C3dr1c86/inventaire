@@ -12,9 +12,11 @@ import { Plus, Edit2, Trash2, Layers } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import CategorieForm from '../components/categories/CategorieForm'
 import Loader from '../components/common/Loader'
+import { usePermissions } from '../hooks/usePermissions'
 
 function Categories() {
   const queryClient = useQueryClient()
+  const { canCreate, canUpdate, canDelete } = usePermissions()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedCategorie, setSelectedCategorie] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
@@ -126,14 +128,16 @@ function Categories() {
             Gérez les catégories pour organiser vos articles
           </p>
         </div>
-        <button
-          onClick={handleCreate}
-          className="btn btn-primary"
-          style={{ gap: '0.5rem' }}
-        >
-          <Plus size={20} />
-          Nouvelle catégorie
-        </button>
+        {canCreate('categories') && (
+          <button
+            onClick={handleCreate}
+            className="btn btn-primary"
+            style={{ gap: '0.5rem' }}
+          >
+            <Plus size={20} />
+            Nouvelle catégorie
+          </button>
+        )}
       </div>
 
       {/* Liste des catégories */}
@@ -142,10 +146,12 @@ function Categories() {
           <Layers size={64} />
           <h2>Aucune catégorie</h2>
           <p>Créez votre première catégorie pour commencer à organiser vos articles</p>
-          <button onClick={handleCreate} className="btn btn-primary">
-            <Plus size={20} />
-            Créer une catégorie
-          </button>
+          {canCreate('categories') && (
+            <button onClick={handleCreate} className="btn btn-primary">
+              <Plus size={20} />
+              Créer une catégorie
+            </button>
+          )}
         </div>
       ) : (
         <div className="card">
@@ -184,22 +190,26 @@ function Categories() {
                       </td>
                       <td>
                         <div className="action-buttons">
-                          <button
-                            onClick={() => handleEdit(categorie)}
-                            className="btn btn-sm btn-secondary"
-                            title="Modifier la catégorie"
-                            aria-label="Modifier la catégorie"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(categorie)}
-                            className="btn btn-sm btn-danger"
-                            title="Supprimer la catégorie"
-                            aria-label="Supprimer la catégorie"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          {canUpdate('categories') && (
+                            <button
+                              onClick={() => handleEdit(categorie)}
+                              className="btn btn-sm btn-secondary"
+                              title="Modifier la catégorie"
+                              aria-label="Modifier la catégorie"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                          )}
+                          {canDelete('categories') && (
+                            <button
+                              onClick={() => handleDelete(categorie)}
+                              className="btn btn-sm btn-danger"
+                              title="Supprimer la catégorie"
+                              aria-label="Supprimer la catégorie"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -222,22 +232,26 @@ function Categories() {
                         </td>
                         <td>
                           <div className="action-buttons">
-                            <button
-                              onClick={() => handleEdit(sousCategorie)}
-                              className="btn btn-sm btn-secondary"
-                              title="Modifier la sous-catégorie"
-                              aria-label="Modifier la sous-catégorie"
-                            >
-                              <Edit2 size={14} />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(sousCategorie)}
-                              className="btn btn-sm btn-danger"
-                              title="Supprimer la sous-catégorie"
-                              aria-label="Supprimer la sous-catégorie"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            {canUpdate('categories') && (
+                              <button
+                                onClick={() => handleEdit(sousCategorie)}
+                                className="btn btn-sm btn-secondary"
+                                title="Modifier la sous-catégorie"
+                                aria-label="Modifier la sous-catégorie"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                            )}
+                            {canDelete('categories') && (
+                              <button
+                                onClick={() => handleDelete(sousCategorie)}
+                                className="btn btn-sm btn-danger"
+                                title="Supprimer la sous-catégorie"
+                                aria-label="Supprimer la sous-catégorie"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

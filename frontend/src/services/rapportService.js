@@ -99,3 +99,86 @@ export const exportBarcodesPDF = async (articleIds) => {
   link.remove()
   window.URL.revokeObjectURL(url)
 }
+
+/**
+ * Génère un PDF avec les QR codes des emplacements sélectionnés
+ * @param {number[]} emplacementIds - Liste des IDs d'emplacements
+ * @returns {Promise<void>}
+ */
+export const exportEmplacementsQRCodesPDF = async (emplacementIds) => {
+  const response = await api.post('/rapports/export/emplacements-qrcodes-pdf', {
+    emplacement_ids: emplacementIds
+  }, {
+    responseType: 'blob'
+  })
+
+  // Créer un lien de téléchargement
+  const url = window.URL.createObjectURL(new Blob([response.data]))
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `qrcodes_emplacements_${new Date().toISOString().split('T')[0]}.pdf`)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
+/**
+ * Exporte les fournisseurs en CSV ou PDF
+ * @param {string} format - Format d'export ('csv' ou 'pdf')
+ * @returns {Promise<void>}
+ */
+export const exportFournisseurs = async (format) => {
+  const response = await api.get(`/rapports/export/fournisseurs-${format}`, {
+    responseType: 'blob'
+  })
+
+  const url = window.URL.createObjectURL(new Blob([response.data]))
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `fournisseurs_${new Date().toISOString().split('T')[0]}.${format}`)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
+/**
+ * Exporte les tags en CSV ou PDF
+ * @param {string} format - Format d'export ('csv' ou 'pdf')
+ * @returns {Promise<void>}
+ */
+export const exportTags = async (format) => {
+  const response = await api.get(`/rapports/export/tags-${format}`, {
+    responseType: 'blob'
+  })
+
+  const url = window.URL.createObjectURL(new Blob([response.data]))
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `tags_${new Date().toISOString().split('T')[0]}.${format}`)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
+/**
+ * Exporte les emplacements en CSV ou PDF (données, pas QR codes)
+ * @param {string} format - Format d'export ('csv' ou 'pdf')
+ * @returns {Promise<void>}
+ */
+export const exportEmplacementsData = async (format) => {
+  const response = await api.get(`/rapports/export/emplacements-${format}`, {
+    responseType: 'blob'
+  })
+
+  const url = window.URL.createObjectURL(new Blob([response.data]))
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `emplacements_${new Date().toISOString().split('T')[0]}.${format}`)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}

@@ -31,6 +31,11 @@ class BarcodesExportRequest(BaseModel):
     article_ids: List[int]
 
 
+# Schéma pour la requête de génération de QR codes d'emplacements
+class QRCodesExportRequest(BaseModel):
+    emplacement_ids: List[int]
+
+
 @router.get("/statistiques", response_model=schemas.StatistiquesResponse)
 def obtenir_statistiques(
     db: Session = Depends(get_db),
@@ -286,3 +291,154 @@ def export_barcodes_pdf(
             "Content-Type": "application/pdf"
         }
     )
+
+
+@router.post("/export/emplacements-qrcodes-pdf")
+def export_emplacements_qrcodes_pdf(
+    request: QRCodesExportRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    Génère un PDF avec les QR codes des emplacements sélectionnés.
+
+    Le PDF est formaté en grille (2 colonnes, 3 lignes) pour faciliter
+    l'impression et le découpage des étiquettes.
+
+    Args:
+        request: Liste des IDs d'emplacements pour lesquels générer des QR codes
+        db: Session de base de données
+
+    Returns:
+        Fichier PDF téléchargeable avec les QR codes
+
+    Raises:
+        HTTPException 400: Si aucun emplacement n'est sélectionné
+        HTTPException 404: Si un des emplacements n'existe pas
+    """
+    if not request.emplacement_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Aucun emplacement sélectionné"
+        )
+
+    # Récupérer les emplacements depuis la base de données
+    emplacements = []
+    for emplacement_id in request.emplacement_ids:
+        emplacement = crud.get_emplacement(db, emplacement_id)
+        if not emplacement:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Emplacement {emplacement_id} non trouvé"
+            )
+        emplacements.append(emplacement)
+
+    # Générer le PDF
+    try:
+        pdf_content = export_service.export_emplacements_qrcodes_pdf(emplacements)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la génération du PDF : {str(e)}"
+        )
+
+    # Nom du fichier avec timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"qrcodes_emplacements_{timestamp}.pdf"
+
+    # Retourner le PDF
+    return Response(
+        content=pdf_content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Type": "application/pdf"
+        }
+    )
+
+
+@router.get("/export/fournisseurs-{format}")
+def export_fournisseurs(
+    format: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """Exporte tous les fournisseurs en CSV ou PDF"""
+    fournisseurs = crud.get_fournisseurs(db)
+
+    if format == "csv":
+        csv_content = export_service.export_fournisseurs_csv(fournisseurs)
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=fournisseurs_{datetime.now().strftime('%Y%m%d')}.csv"}
+        )
+    elif format == "pdf":
+        pdf_content = export_service.export_fournisseurs_pdf(fournisseurs)
+        return Response(
+            content=pdf_content,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=fournisseurs_{datetime.now().strftime('%Y%m%d')}.pdf"}
+        )
+    else:
+        raise HTTPException(status_code=400, detail="Format non supporté (csv ou pdf uniquement)")
+
+
+@router.get("/export/tags-{format}")
+def export_tags(
+    format: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """Exporte tous les tags en CSV ou PDF"""
+    from sqlalchemy.orm import joinedload
+    tags = db.query(models.Tag).options(joinedload(models.Tag.articles)).all()
+
+    if format == "csv":
+        csv_content = export_service.export_tags_csv(tags)
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=tags_{datetime.now().strftime('%Y%m%d')}.csv"}
+        )
+    elif format == "pdf":
+        pdf_content = export_service.export_tags_pdf(tags)
+        return Response(
+            content=pdf_content,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=tags_{datetime.now().strftime('%Y%m%d')}.pdf"}
+        )
+    else:
+        raise HTTPException(status_code=400, detail="Format non supporté (csv ou pdf uniquement)")
+
+
+@router.get("/export/emplacements-{format}")
+def export_emplacements_data(
+    format: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """Exporte tous les emplacements en CSV ou PDF"""
+    from sqlalchemy.orm import joinedload
+    emplacements = db.query(models.Emplacement).options(
+        joinedload(models.Emplacement.parent),
+        joinedload(models.Emplacement.articles)
+    ).all()
+
+    if format == "csv":
+        csv_content = export_service.export_emplacements_csv(emplacements)
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=emplacements_{datetime.now().strftime('%Y%m%d')}.csv"}
+        )
+    elif format == "pdf":
+        pdf_content = export_service.export_emplacements_pdf(emplacements)
+        return Response(
+            content=pdf_content,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=emplacements_{datetime.now().strftime('%Y%m%d')}.pdf"}
+        )
+    else:
+        raise HTTPException(status_code=400, detail="Format non supporté (csv ou pdf uniquement)")
+

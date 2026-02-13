@@ -57,7 +57,7 @@ def creer_tag(
     current_user: models.User = Depends(get_current_user)
 ):
     """Crée un nouveau tag."""
-    return crud.create_tag(db, tag)
+    return crud.create_tag(db, tag, current_user)
 
 
 @router.put("/{tag_id}", response_model=schemas.TagResponse)
@@ -68,7 +68,7 @@ def modifier_tag(
     current_user: models.User = Depends(get_current_user)
 ):
     """Met à jour un tag existant."""
-    return crud.update_tag(db, tag_id, tag_update)
+    return crud.update_tag(db, tag_id, tag_update, current_user)
 
 
 @router.delete("/{tag_id}", response_model=schemas.MessageResponse)

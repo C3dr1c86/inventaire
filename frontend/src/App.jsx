@@ -15,9 +15,16 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Articles from './pages/Articles'
 import Categories from './pages/Categories'
+import Emplacements from './pages/Emplacements'
+import ScanQRCode from './pages/ScanQRCode'
+import PlanAtelier from './pages/PlanAtelier'
 import Tags from './pages/Tags'
+import Fournisseurs from './pages/Fournisseurs'
 import Mouvements from './pages/Mouvements'
 import Rapports from './pages/Rapports'
+import Commandes from './pages/Commandes'
+import NouvelleCommande from './pages/NouvelleCommande'
+import Users from './pages/Users'
 
 function App() {
   return (
@@ -80,11 +87,51 @@ function App() {
           }
         />
         <Route
+          path="/emplacements"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Emplacements />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/scan-qrcode"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <ScanQRCode />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plan-atelier"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <PlanAtelier />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/tags"
           element={
             <ProtectedRoute>
               <Layout>
                 <Tags />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/fournisseurs"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Fournisseurs />
               </Layout>
             </ProtectedRoute>
           }
@@ -105,6 +152,36 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Rapports />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/commandes"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Commandes />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/commandes/nouvelle"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <NouvelleCommande />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Users />
               </Layout>
             </ProtectedRoute>
           }

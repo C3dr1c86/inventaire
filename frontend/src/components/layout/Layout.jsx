@@ -9,13 +9,18 @@ import {
   LayoutDashboard,
   Package,
   Layers,
+  MapPin,
+  ScanLine,
   Tag,
+  Truck,
   ArrowRightLeft,
   FileText,
+  ShoppingCart,
   Menu,
-  LogOut
+  LogOut,
+  Users
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { toast } from 'react-toastify'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -23,7 +28,7 @@ function Layout({ children }) {
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { user, logoutUser } = useAuth()
+  const { user, role, hasPermission, logoutUser } = useAuth()
 
   const handleLogout = () => {
     logoutUser()
@@ -31,15 +36,36 @@ function Layout({ children }) {
     toast.info('Déconnexion réussie')
   }
 
-  // Navigation items
+  // Couleurs des badges de rôles
+  const roleBadgeColors = {
+    admin: '#8b5cf6',          // Violet
+    gestionnaire: '#3b82f6',    // Bleu
+    technicien: '#10b981',      // Vert
+    consultation: '#6b7280'     // Gris
+  }
+
+  // Navigation items avec permissions requises
   const navItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/articles', icon: Package, label: 'Articles' },
-    { path: '/categories', icon: Layers, label: 'Catégories' },
-    { path: '/tags', icon: Tag, label: 'Tags' },
-    { path: '/mouvements', icon: ArrowRightLeft, label: 'Mouvements' },
-    { path: '/rapports', icon: FileText, label: 'Rapports' },
+    { path: '/articles', icon: Package, label: 'Articles', permission: { resource: 'articles', action: 'read' } },
+    { path: '/categories', icon: Layers, label: 'Catégories', permission: { resource: 'categories', action: 'read' } },
+    { path: '/emplacements', icon: MapPin, label: 'Emplacements', permission: { resource: 'emplacements', action: 'read' } },
+    { path: '/scan-qrcode', icon: ScanLine, label: 'Scanner QR Code' },
+    { path: '/tags', icon: Tag, label: 'Tags', permission: { resource: 'tags', action: 'read' } },
+    { path: '/fournisseurs', icon: Truck, label: 'Fournisseurs', permission: { resource: 'fournisseurs', action: 'read' } },
+    { path: '/commandes', icon: ShoppingCart, label: 'Commandes', permission: { resource: 'commandes', action: 'read' } },
+    { path: '/mouvements', icon: ArrowRightLeft, label: 'Mouvements', permission: { resource: 'mouvements', action: 'read' } },
+    { path: '/rapports', icon: FileText, label: 'Rapports', permission: { resource: 'rapports', action: 'read' } },
+    { path: '/users', icon: Users, label: 'Utilisateurs', permission: { resource: 'users', action: 'read' } },
   ]
+
+  // Filtrer les items de navigation selon les permissions
+  const visibleNavItems = useMemo(() => {
+    return navItems.filter(item => {
+      if (!item.permission) return true
+      return hasPermission(item.permission.resource, item.permission.action)
+    })
+  }, [hasPermission])
 
   // Vérifier si un lien est actif
   const isActive = (path) => location.pathname === path
@@ -59,7 +85,7 @@ function Layout({ children }) {
 
         <nav>
           <ul className="nav-menu">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon
               return (
                 <li key={item.path} className="nav-item">
@@ -87,9 +113,23 @@ function Layout({ children }) {
             <p style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '0.25rem' }}>
               Connecté en tant que
             </p>
-            <p style={{ fontSize: '0.875rem', fontWeight: 'bold' }}>
+            <p style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
               {user?.username}
             </p>
+            {role && (
+              <span style={{
+                display: 'inline-block',
+                padding: '0.25rem 0.5rem',
+                fontSize: '0.75rem',
+                borderRadius: '0.25rem',
+                backgroundColor: roleBadgeColors[role] || '#6b7280',
+                color: '#fff',
+                fontWeight: 500,
+                textTransform: 'capitalize'
+              }}>
+                {role}
+              </span>
+            )}
           </div>
 
           {/* Bouton déconnexion */}

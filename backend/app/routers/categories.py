@@ -16,6 +16,7 @@ from typing import List
 from app import crud, schemas, models
 from app.database import get_db
 from app.auth import get_current_user
+from app.permissions import require_permission
 
 # Créer le router
 router = APIRouter()
@@ -120,7 +121,7 @@ def lire_categorie(
     return categorie
 
 
-@router.post("/", response_model=schemas.CategorieResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=schemas.CategorieResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_permission("categories", "create"))])
 def creer_categorie(
     categorie: schemas.CategorieCreate,
     db: Session = Depends(get_db),
@@ -139,10 +140,10 @@ def creer_categorie(
     Raises:
         HTTPException 400: Si une catégorie avec ce nom existe déjà
     """
-    return crud.create_categorie(db, categorie)
+    return crud.create_categorie(db, categorie, current_user)
 
 
-@router.put("/{categorie_id}", response_model=schemas.CategorieResponse)
+@router.put("/{categorie_id}", response_model=schemas.CategorieResponse, dependencies=[Depends(require_permission("categories", "update"))])
 def modifier_categorie(
     categorie_id: int,
     categorie_update: schemas.CategorieUpdate,
@@ -164,10 +165,10 @@ def modifier_categorie(
         HTTPException 404: Si la catégorie n'existe pas
         HTTPException 400: Si le nouveau nom est déjà utilisé
     """
-    return crud.update_categorie(db, categorie_id, categorie_update)
+    return crud.update_categorie(db, categorie_id, categorie_update, current_user)
 
 
-@router.delete("/{categorie_id}", response_model=schemas.MessageResponse)
+@router.delete("/{categorie_id}", response_model=schemas.MessageResponse, dependencies=[Depends(require_permission("categories", "delete"))])
 def supprimer_categorie(
     categorie_id: int,
     db: Session = Depends(get_db),

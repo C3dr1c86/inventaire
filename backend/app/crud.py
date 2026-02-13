@@ -8,7 +8,7 @@ articles et mouvements.
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, func
 from sqlalchemy.exc import IntegrityError
-from typing import Optional, List
+from typing import Optional, List, Union
 from app import models, schemas
 from fastapi import HTTPException, status
 import logging
@@ -63,7 +63,7 @@ def get_categories(db: Session, skip: int = 0, limit: int = 100) -> List[models.
     return db.query(models.Categorie).offset(skip).limit(limit).all()
 
 
-def create_categorie(db: Session, categorie: schemas.CategorieCreate) -> models.Categorie:
+def create_categorie(db: Session, categorie: schemas.CategorieCreate, current_user: models.User) -> models.Categorie:
     """
     Crée une nouvelle catégorie.
 
@@ -74,6 +74,7 @@ def create_categorie(db: Session, categorie: schemas.CategorieCreate) -> models.
     Args:
         db: Session de base de données
         categorie: Données de la catégorie à créer
+        current_user: Utilisateur créant la catégorie (pour audit trail)
 
     Returns:
         Catégorie créée
@@ -98,8 +99,8 @@ def create_categorie(db: Session, categorie: schemas.CategorieCreate) -> models.
             detail=f"Une catégorie '{categorie.nom}' existe déjà pour {parent_name}"
         )
 
-    # Créer la catégorie
-    db_categorie = models.Categorie(**categorie.model_dump())
+    # Créer la catégorie avec audit trail
+    db_categorie = models.Categorie(**categorie.model_dump(), created_by=current_user.id)
     db.add(db_categorie)
     db.commit()
     db.refresh(db_categorie)
@@ -109,7 +110,8 @@ def create_categorie(db: Session, categorie: schemas.CategorieCreate) -> models.
 def update_categorie(
     db: Session,
     categorie_id: int,
-    categorie_update: schemas.CategorieUpdate
+    categorie_update: schemas.CategorieUpdate,
+    current_user: models.User
 ) -> models.Categorie:
     """
     Met à jour une catégorie existante.
@@ -118,6 +120,7 @@ def update_categorie(
         db: Session de base de données
         categorie_id: ID de la catégorie à mettre à jour
         categorie_update: Nouvelles données
+        current_user: Utilisateur effectuant la modification (pour audit trail)
 
     Returns:
         Catégorie mise à jour
@@ -140,6 +143,9 @@ def update_categorie(
     # Mettre à jour les champs modifiés
     for field, value in update_data.items():
         setattr(db_categorie, field, value)
+
+    # Audit trail
+    db_categorie.updated_by = current_user.id
 
     db.commit()
     db.refresh(db_categorie)
@@ -299,7 +305,7 @@ def validate_hierarchy(db: Session, categorie_id: Optional[int], parent_id: Opti
 
 def get_article(db: Session, article_id: int) -> Optional[models.Article]:
     """
-    Récupère un article par son ID avec sa catégorie, ses tags et ses photos.
+    Récupère un article par son ID avec sa catégorie, son emplacement, ses tags, ses photos et ses fournisseurs.
 
     Args:
         db: Session de base de données
@@ -310,8 +316,10 @@ def get_article(db: Session, article_id: int) -> Optional[models.Article]:
     """
     return db.query(models.Article)\
         .options(joinedload(models.Article.categorie))\
+        .options(joinedload(models.Article.emplacement))\
         .options(joinedload(models.Article.tags))\
         .options(joinedload(models.Article.photos))\
+        .options(joinedload(models.Article.fournisseurs))\
         .filter(models.Article.id == article_id)\
         .first()
 
@@ -337,6 +345,8 @@ def get_articles(
     search: Optional[str] = None,
     categorie_id: Optional[int] = None,
     tag_id: Optional[int] = None,
+    fournisseur_id: Optional[int] = None,
+    emplacement_id: Optional[Union[int, str]] = None,
     stock_bas: bool = False,
     sort_by: Optional[str] = None,
     order: str = "asc"
@@ -351,6 +361,8 @@ def get_articles(
         search: Terme de recherche (cherche dans nom et description)
         categorie_id: Filtre par catégorie
         tag_id: Filtre par tag
+        fournisseur_id: Filtre par fournisseur
+        emplacement_id: Filtre par emplacement
         stock_bas: Si True, retourne uniquement les articles en stock bas
         sort_by: Colonne pour le tri (id, nom, sku, quantite, prix_unitaire, categorie)
         order: Ordre de tri (asc ou desc)
@@ -360,8 +372,10 @@ def get_articles(
     """
     query = db.query(models.Article)\
         .options(joinedload(models.Article.categorie))\
+        .options(joinedload(models.Article.emplacement))\
         .options(joinedload(models.Article.tags))\
-        .options(joinedload(models.Article.photos))
+        .options(joinedload(models.Article.photos))\
+        .options(joinedload(models.Article.fournisseurs))
 
     # Filtre de recherche
     if search:
@@ -394,6 +408,18 @@ def get_articles(
     # Filtre par tag
     if tag_id:
         query = query.join(models.Article.tags).filter(models.Tag.id == tag_id)
+
+    # Filtre par fournisseur
+    if fournisseur_id:
+        query = query.join(models.Article.fournisseurs).filter(models.Fournisseur.id == fournisseur_id)
+
+    # Filtre par emplacement
+    if emplacement_id:
+        if emplacement_id == 'null':
+            # Filtre articles sans emplacement
+            query = query.filter(models.Article.emplacement_id.is_(None))
+        else:
+            query = query.filter(models.Article.emplacement_id == emplacement_id)
 
     # Filtre stock bas
     if stock_bas:
@@ -433,13 +459,14 @@ def get_articles(
     return articles, total
 
 
-def create_article(db: Session, article: schemas.ArticleCreate) -> models.Article:
+def create_article(db: Session, article: schemas.ArticleCreate, current_user: models.User) -> models.Article:
     """
     Crée un nouvel article.
 
     Args:
         db: Session de base de données
         article: Données de l'article à créer
+        current_user: Utilisateur créant l'article (pour audit trail)
 
     Returns:
         Article créé
@@ -461,12 +488,17 @@ def create_article(db: Session, article: schemas.ArticleCreate) -> models.Articl
             detail=f"Catégorie {article.categorie_id} non trouvée"
         )
 
-    # Extraire les tag_ids avant de créer l'article
+    # Valider la capacité de l'emplacement (si fourni)
+    if article.emplacement_id:
+        validate_emplacement_capacite(db, article.emplacement_id, article.quantite)
+
+    # Extraire les tag_ids et fournisseur_ids avant de créer l'article
     article_data = article.model_dump()
     tag_ids = article_data.pop('tag_ids', [])
+    fournisseur_ids = article_data.pop('fournisseur_ids', [])
 
-    # Créer l'article sans les tag_ids
-    db_article = models.Article(**article_data)
+    # Créer l'article avec audit trail
+    db_article = models.Article(**article_data, created_by=current_user.id)
     db.add(db_article)
 
     # Associer les tags si fournis
@@ -476,6 +508,13 @@ def create_article(db: Session, article: schemas.ArticleCreate) -> models.Articl
             if tag:
                 db_article.tags.append(tag)
 
+    # Associer les fournisseurs si fournis
+    if fournisseur_ids:
+        for fournisseur_id in fournisseur_ids:
+            fournisseur = get_fournisseur(db, fournisseur_id)
+            if fournisseur:
+                db_article.fournisseurs.append(fournisseur)
+
     db.commit()
     db.refresh(db_article)
     return db_article
@@ -484,7 +523,8 @@ def create_article(db: Session, article: schemas.ArticleCreate) -> models.Articl
 def update_article(
     db: Session,
     article_id: int,
-    article_update: schemas.ArticleUpdate
+    article_update: schemas.ArticleUpdate,
+    current_user: models.User
 ) -> models.Article:
     """
     Met à jour un article existant.
@@ -493,6 +533,7 @@ def update_article(
         db: Session de base de données
         article_id: ID de l'article à mettre à jour
         article_update: Nouvelles données
+        current_user: Utilisateur effectuant la modification (pour audit trail)
 
     Returns:
         Article mis à jour
@@ -523,11 +564,20 @@ def update_article(
             detail=f"Catégorie {article_update.categorie_id} non trouvée"
         )
 
+    # Valider la capacité de l'emplacement (si modifié)
+    if article_update.emplacement_id is not None:
+        # Calculer delta de quantité si l'emplacement change
+        ancienne_quantite = db_article.quantite if db_article.emplacement_id == article_update.emplacement_id else 0
+        nouvelle_quantite = article_update.quantite if article_update.quantite is not None else db_article.quantite
+        delta_quantite = nouvelle_quantite - ancienne_quantite
+        validate_emplacement_capacite(db, article_update.emplacement_id, delta_quantite)
+
     # Mettre à jour les champs modifiés
     update_data = article_update.model_dump(exclude_unset=True)
 
-    # Extraire les tag_ids s'ils sont présents
+    # Extraire les tag_ids et fournisseur_ids s'ils sont présents
     tag_ids = update_data.pop('tag_ids', None)
+    fournisseur_ids = update_data.pop('fournisseur_ids', None)
 
     # Mettre à jour les champs simples
     for field, value in update_data.items():
@@ -541,6 +591,18 @@ def update_article(
             tag = get_tag(db, tag_id)
             if tag:
                 db_article.tags.append(tag)
+
+    # Mettre à jour les fournisseurs si fournis
+    if fournisseur_ids is not None:
+        # Remplacer tous les fournisseurs existants par les nouveaux
+        db_article.fournisseurs.clear()
+        for fournisseur_id in fournisseur_ids:
+            fournisseur = get_fournisseur(db, fournisseur_id)
+            if fournisseur:
+                db_article.fournisseurs.append(fournisseur)
+
+    # Audit trail
+    db_article.updated_by = current_user.id
 
     db.commit()
     db.refresh(db_article)
@@ -635,7 +697,7 @@ def get_mouvements(
     return mouvements, total
 
 
-def create_mouvement(db: Session, mouvement: schemas.MouvementCreate) -> models.Mouvement:
+def create_mouvement(db: Session, mouvement: schemas.MouvementCreate, current_user: models.User) -> models.Mouvement:
     """
     Crée un nouveau mouvement et met à jour le stock de l'article.
 
@@ -644,6 +706,7 @@ def create_mouvement(db: Session, mouvement: schemas.MouvementCreate) -> models.
     Args:
         db: Session de base de données
         mouvement: Données du mouvement à créer
+        current_user: Utilisateur créant le mouvement (pour audit trail)
 
     Returns:
         Mouvement créé
@@ -673,14 +736,15 @@ def create_mouvement(db: Session, mouvement: schemas.MouvementCreate) -> models.
             )
         quantite_apres = quantite_avant - mouvement.quantite
 
-    # Créer le mouvement
+    # Créer le mouvement avec audit trail
     db_mouvement = models.Mouvement(
         article_id=mouvement.article_id,
         type=mouvement.type,
         quantite=mouvement.quantite,
         quantite_avant=quantite_avant,
         quantite_apres=quantite_apres,
-        motif=mouvement.motif
+        motif=mouvement.motif,
+        created_by=current_user.id
     )
 
     # Mettre à jour la quantité de l'article
@@ -851,13 +915,14 @@ def get_tags(db: Session, skip: int = 0, limit: int = 100) -> List[models.Tag]:
     return db.query(models.Tag).offset(skip).limit(limit).all()
 
 
-def create_tag(db: Session, tag: schemas.TagCreate) -> models.Tag:
+def create_tag(db: Session, tag: schemas.TagCreate, current_user: models.User) -> models.Tag:
     """
     Crée un nouveau tag.
 
     Args:
         db: Session de base de données
         tag: Données du tag
+        current_user: Utilisateur créant le tag (pour audit trail)
 
     Returns:
         Tag créé
@@ -871,14 +936,14 @@ def create_tag(db: Session, tag: schemas.TagCreate) -> models.Tag:
             detail=f"Un tag avec le nom '{tag.nom}' existe déjà"
         )
 
-    db_tag = models.Tag(**tag.model_dump())
+    db_tag = models.Tag(**tag.model_dump(), created_by=current_user.id)
     db.add(db_tag)
     db.commit()
     db.refresh(db_tag)
     return db_tag
 
 
-def update_tag(db: Session, tag_id: int, tag_update: schemas.TagUpdate) -> models.Tag:
+def update_tag(db: Session, tag_id: int, tag_update: schemas.TagUpdate, current_user: models.User) -> models.Tag:
     """
     Met à jour un tag.
 
@@ -886,6 +951,7 @@ def update_tag(db: Session, tag_id: int, tag_update: schemas.TagUpdate) -> model
         db: Session de base de données
         tag_id: ID du tag
         tag_update: Nouvelles données
+        current_user: Utilisateur effectuant la modification (pour audit trail)
 
     Returns:
         Tag mis à jour
@@ -912,6 +978,9 @@ def update_tag(db: Session, tag_id: int, tag_update: schemas.TagUpdate) -> model
     update_data = tag_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(db_tag, field, value)
+
+    # Audit trail
+    db_tag.updated_by = current_user.id
 
     db.commit()
     db.refresh(db_tag)
@@ -1020,6 +1089,695 @@ def remove_tag_from_article(db: Session, article_id: int, tag_id: int) -> models
 
 
 # ============================================================================
+# CRUD FOURNISSEURS
+# ============================================================================
+
+def get_fournisseur(db: Session, fournisseur_id: int) -> Optional[models.Fournisseur]:
+    """
+    Récupère un fournisseur par son ID.
+
+    Args:
+        db: Session de base de données
+        fournisseur_id: ID du fournisseur
+
+    Returns:
+        Fournisseur trouvé ou None
+    """
+    return db.query(models.Fournisseur).filter(models.Fournisseur.id == fournisseur_id).first()
+
+
+def get_fournisseur_by_nom(db: Session, nom: str) -> Optional[models.Fournisseur]:
+    """
+    Récupère un fournisseur par son nom.
+
+    Args:
+        db: Session de base de données
+        nom: Nom du fournisseur
+
+    Returns:
+        Fournisseur trouvé ou None
+    """
+    return db.query(models.Fournisseur).filter(models.Fournisseur.nom == nom).first()
+
+
+def get_fournisseurs(db: Session, skip: int = 0, limit: int = 100) -> List[models.Fournisseur]:
+    """
+    Récupère tous les fournisseurs.
+
+    Args:
+        db: Session de base de données
+        skip: Pagination
+        limit: Limite de résultats
+
+    Returns:
+        Liste des fournisseurs
+    """
+    return db.query(models.Fournisseur).offset(skip).limit(limit).all()
+
+
+def create_fournisseur(db: Session, fournisseur: schemas.FournisseurCreate, current_user: models.User) -> models.Fournisseur:
+    """
+    Crée un nouveau fournisseur.
+
+    Args:
+        db: Session de base de données
+        fournisseur: Données du fournisseur
+        current_user: Utilisateur créant le fournisseur (pour audit trail)
+
+    Returns:
+        Fournisseur créé
+
+    Raises:
+        HTTPException: Si un fournisseur avec ce nom existe déjà
+    """
+    if get_fournisseur_by_nom(db, fournisseur.nom):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Un fournisseur avec le nom '{fournisseur.nom}' existe déjà"
+        )
+
+    db_fournisseur = models.Fournisseur(**fournisseur.model_dump(), created_by=current_user.id)
+    db.add(db_fournisseur)
+    db.commit()
+    db.refresh(db_fournisseur)
+    return db_fournisseur
+
+
+def update_fournisseur(db: Session, fournisseur_id: int, fournisseur_update: schemas.FournisseurUpdate, current_user: models.User) -> models.Fournisseur:
+    """
+    Met à jour un fournisseur.
+
+    Args:
+        db: Session de base de données
+        fournisseur_id: ID du fournisseur
+        fournisseur_update: Nouvelles données
+        current_user: Utilisateur effectuant la modification (pour audit trail)
+
+    Returns:
+        Fournisseur mis à jour
+
+    Raises:
+        HTTPException: Si le fournisseur n'existe pas ou si le nom est déjà pris
+    """
+    db_fournisseur = get_fournisseur(db, fournisseur_id)
+    if not db_fournisseur:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Fournisseur {fournisseur_id} non trouvé"
+        )
+
+    # Vérifier unicité du nom si modifié
+    if fournisseur_update.nom:
+        existing = get_fournisseur_by_nom(db, fournisseur_update.nom)
+        if existing and existing.id != fournisseur_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Un fournisseur avec le nom '{fournisseur_update.nom}' existe déjà"
+            )
+
+    update_data = fournisseur_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_fournisseur, field, value)
+
+    # Audit trail
+    db_fournisseur.updated_by = current_user.id
+
+    db.commit()
+    db.refresh(db_fournisseur)
+    return db_fournisseur
+
+
+def delete_fournisseur(db: Session, fournisseur_id: int) -> bool:
+    """
+    Supprime un fournisseur.
+
+    Args:
+        db: Session de base de données
+        fournisseur_id: ID du fournisseur
+
+    Returns:
+        True si succès
+
+    Raises:
+        HTTPException: Si le fournisseur n'existe pas ou est associé à des articles
+    """
+    db_fournisseur = get_fournisseur(db, fournisseur_id)
+    if not db_fournisseur:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Fournisseur {fournisseur_id} non trouvé"
+        )
+
+    # Vérifier si le fournisseur est associé à des articles
+    if db_fournisseur.articles:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Impossible de supprimer le fournisseur '{db_fournisseur.nom}' car il est associé à {len(db_fournisseur.articles)} article(s)"
+        )
+
+    db.delete(db_fournisseur)
+    db.commit()
+    return True
+
+
+def add_fournisseur_to_article(db: Session, article_id: int, fournisseur_id: int) -> models.Article:
+    """
+    Associe un fournisseur à un article.
+
+    Args:
+        db: Session de base de données
+        article_id: ID de l'article
+        fournisseur_id: ID du fournisseur
+
+    Returns:
+        Article avec ses fournisseurs
+
+    Raises:
+        HTTPException: Si l'article ou le fournisseur n'existe pas
+    """
+    article = get_article(db, article_id)
+    if not article:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Article {article_id} non trouvé"
+        )
+
+    fournisseur = get_fournisseur(db, fournisseur_id)
+    if not fournisseur:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Fournisseur {fournisseur_id} non trouvé"
+        )
+
+    # Vérifier si le fournisseur n'est pas déjà associé
+    if fournisseur not in article.fournisseurs:
+        article.fournisseurs.append(fournisseur)
+        db.commit()
+        db.refresh(article)
+
+    return article
+
+
+def remove_fournisseur_from_article(db: Session, article_id: int, fournisseur_id: int) -> models.Article:
+    """
+    Retire un fournisseur d'un article.
+
+    Args:
+        db: Session de base de données
+        article_id: ID de l'article
+        fournisseur_id: ID du fournisseur
+
+    Returns:
+        Article avec ses fournisseurs
+
+    Raises:
+        HTTPException: Si l'article ou le fournisseur n'existe pas
+    """
+    article = get_article(db, article_id)
+    if not article:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Article {article_id} non trouvé"
+        )
+
+    fournisseur = get_fournisseur(db, fournisseur_id)
+    if not fournisseur:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Fournisseur {fournisseur_id} non trouvé"
+        )
+
+    if fournisseur in article.fournisseurs:
+        article.fournisseurs.remove(fournisseur)
+        db.commit()
+        db.refresh(article)
+
+    return article
+
+
+def get_articles_by_fournisseur(db: Session, fournisseur_id: int, skip: int = 0, limit: int = 100) -> List[models.Article]:
+    """
+    Récupère tous les articles d'un fournisseur.
+
+    Args:
+        db: Session de base de données
+        fournisseur_id: ID du fournisseur
+        skip: Pagination
+        limit: Limite de résultats
+
+    Returns:
+        Liste des articles du fournisseur
+
+    Raises:
+        HTTPException: Si le fournisseur n'existe pas
+    """
+    fournisseur = get_fournisseur(db, fournisseur_id)
+    if not fournisseur:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Fournisseur {fournisseur_id} non trouvé"
+        )
+
+    return db.query(models.Article)\
+        .join(models.article_fournisseurs)\
+        .filter(models.article_fournisseurs.c.fournisseur_id == fournisseur_id)\
+        .options(joinedload(models.Article.categorie))\
+        .options(joinedload(models.Article.tags))\
+        .options(joinedload(models.Article.photos))\
+        .options(joinedload(models.Article.fournisseurs))\
+        .offset(skip)\
+        .limit(limit)\
+        .all()
+
+
+# ============================================================================
+# FONCTIONS CRUD POUR LES EMPLACEMENTS
+# ============================================================================
+
+def validate_emplacement_hierarchy(db: Session, parent_id: Optional[int], current_id: Optional[int] = None) -> None:
+    """
+    Valide la hiérarchie des emplacements (max 3 niveaux).
+
+    Args:
+        db: Session de base de données
+        parent_id: ID de l'emplacement parent
+        current_id: ID de l'emplacement actuel (pour éviter boucles circulaires)
+
+    Raises:
+        HTTPException: Si la hiérarchie est invalide
+    """
+    if parent_id is None:
+        return  # Pas de parent = Zone (niveau 0) → OK
+
+    # Vérifier que le parent existe
+    parent = get_emplacement(db, parent_id)
+    if not parent:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Emplacement parent {parent_id} non trouvé"
+        )
+
+    # Empêcher boucles circulaires (parent = self)
+    if current_id and parent_id == current_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Un emplacement ne peut pas être son propre parent"
+        )
+
+    # Bloquer si parent est niveau 2 (Boîte) → Empêche 4e niveau
+    if parent.niveau >= 2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Impossible de créer un sous-emplacement sous '{parent.code}' (niveau {parent.niveau}). Maximum 3 niveaux : Zone → Étagère → Boîte"
+        )
+
+
+def validate_emplacement_capacite(db: Session, emplacement_id: int, delta_quantite: int) -> None:
+    """
+    Valide que l'ajout d'articles ne dépasse pas la capacité max.
+
+    Args:
+        db: Session de base de données
+        emplacement_id: ID de l'emplacement
+        delta_quantite: Quantité à ajouter (peut être négative)
+
+    Raises:
+        HTTPException: Si la capacité est dépassée
+    """
+    emplacement = get_emplacement(db, emplacement_id)
+    if not emplacement:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Emplacement {emplacement_id} non trouvé"
+        )
+
+    # Si capacite_max = NULL, pas de limite
+    if emplacement.capacite_max is None:
+        return
+
+    # Calculer quantité actuelle
+    quantite_actuelle = sum(article.quantite for article in emplacement.articles)
+
+    # Vérifier dépassement
+    nouvelle_quantite = quantite_actuelle + delta_quantite
+    if nouvelle_quantite > emplacement.capacite_max:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Capacité de l'emplacement '{emplacement.code}' dépassée. "
+                   f"Disponible: {emplacement.capacite_max - quantite_actuelle}, "
+                   f"Demandé: {delta_quantite}, "
+                   f"Capacité max: {emplacement.capacite_max}"
+        )
+
+
+def has_children_emplacement(db: Session, emplacement_id: int) -> bool:
+    """
+    Vérifie si un emplacement a des sous-emplacements.
+
+    Args:
+        db: Session de base de données
+        emplacement_id: ID de l'emplacement
+
+    Returns:
+        True si l'emplacement a des enfants, False sinon
+    """
+    count = db.query(models.Emplacement)\
+        .filter(models.Emplacement.parent_id == emplacement_id)\
+        .count()
+    return count > 0
+
+
+def get_emplacement(db: Session, emplacement_id: int) -> Optional[models.Emplacement]:
+    """
+    Récupère un emplacement par son ID.
+
+    Args:
+        db: Session de base de données
+        emplacement_id: ID de l'emplacement
+
+    Returns:
+        Emplacement ou None si non trouvé
+    """
+    return db.query(models.Emplacement).filter(models.Emplacement.id == emplacement_id).first()
+
+
+def get_emplacement_by_code(db: Session, code: str) -> Optional[models.Emplacement]:
+    """
+    Récupère un emplacement par son code.
+
+    Args:
+        db: Session de base de données
+        code: Code de l'emplacement
+
+    Returns:
+        Emplacement ou None si non trouvé
+    """
+    return db.query(models.Emplacement).filter(models.Emplacement.code == code).first()
+
+
+def get_emplacements(db: Session, skip: int = 0, limit: int = 100) -> List[models.Emplacement]:
+    """
+    Récupère tous les emplacements (structure plate).
+
+    Args:
+        db: Session de base de données
+        skip: Pagination
+        limit: Limite de résultats
+
+    Returns:
+        Liste des emplacements
+    """
+    return db.query(models.Emplacement)\
+        .order_by(models.Emplacement.code)\
+        .offset(skip)\
+        .limit(limit)\
+        .all()
+
+
+def get_emplacements_racines(db: Session) -> List[models.Emplacement]:
+    """
+    Récupère uniquement les Zones (emplacements racines).
+
+    Args:
+        db: Session de base de données
+
+    Returns:
+        Liste des Zones (parent_id = NULL)
+    """
+    return db.query(models.Emplacement)\
+        .filter(models.Emplacement.parent_id == None)\
+        .order_by(models.Emplacement.code)\
+        .all()
+
+
+def get_emplacements_tree(db: Session) -> List[models.Emplacement]:
+    """
+    Récupère l'arbre hiérarchique complet (3 niveaux).
+
+    IMPORTANT: Utilise joinedload DEUX FOIS pour charger 3 niveaux
+    et éviter les requêtes N+1.
+
+    Args:
+        db: Session de base de données
+
+    Returns:
+        Liste des Zones avec children imbriqués (3 niveaux)
+    """
+    return db.query(models.Emplacement)\
+        .filter(models.Emplacement.parent_id == None)\
+        .options(
+            joinedload(models.Emplacement.children)
+            .joinedload(models.Emplacement.children)  # 2e fois pour children.children
+        )\
+        .order_by(models.Emplacement.code)\
+        .all()
+
+
+def get_children_emplacement(db: Session, parent_id: int) -> List[models.Emplacement]:
+    """
+    Récupère les sous-emplacements directs d'un parent.
+
+    Args:
+        db: Session de base de données
+        parent_id: ID de l'emplacement parent
+
+    Returns:
+        Liste des enfants directs
+    """
+    return db.query(models.Emplacement)\
+        .filter(models.Emplacement.parent_id == parent_id)\
+        .order_by(models.Emplacement.code)\
+        .all()
+
+
+def create_emplacement(db: Session, emplacement: schemas.EmplacementCreate, current_user: models.User) -> models.Emplacement:
+    """
+    Crée un nouvel emplacement.
+
+    Args:
+        db: Session de base de données
+        emplacement: Données de l'emplacement
+        current_user: Utilisateur créant l'emplacement (pour audit trail)
+
+    Returns:
+        Emplacement créé
+
+    Raises:
+        HTTPException: Si le code existe déjà ou hiérarchie invalide
+    """
+    # Vérifier unicité du code
+    if get_emplacement_by_code(db, emplacement.code):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Un emplacement avec le code '{emplacement.code}' existe déjà"
+        )
+
+    # Valider hiérarchie
+    validate_emplacement_hierarchy(db, emplacement.parent_id)
+
+    # Créer l'emplacement avec audit trail
+    db_emplacement = models.Emplacement(
+        code=emplacement.code,
+        description=emplacement.description,
+        capacite_max=emplacement.capacite_max,
+        parent_id=emplacement.parent_id,
+        created_by=current_user.id
+    )
+
+    db.add(db_emplacement)
+    db.commit()
+    db.refresh(db_emplacement)
+    return db_emplacement
+
+
+def update_emplacement(db: Session, emplacement_id: int, emplacement: schemas.EmplacementUpdate, current_user: models.User) -> models.Emplacement:
+    """
+    Met à jour un emplacement existant.
+
+    Args:
+        db: Session de base de données
+        emplacement_id: ID de l'emplacement
+        emplacement: Nouvelles données
+        current_user: Utilisateur effectuant la modification (pour audit trail)
+
+    Returns:
+        Emplacement mis à jour
+
+    Raises:
+        HTTPException: Si non trouvé, code en double, ou hiérarchie invalide
+    """
+    db_emplacement = get_emplacement(db, emplacement_id)
+    if not db_emplacement:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Emplacement {emplacement_id} non trouvé"
+        )
+
+    # Vérifier unicité du code (si modifié)
+    if emplacement.code and emplacement.code != db_emplacement.code:
+        if get_emplacement_by_code(db, emplacement.code):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Un emplacement avec le code '{emplacement.code}' existe déjà"
+            )
+
+    # Valider hiérarchie (si parent_id modifié)
+    if emplacement.parent_id is not None and emplacement.parent_id != db_emplacement.parent_id:
+        validate_emplacement_hierarchy(db, emplacement.parent_id, current_id=emplacement_id)
+
+    # Mettre à jour les champs
+    if emplacement.code is not None:
+        db_emplacement.code = emplacement.code
+    if emplacement.description is not None:
+        db_emplacement.description = emplacement.description
+    if emplacement.capacite_max is not None:
+        db_emplacement.capacite_max = emplacement.capacite_max
+    if emplacement.parent_id is not None:
+        db_emplacement.parent_id = emplacement.parent_id
+
+    # Audit trail
+    db_emplacement.updated_by = current_user.id
+
+    db.commit()
+    db.refresh(db_emplacement)
+    return db_emplacement
+
+
+def delete_emplacement(db: Session, emplacement_id: int) -> bool:
+    """
+    Supprime un emplacement.
+
+    IMPORTANT: Bloque si l'emplacement a des enfants OU des articles associés.
+
+    Args:
+        db: Session de base de données
+        emplacement_id: ID de l'emplacement
+
+    Returns:
+        True si supprimé
+
+    Raises:
+        HTTPException: Si non trouvé, a des enfants ou des articles
+    """
+    db_emplacement = get_emplacement(db, emplacement_id)
+    if not db_emplacement:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Emplacement {emplacement_id} non trouvé"
+        )
+
+    # DOUBLE validation (différence avec Catégories)
+
+    # 1. Bloquer si sous-emplacements
+    if has_children_emplacement(db, emplacement_id):
+        children_count = len(db_emplacement.children)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Impossible de supprimer '{db_emplacement.code}' car il contient {children_count} sous-emplacement(s). Supprimez-les d'abord."
+        )
+
+    # 2. Bloquer si articles associés
+    if db_emplacement.articles:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Impossible de supprimer '{db_emplacement.code}' car il contient {len(db_emplacement.articles)} article(s). Reclassez-les d'abord."
+        )
+
+    # Supprimer
+    db.delete(db_emplacement)
+    db.commit()
+    return True
+
+
+def get_articles_by_emplacement(db: Session, emplacement_id: int, skip: int = 0, limit: int = 100) -> List[models.Article]:
+    """
+    Récupère tous les articles d'un emplacement.
+
+    Args:
+        db: Session de base de données
+        emplacement_id: ID de l'emplacement
+        skip: Pagination
+        limit: Limite de résultats
+
+    Returns:
+        Liste des articles de l'emplacement
+
+    Raises:
+        HTTPException: Si l'emplacement n'existe pas
+    """
+    emplacement = get_emplacement(db, emplacement_id)
+    if not emplacement:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Emplacement {emplacement_id} non trouvé"
+        )
+
+    return db.query(models.Article)\
+        .filter(models.Article.emplacement_id == emplacement_id)\
+        .options(joinedload(models.Article.categorie))\
+        .options(joinedload(models.Article.emplacement))\
+        .options(joinedload(models.Article.tags))\
+        .options(joinedload(models.Article.photos))\
+        .options(joinedload(models.Article.fournisseurs))\
+        .offset(skip)\
+        .limit(limit)\
+        .all()
+
+
+def get_emplacements_suggestions_by_category(db: Session, categorie_id: int, limit: int = 5) -> List[dict]:
+    """
+    Suggère des emplacements pour un article basé sur sa catégorie.
+
+    Analyse où sont stockés les autres articles de la même catégorie
+    et retourne les emplacements les plus fréquemment utilisés.
+
+    Args:
+        db: Session de base de données
+        categorie_id: ID de la catégorie
+        limit: Nombre maximum de suggestions à retourner
+
+    Returns:
+        Liste de dictionnaires avec les suggestions d'emplacements
+        Format: [{"emplacement": Emplacement, "count": int}, ...]
+    """
+    from sqlalchemy import func
+
+    # Vérifier que la catégorie existe
+    categorie = get_categorie(db, categorie_id)
+    if not categorie:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Catégorie {categorie_id} non trouvée"
+        )
+
+    # Trouver les emplacements les plus utilisés pour cette catégorie
+    # GROUP BY emplacement_id et compter le nombre d'articles
+    results = db.query(
+        models.Article.emplacement_id,
+        func.count(models.Article.id).label('count')
+    )\
+    .filter(models.Article.categorie_id == categorie_id)\
+    .filter(models.Article.emplacement_id.isnot(None))\
+    .group_by(models.Article.emplacement_id)\
+    .order_by(func.count(models.Article.id).desc())\
+    .limit(limit)\
+    .all()
+
+    # Charger les détails complets des emplacements
+    suggestions = []
+    for emplacement_id, count in results:
+        emplacement = get_emplacement(db, emplacement_id)
+        if emplacement:
+            suggestions.append({
+                "emplacement": emplacement,
+                "count": count,
+                "raison": f"{count} article(s) de cette catégorie"
+            })
+
+    return suggestions
+
+
+# ============================================================================
 # FONCTIONS CRUD POUR LES UTILISATEURS
 # ============================================================================
 
@@ -1065,13 +1823,14 @@ def get_user_by_email(db: Session, email: str) -> Optional[models.User]:
     return db.query(models.User).filter(models.User.email == email).first()
 
 
-def create_user(db: Session, user: schemas.UserCreate) -> models.User:
+def create_user(db: Session, user: schemas.UserCreate, current_user: Optional[models.User] = None) -> models.User:
     """
     Crée un nouvel utilisateur avec un mot de passe haché.
 
     Args:
         db: Session de base de données
         user: Schéma de création d'utilisateur
+        current_user: Utilisateur qui crée (optionnel, None pour inscription)
 
     Returns:
         L'utilisateur créé
@@ -1103,7 +1862,8 @@ def create_user(db: Session, user: schemas.UserCreate) -> models.User:
         username=user.username,
         email=user.email,
         hashed_password=hashed_password,
-        is_active=True
+        is_active=True,
+        created_by=current_user.id if current_user else None
     )
 
     db.add(db_user)
@@ -1133,6 +1893,162 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[mod
 
     if not verify_password(password, user.hashed_password):
         return None
+
+    return user
+
+
+def get_users(db: Session, skip: int = 0, limit: int = 100) -> list[models.User]:
+    """
+    Récupère la liste de tous les utilisateurs avec pagination.
+
+    Args:
+        db: Session de base de données
+        skip: Nombre d'enregistrements à sauter
+        limit: Nombre maximum d'enregistrements à retourner
+
+    Returns:
+        Liste des utilisateurs
+    """
+    return db.query(models.User).order_by(models.User.created_at.desc()).offset(skip).limit(limit).all()
+
+
+def update_user_role(db: Session, user_id: int, new_role: models.RoleEnum, current_user: models.User) -> models.User:
+    """
+    Change le rôle d'un utilisateur.
+
+    Validations :
+    - L'utilisateur cible existe
+    - L'utilisateur actuel ne peut pas changer son propre rôle
+
+    Args:
+        db: Session de base de données
+        user_id: ID de l'utilisateur à modifier
+        new_role: Nouveau rôle
+        current_user: Utilisateur qui effectue la modification
+
+    Returns:
+        L'utilisateur modifié
+
+    Raises:
+        HTTPException 404: Si l'utilisateur n'existe pas
+        HTTPException 400: Si tentative de modifier son propre rôle
+    """
+    # Récupérer l'utilisateur cible
+    user = get_user(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Utilisateur {user_id} non trouvé"
+        )
+
+    # Empêcher un utilisateur de modifier son propre rôle
+    if user_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Impossible de modifier votre propre rôle"
+        )
+
+    # Mettre à jour le rôle
+    user.role = new_role
+    user.updated_by = current_user.id
+
+    db.commit()
+    db.refresh(user)
+
+    return user
+
+
+def update_user_permissions(db: Session, user_id: int, permissions: Optional[list[str]], current_user: models.User) -> models.User:
+    """
+    Met à jour les permissions custom d'un utilisateur.
+
+    Si permissions = None, réinitialise aux permissions par défaut du rôle.
+
+    Args:
+        db: Session de base de données
+        user_id: ID de l'utilisateur à modifier
+        permissions: Liste de permissions (format "resource:action") ou None
+        current_user: Utilisateur qui effectue la modification
+
+    Returns:
+        L'utilisateur modifié
+
+    Raises:
+        HTTPException 404: Si l'utilisateur n'existe pas
+    """
+    # Récupérer l'utilisateur cible
+    user = get_user(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Utilisateur {user_id} non trouvé"
+        )
+
+    # Mettre à jour les permissions (None = reset)
+    user.permissions = permissions
+    user.updated_by = current_user.id
+
+    db.commit()
+    db.refresh(user)
+
+    return user
+
+
+def deactivate_user(db: Session, user_id: int, current_user: models.User) -> models.User:
+    """
+    Désactive un utilisateur (is_active = False).
+
+    Validations :
+    - L'utilisateur cible existe
+    - L'utilisateur actuel ne peut pas se désactiver lui-même
+    - Il doit rester au moins 1 admin actif
+
+    Args:
+        db: Session de base de données
+        user_id: ID de l'utilisateur à désactiver
+        current_user: Utilisateur qui effectue la désactivation
+
+    Returns:
+        L'utilisateur désactivé
+
+    Raises:
+        HTTPException 404: Si l'utilisateur n'existe pas
+        HTTPException 400: Si tentative de se désactiver soi-même ou si c'est le dernier admin
+    """
+    # Récupérer l'utilisateur cible
+    user = get_user(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Utilisateur {user_id} non trouvé"
+        )
+
+    # Empêcher de se désactiver soi-même
+    if user_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Impossible de vous désactiver vous-même"
+        )
+
+    # Vérifier qu'il reste au moins 1 admin actif
+    if user.role == models.RoleEnum.ADMIN and user.is_active:
+        active_admins = db.query(models.User).filter(
+            models.User.role == models.RoleEnum.ADMIN,
+            models.User.is_active == True
+        ).count()
+
+        if active_admins <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Impossible de désactiver le dernier administrateur actif"
+            )
+
+    # Désactiver l'utilisateur
+    user.is_active = False
+    user.updated_by = current_user.id
+
+    db.commit()
+    db.refresh(user)
 
     return user
 
@@ -1179,7 +2095,8 @@ def create_photo(
     filepath: str,
     thumbnail_path: str,
     file_size: int,
-    mime_type: str
+    mime_type: str,
+    current_user: models.User
 ) -> models.Photo:
     """
     Crée un enregistrement de photo en base de données.
@@ -1196,6 +2113,7 @@ def create_photo(
         thumbnail_path: Chemin relatif de la miniature
         file_size: Taille du fichier en octets
         mime_type: Type MIME du fichier
+        current_user: Utilisateur qui crée la photo
 
     Returns:
         La photo créée
@@ -1228,7 +2146,8 @@ def create_photo(
         filepath=filepath,
         thumbnail_path=thumbnail_path,
         file_size=file_size,
-        mime_type=mime_type
+        mime_type=mime_type,
+        created_by=current_user.id
     )
 
     db.add(db_photo)
@@ -1265,3 +2184,491 @@ def delete_photo(db: Session, photo_id: int) -> bool:
     db.commit()
 
     return True
+
+
+# ============================================================================
+# CRUD COMMANDES
+# ============================================================================
+
+def get_commande(db: Session, commande_id: int) -> Optional[models.Commande]:
+    """
+    Récupère une commande par son ID avec toutes ses relations.
+
+    Args:
+        db: Session de base de données
+        commande_id: ID de la commande
+
+    Returns:
+        La commande avec fournisseur et lignes, ou None si non trouvée
+    """
+    return db.query(models.Commande)\
+        .options(
+            joinedload(models.Commande.fournisseur),
+            joinedload(models.Commande.lignes).joinedload(models.LigneCommande.article)
+        )\
+        .filter(models.Commande.id == commande_id)\
+        .first()
+
+
+def get_commandes(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    statut: Optional[str] = None,
+    fournisseur_id: Optional[int] = None
+) -> Tuple[List[models.Commande], int]:
+    """
+    Récupère une liste paginée de commandes avec filtres optionnels.
+
+    Args:
+        db: Session de base de données
+        skip: Nombre de commandes à sauter (pagination)
+        limit: Nombre maximum de commandes à retourner
+        statut: Filtre par statut (BROUILLON, ENVOYEE, RECUE, ANNULEE)
+        fournisseur_id: Filtre par fournisseur
+
+    Returns:
+        Tuple (liste de commandes, nombre total)
+    """
+    query = db.query(models.Commande)\
+        .options(
+            joinedload(models.Commande.fournisseur),
+            joinedload(models.Commande.lignes)
+        )
+
+    # Filtres
+    if statut:
+        query = query.filter(models.Commande.statut == statut)
+    if fournisseur_id:
+        query = query.filter(models.Commande.fournisseur_id == fournisseur_id)
+
+    # Compter le total
+    total = query.count()
+
+    # Appliquer pagination et tri par date de création descendante
+    commandes = query.order_by(models.Commande.created_at.desc())\
+        .offset(skip)\
+        .limit(limit)\
+        .all()
+
+    return commandes, total
+
+
+def get_commandes_by_fournisseur(db: Session, fournisseur_id: int) -> List[models.Commande]:
+    """
+    Récupère toutes les commandes d'un fournisseur.
+
+    Args:
+        db: Session de base de données
+        fournisseur_id: ID du fournisseur
+
+    Returns:
+        Liste des commandes du fournisseur
+    """
+    return db.query(models.Commande)\
+        .options(joinedload(models.Commande.lignes))\
+        .filter(models.Commande.fournisseur_id == fournisseur_id)\
+        .order_by(models.Commande.created_at.desc())\
+        .all()
+
+
+def create_commande(
+    db: Session,
+    commande: schemas.CommandeCreate,
+    current_user: models.User
+) -> models.Commande:
+    """
+    Crée une nouvelle commande avec ses lignes.
+
+    Valide que :
+    - Le fournisseur existe
+    - Le numéro de commande est unique
+    - Chaque article dans les lignes existe
+    - Il y a au moins une ligne de commande
+
+    Calcule automatiquement le montant_total.
+
+    Args:
+        db: Session de base de données
+        commande: Schéma de création de commande
+        current_user: Utilisateur créateur
+
+    Returns:
+        La commande créée avec ses lignes
+
+    Raises:
+        HTTPException 400: Si le numéro de commande existe déjà
+        HTTPException 404: Si le fournisseur ou un article n'existe pas
+        HTTPException 400: Si aucune ligne de commande
+    """
+    # Valider que le fournisseur existe
+    fournisseur = get_fournisseur(db, commande.fournisseur_id)
+    if not fournisseur:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Fournisseur {commande.fournisseur_id} non trouvé"
+        )
+
+    # Vérifier unicité du numéro de commande
+    existing = db.query(models.Commande)\
+        .filter(models.Commande.numero_commande == commande.numero_commande)\
+        .first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Le numéro de commande '{commande.numero_commande}' existe déjà"
+        )
+
+    # Valider qu'il y a au moins une ligne
+    if not commande.lignes or len(commande.lignes) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Une commande doit contenir au moins une ligne"
+        )
+
+    # Calculer le montant total
+    montant_total = 0.0
+    for ligne_data in commande.lignes:
+        # Vérifier que l'article existe
+        article = get_article(db, ligne_data.article_id)
+        if not article:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Article {ligne_data.article_id} non trouvé"
+            )
+        montant_total += ligne_data.quantite_commandee * ligne_data.prix_unitaire
+
+    # Créer la commande (statut = BROUILLON par défaut)
+    db_commande = models.Commande(
+        fournisseur_id=commande.fournisseur_id,
+        numero_commande=commande.numero_commande,
+        statut="BROUILLON",
+        date_reception_prevue=commande.date_reception_prevue,
+        notes=commande.notes,
+        montant_total=montant_total,
+        created_by=current_user.id
+    )
+
+    db.add(db_commande)
+    db.flush()  # Pour obtenir l'ID de la commande
+
+    # Créer les lignes de commande
+    for ligne_data in commande.lignes:
+        db_ligne = models.LigneCommande(
+            commande_id=db_commande.id,
+            article_id=ligne_data.article_id,
+            quantite_commandee=ligne_data.quantite_commandee,
+            quantite_recue=0,  # Pas encore reçue
+            prix_unitaire=ligne_data.prix_unitaire
+        )
+        db.add(db_ligne)
+
+    db.commit()
+    db.refresh(db_commande)
+
+    return db_commande
+
+
+def update_commande(
+    db: Session,
+    commande_id: int,
+    commande_update: schemas.CommandeUpdate,
+    current_user: models.User
+) -> models.Commande:
+    """
+    Met à jour une commande existante.
+
+    Validations :
+    - La commande existe
+    - Si changement de statut, valider le workflow
+    - Si statut = ENVOYEE ou RECUE, interdire modification des lignes
+    - Si modification des lignes, recalculer montant_total
+
+    Args:
+        db: Session de base de données
+        commande_id: ID de la commande à modifier
+        commande_update: Nouvelles données
+        current_user: Utilisateur qui modifie
+
+    Returns:
+        La commande mise à jour
+
+    Raises:
+        HTTPException 404: Si la commande n'existe pas
+        HTTPException 400: Si modification interdite (statut RECUE ou ANNULEE)
+    """
+    db_commande = get_commande(db, commande_id)
+    if not db_commande:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Commande {commande_id} non trouvée"
+        )
+
+    # Interdire modification si commande RECUE ou ANNULEE
+    if db_commande.statut in ["RECUE", "ANNULEE"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Impossible de modifier une commande {db_commande.statut}"
+        )
+
+    # Mettre à jour les champs simples
+    if commande_update.numero_commande is not None:
+        # Vérifier unicité du nouveau numéro
+        existing = db.query(models.Commande)\
+            .filter(models.Commande.numero_commande == commande_update.numero_commande)\
+            .filter(models.Commande.id != commande_id)\
+            .first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Le numéro de commande '{commande_update.numero_commande}' existe déjà"
+            )
+        db_commande.numero_commande = commande_update.numero_commande
+
+    if commande_update.fournisseur_id is not None:
+        # Vérifier que le fournisseur existe
+        fournisseur = get_fournisseur(db, commande_update.fournisseur_id)
+        if not fournisseur:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Fournisseur {commande_update.fournisseur_id} non trouvé"
+            )
+        db_commande.fournisseur_id = commande_update.fournisseur_id
+
+    if commande_update.date_reception_prevue is not None:
+        db_commande.date_reception_prevue = commande_update.date_reception_prevue
+
+    if commande_update.notes is not None:
+        db_commande.notes = commande_update.notes
+
+    # Gestion du changement de statut
+    if commande_update.statut is not None:
+        update_commande_statut(db, commande_id, commande_update.statut, current_user)
+
+    # Si modification des lignes (seulement pour BROUILLON)
+    if commande_update.lignes is not None:
+        if db_commande.statut != "BROUILLON":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Les lignes ne peuvent être modifiées que pour les commandes BROUILLON"
+            )
+
+        # Supprimer toutes les anciennes lignes
+        db.query(models.LigneCommande)\
+            .filter(models.LigneCommande.commande_id == commande_id)\
+            .delete()
+
+        # Créer les nouvelles lignes et recalculer montant_total
+        montant_total = 0.0
+        for ligne_data in commande_update.lignes:
+            # Vérifier que l'article existe
+            article = get_article(db, ligne_data.article_id)
+            if not article:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Article {ligne_data.article_id} non trouvé"
+                )
+
+            db_ligne = models.LigneCommande(
+                commande_id=commande_id,
+                article_id=ligne_data.article_id,
+                quantite_commandee=ligne_data.quantite_commandee,
+                quantite_recue=0,
+                prix_unitaire=ligne_data.prix_unitaire
+            )
+            db.add(db_ligne)
+            montant_total += ligne_data.quantite_commandee * ligne_data.prix_unitaire
+
+        db_commande.montant_total = montant_total
+
+    # Audit trail
+    db_commande.updated_by = current_user.id
+
+    db.commit()
+    db.refresh(db_commande)
+
+    return db_commande
+
+
+def update_commande_statut(db: Session, commande_id: int, nouveau_statut: str, current_user: models.User) -> models.Commande:
+    """
+    Change le statut d'une commande avec validation du workflow.
+
+    Workflow autorisé :
+    - BROUILLON → ENVOYEE (définit date_commande = now())
+    - ENVOYEE → RECUE (appelle recevoir_commande())
+    - BROUILLON → ANNULEE
+    - ENVOYEE → ANNULEE
+
+    Workflow interdit :
+    - RECUE → * (commande finalisée)
+    - ANNULEE → * (commande annulée)
+
+    Args:
+        db: Session de base de données
+        commande_id: ID de la commande
+        nouveau_statut: Nouveau statut (BROUILLON, ENVOYEE, RECUE, ANNULEE)
+        current_user: Utilisateur qui change le statut
+
+    Returns:
+        La commande avec le nouveau statut
+
+    Raises:
+        HTTPException 400: Si le changement de statut est interdit
+        HTTPException 404: Si la commande n'existe pas
+    """
+    from datetime import datetime
+
+    db_commande = get_commande(db, commande_id)
+    if not db_commande:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Commande {commande_id} non trouvée"
+        )
+
+    statut_actuel = db_commande.statut
+
+    # Valider les transitions de statut autorisées
+    transitions_autorisees = {
+        "BROUILLON": ["ENVOYEE", "ANNULEE"],
+        "ENVOYEE": ["RECUE", "ANNULEE"],
+        "RECUE": [],  # Statut final
+        "ANNULEE": []  # Statut final
+    }
+
+    if nouveau_statut not in transitions_autorisees.get(statut_actuel, []):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Transition {statut_actuel} → {nouveau_statut} non autorisée"
+        )
+
+    # Appliquer le changement de statut
+    db_commande.statut = nouveau_statut
+
+    # Actions spécifiques selon le nouveau statut
+    if nouveau_statut == "ENVOYEE":
+        db_commande.date_commande = datetime.now()
+
+    elif nouveau_statut == "RECUE":
+        # Appeler la fonction de réception qui met à jour les stocks
+        recevoir_commande(db, commande_id)
+
+    # Audit trail
+    db_commande.updated_by = current_user.id
+
+    db.commit()
+    db.refresh(db_commande)
+
+    return db_commande
+
+
+def delete_commande(db: Session, commande_id: int) -> bool:
+    """
+    Supprime une commande.
+
+    Validation : Seulement les commandes BROUILLON peuvent être supprimées.
+
+    Args:
+        db: Session de base de données
+        commande_id: ID de la commande à supprimer
+
+    Returns:
+        True si suppression réussie
+
+    Raises:
+        HTTPException 404: Si la commande n'existe pas
+        HTTPException 400: Si la commande n'est pas BROUILLON
+    """
+    db_commande = get_commande(db, commande_id)
+    if not db_commande:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Commande {commande_id} non trouvée"
+        )
+
+    if db_commande.statut != "BROUILLON":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Impossible de supprimer une commande {db_commande.statut}. Seules les commandes BROUILLON peuvent être supprimées."
+        )
+
+    db.delete(db_commande)
+    db.commit()
+
+    return True
+
+
+def recevoir_commande(db: Session, commande_id: int) -> models.Commande:
+    """
+    Réceptionne une commande et met à jour automatiquement les stocks.
+
+    Pour chaque ligne de commande :
+    - Met à jour quantite_recue = quantite_commandee (réception complète)
+    - Incrémente article.quantite de quantite_recue
+    - Crée un mouvement ENTREE avec le motif "Réception commande N°..."
+
+    Définit date_reception_reelle = now()
+
+    Args:
+        db: Session de base de données
+        commande_id: ID de la commande à réceptionner
+
+    Returns:
+        La commande réceptionnée
+
+    Raises:
+        HTTPException 404: Si la commande n'existe pas
+        HTTPException 400: Si la commande n'est pas ENVOYEE
+    """
+    from datetime import datetime
+
+    db_commande = get_commande(db, commande_id)
+    if not db_commande:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Commande {commande_id} non trouvée"
+        )
+
+    if db_commande.statut != "ENVOYEE":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Seules les commandes ENVOYEE peuvent être réceptionnées (statut actuel : {db_commande.statut})"
+        )
+
+    # Réceptionner chaque ligne et mettre à jour le stock
+    for ligne in db_commande.lignes:
+        # Mettre à jour quantite_recue
+        ligne.quantite_recue = ligne.quantite_commandee
+
+        # Récupérer l'article
+        article = get_article(db, ligne.article_id)
+        if not article:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Article {ligne.article_id} non trouvé"
+            )
+
+        # Sauvegarder quantité avant mise à jour
+        quantite_avant = article.quantite
+
+        # Mettre à jour le stock
+        article.quantite += ligne.quantite_recue
+
+        # Créer un mouvement ENTREE
+        db_mouvement = models.Mouvement(
+            article_id=ligne.article_id,
+            type="ENTREE",
+            quantite=ligne.quantite_recue,
+            quantite_avant=quantite_avant,
+            quantite_apres=article.quantite,
+            motif=f"Réception commande N°{db_commande.numero_commande}"
+        )
+        db.add(db_mouvement)
+
+    # Mettre à jour la commande
+    db_commande.date_reception_reelle = datetime.now()
+
+    db.commit()
+    db.refresh(db_commande)
+
+    return db_commande

@@ -6,8 +6,10 @@ Ce fichier fournit des conseils à Claude Code (claude.ai/code) lors du travail 
 
 Application full-stack de gestion d'inventaire avec :
 - **Backend** : FastAPI + SQLAlchemy + SQLite (100% complet)
-- **Frontend** : React 18 + Vite + React Query (~99% complet)
+- **Frontend** : React 18 + Vite + React Query (100% complet)
 - **Langue** : Français (commentaires de code, UI, documentation)
+- **Version actuelle** : v1.6.0 (Multi-utilisateurs & Permissions)
+- **Prochaine version** : v1.7.0 (Dashboard Analytique Avancé) - Voir [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ## Commandes de développement
 
@@ -84,8 +86,12 @@ backend/app/
    - Les modèles définissent le schéma de la base de données
 
 2. **Modèles de base de données** (models.py)
-   - `User` : Utilisateurs avec username, email, hashed_password (mono-utilisateur)
-   - `Categorie` : Catégories avec relation one-to-many vers articles
+   - `User` : Utilisateurs avec username, email, hashed_password, role (RoleEnum), permissions (JSON custom)
+   - `Categorie` : **Catégories hiérarchiques** (2 niveaux max : racine → sous-catégorie)
+     - Champ `parent_id` pour auto-référence (nullable pour catégories racines)
+     - Relations : `parent` (many-to-one) et `children` (one-to-many)
+     - Propriétés calculées : `niveau` (0 ou 1), `nom_complet` (ex: "Matériaux > Bois")
+     - Validations : empêche >2 niveaux, boucles circulaires, suppression si enfants
    - `Article` : Articles avec quantité en stock, seuil minimum, prix, tags (many-to-many)
    - `Mouvement` : Historique des mouvements de stock (ENTREE/SORTIE) avec quantités avant/après
    - `Tag` : Tags avec nom, couleur, relation many-to-many vers articles
@@ -176,8 +182,9 @@ users
 
 categories
 ├── id (PK)
-├── nom (unique)
+├── nom (non unique - permet même nom sous parents différents)
 ├── description
+├── parent_id (FK → categories, CASCADE, nullable)
 ├── created_at
 └── updated_at
 
@@ -227,11 +234,14 @@ Tous les endpoints sont préfixés par `/api/`
 - GET /me - Récupérer les informations de l'utilisateur connecté (nécessite token)
 
 **Catégories** (`/api/categories`) - Routes protégées (nécessitent authentification)
-- GET / - Liste toutes
-- GET /{id} - Récupère une
-- POST / - Crée
+- GET / - Liste toutes (structure plate)
+- GET /racines - Liste uniquement les catégories racines (parent_id = null)
+- GET /tree - Récupère l'arbre hiérarchique complet avec children imbriqués
+- GET /{id} - Récupère une catégorie
+- GET /{id}/children - Récupère les sous-catégories d'une catégorie
+- POST / - Crée (avec parent_id optionnel pour sous-catégorie)
 - PUT /{id} - Modifie
-- DELETE /{id} - Supprime
+- DELETE /{id} - Supprime (bloqué si la catégorie a des enfants)
 
 **Articles** (`/api/articles`)
 - GET / - Liste avec paramètres optionnels : `search`, `categorie_id`, `stock_bas`, `skip`, `limit`
@@ -280,6 +290,46 @@ Lors de la création d'un mouvement :
 - **PDF** : Utilise ReportLab, génère des tableaux formatés avec en-têtes/pieds de page
 - Exports sauvegardés dans le répertoire `exports/` avec horodatage
 
+### Catégories hiérarchiques (v1.1.0)
+
+**Structure à 2 niveaux** : Catégories racines → Sous-catégories
+
+Exemples :
+```
+Matériaux
+├── Bois
+├── Métal
+├── Plastique
+└── Autres
+
+Consommables
+├── Quincaillerie
+├── Colles & Mastics
+├── Électricité
+└── Plomberie
+```
+
+**Backend** :
+- Validation `validate_hierarchy()` dans crud.py empêche création de plus de 2 niveaux
+- Fonction `has_children()` vérifie si une catégorie a des sous-catégories
+- Impossible de supprimer une catégorie parente si elle contient des enfants
+- Endpoints `/racines`, `/tree`, `/{id}/children` pour navigation hiérarchique
+- Optimisation : `joinedload(Categorie.children)` évite requêtes N+1
+
+**Frontend** :
+- **ArticleForm** : Double select cascadé (catégorie parente → sous-catégorie)
+- **CategorieForm** : Select "Catégorie parente" pour créer sous-catégories
+- **Page Categories** : Affichage en arbre avec indentation visuelle
+  - Catégories racines en gras avec fond gris et icône 📁
+  - Sous-catégories indentées avec symbole ↳
+  - Compteur de sous-catégories affiché
+- **Page Articles** : Filtre avec `<optgroup>` pour structure claire
+
+**Points d'attention** :
+- Toujours utiliser `/tree` pour affichage hiérarchique (pas `/` qui retourne structure plate)
+- Charger sous-catégories dynamiquement avec `getSousCategories(parentId)`
+- Vérifier `parent_id` lors de création/modification pour éviter boucles circulaires
+
 ### Intégration Frontend-Backend
 
 - Le frontend s'attend à l'API sur `http://localhost:8000/api` (configurable via `.env`)
@@ -293,6 +343,13 @@ Lors de la création d'un mouvement :
 - Modèles de base de données avec relations et contraintes appropriées
 - Pages frontend affichent les données correctement
 - Fonctionnalité d'export (CSV/PDF) opérationnelle côté backend
+- **Catégories hiérarchiques (v1.1.0)** :
+  - Structure à 2 niveaux (racine → sous-catégorie)
+  - Endpoints `/racines`, `/tree`, `/{id}/children`
+  - Double select cascadé dans ArticleForm
+  - Affichage en arbre dans page Catégories
+  - Filtres hiérarchiques avec `<optgroup>`
+  - Validations empêchant >2 niveaux et boucles circulaires
 - **Système de tags complet** :
   - Backend : Modèles Tag + table association many-to-many + endpoints CRUD
   - Frontend : TagInput avec création inline, affichage badges colorés
@@ -334,14 +391,22 @@ Lors de la création d'un mouvement :
   - Pagination adaptative (vertical sur mobile)
   - Breakpoints: 768px (tablette) et 576px (mobile)
 - **Authentification JWT complète** :
-  - Backend : Modèle User, endpoints /register, /login, /me
+  - Backend : Modèle User avec role et permissions, endpoints /register, /login, /me
   - Protection de toutes les routes API avec dépendance `get_current_user`
-  - JWT avec expiration de 24 heures (mono-utilisateur)
-  - Frontend : AuthContext, ProtectedRoute, pages Login/Register
+  - JWT enrichi avec expiration de 24 heures (payload : username, user_id, role, exp)
+  - Frontend : AuthContext avec permissions, ProtectedRoute, pages Login/Register
   - Token stocké dans localStorage
   - Intercepteur Axios pour ajouter automatiquement le token
   - Redirection automatique vers /login si token invalide/expiré
-  - **Mode mono-utilisateur** : Un seul compte peut être créé
+  - **Multi-utilisateurs** : Plusieurs comptes avec rôles (Admin, Gestionnaire, Technicien, Consultation)
+- **Système de permissions granulaires (v1.6.0)** :
+  - 4 rôles prédéfinis avec permissions par défaut
+  - Permissions custom par utilisateur (champ JSON)
+  - Format `resource:action` avec wildcards
+  - Protection endpoints avec `require_permission()`
+  - Rendering conditionnel frontend basé sur permissions
+  - Interface admin pour gestion utilisateurs
+  - Audit trail complet (created_by/updated_by sur 11 modèles)
 - **Déploiement Docker complet** :
   - Dockerfiles optimisés (multi-stage pour frontend)
   - docker-compose.yml pour build local
@@ -349,15 +414,48 @@ Lors de la création d'un mouvement :
   - Scripts Windows (.bat) et Linux/Mac (.sh) pour déploiement automatisé
   - Volumes persistants pour database et exports
   - Configuration CORS adaptée pour Docker (localhost:80)
+  - Guide Raspberry Pi complet (deployment/raspberry-pi/README.md)
+- **Version portable complète (Windows)** :
+  - Package autonome sans installation (Python 3.11.8 embedded)
+  - Scripts de build automatisés
+  - Base de données démo pré-remplie (50+ articles)
+  - Documentation utilisateur (LISEZMOI.txt)
+  - Taille finale : ~56 MB compressé
+  - Localisation : deployment/portable-demo/build-complet/
 
 ### Incomplet ⚠️
 - Aucune fonctionnalité majeure manquante
 
+**Prochaine version planifiée** : v1.7.0 - Dashboard Analytique Avancé
+**Roadmap complète** : Voir [docs/ROADMAP.md](docs/ROADMAP.md) pour toutes les versions planifiées
+
 ## Tâches courantes
 
-### Déploiement Docker
+### Options de déploiement
 
-#### Sur PC local (développement rapide)
+L'application peut être déployée de **3 façons différentes** :
+
+#### 1. Version Portable Complète (Windows uniquement)
+
+**Idéal pour** : Démonstrations, clés USB, tests sur PC sans Python
+
+**Localisation** : `deployment/portable-demo/build-complet/inventaire-portable-complet-v1.1.0.zip`
+
+**Caractéristiques** :
+- Aucune installation requise (Python 3.11.8 embedded inclus)
+- Toutes les dépendances pré-installées
+- Base de données démo avec 50+ articles
+- Taille : ~56 MB (compressé), ~150 MB (décompressé)
+- Lancement : Double-clic sur "Lancer Inventaire.bat"
+- Mono-utilisateur
+
+**Documentation** : [deployment/portable-demo/README.md](deployment/portable-demo/README.md)
+
+#### 2. Déploiement Docker (Recommandé pour production)
+
+**Idéal pour** : NAS, serveurs, production
+
+##### Sur PC local (développement rapide)
 ```bash
 # Windows
 scripts\start.bat
@@ -368,7 +466,7 @@ scripts\start.bat
 # Accès : http://localhost (frontend) et http://localhost:8000 (backend)
 ```
 
-#### Sur NAS Ugreen/Synology
+##### Sur NAS Ugreen/Synology
 ```bash
 # Windows - Déploiement complet automatisé
 scripts\deploy-to-nas.bat
@@ -383,6 +481,23 @@ scripts\deploy-to-nas.bat
 # HOST_IP=192.168.x.x  # IP du NAS
 # SECRET_KEY=...        # Clé JWT (générer avec openssl rand -hex 32)
 ```
+
+##### Sur Raspberry Pi 3B+ (ou supérieur)
+
+**Documentation complète** : [deployment/raspberry-pi/README.md](deployment/raspberry-pi/README.md)
+
+**Points clés** :
+- Minimum : RPi 3B+ avec 1 GB RAM
+- Recommandé : Stockage SSD USB (pas carte microSD pour performances)
+- Refroidissement : Dissipateur thermique obligatoire
+- OS : Raspberry Pi OS Lite (64-bit)
+- Installation sans Docker (Python + Node.js natifs pour économiser RAM)
+
+#### 3. Développement local (Sans Docker)
+
+**Idéal pour** : Développement, modifications du code
+
+Voir section "Commandes de développement" plus haut pour les instructions complètes.
 
 ### Tâches courantes de développement
 
@@ -529,3 +644,296 @@ docker save inventaire-frontend:latest -o inventaire-frontend-final.tar
 - L'association many-to-many est gérée manuellement dans `crud.py` avec `append()` et `clear()`
 - Les tags sont chargés avec `joinedload()` pour éviter les requêtes N+1
 - Dans le frontend, React Query nécessite `queryFn: () => getTags()` (pas `queryFn: getTags`) pour éviter la pollution des paramètres
+
+### Catégories hiérarchiques - Particularités importantes
+
+- **Structure récursive Pydantic** : `CategorieResponse` contient `children: list[CategorieResponse]` pour représenter l'arbre
+  - Nécessite `CategorieResponse.model_rebuild()` après la définition de la classe pour activer la récursivité
+  - Sans cela, Pydantic lève une erreur "name 'CategorieResponse' is not defined"
+
+- **Validation de hiérarchie** dans `crud.py` :
+  - `validate_hierarchy(db, parent_id, current_id)` empêche >2 niveaux
+  - Vérifie que `parent_id` n'est pas `current_id` (évite boucles circulaires)
+  - Vérifie que le parent est bien une catégorie racine (niveau 0)
+
+- **Suppression protégée** :
+  - Impossible de supprimer une catégorie si elle a des sous-catégories
+  - `has_children()` vérifie la présence d'enfants avant suppression
+  - Lève `HTTPException(status_code=400)` si bloqué
+
+- **Frontend - Double select cascadé** (ArticleForm) :
+  - Premier select : Catégories racines uniquement (`getCategoriesRacines()`)
+  - Second select : Sous-catégories dynamiques (`getSousCategories(parentId)`)
+  - Si aucune sous-catégorie : utilise automatiquement la catégorie parente
+  - Message informatif : "✓ Cette catégorie sera utilisée (pas de sous-catégories disponibles)"
+
+- **Endpoints spécifiques** :
+  - `/api/categories/racines` : TOUJOURS utiliser pour le premier select
+  - `/api/categories/tree` : Pour affichage hiérarchique (page Catégories)
+  - `/api/categories/{id}/children` : Pour charger sous-catégories dynamiquement
+
+- **Optimisation requêtes** :
+  - Utiliser `joinedload(Categorie.children)` pour éviter N+1 queries
+  - Ne PAS utiliser `/api/categories/` (structure plate) pour affichage hiérarchique
+
+### Système Multi-Utilisateurs & Permissions (v1.6.0) - Particularités importantes
+
+**Architecture Hybrid Role Enum + JSON Permissions** :
+- 4 rôles prédéfinis : `admin`, `gestionnaire`, `technicien`, `consultation`
+- Permissions par défaut basées sur le rôle
+- Permissions custom par utilisateur (override defaults) via champ JSON
+- Format permission : `"resource:action"` (ex: `articles:create`, `users:delete`)
+- Wildcards supportés : `articles:*` (toutes actions), `*:*` (admin)
+
+**Backend - Structure des permissions** (`backend/app/permissions.py`) :
+
+```python
+DEFAULT_PERMISSIONS = {
+    RoleEnum.ADMIN: ["*:*"],
+    RoleEnum.GESTIONNAIRE: [
+        "articles:*", "categories:*", "mouvements:*",
+        "commandes:*", "fournisseurs:*", "emplacements:*",
+        "rapports:read", "rapports:export"
+    ],
+    RoleEnum.TECHNICIEN: [
+        "articles:read", "categories:read",
+        "mouvements:create", "mouvements:read",
+        "commandes:read", "rapports:read"
+    ],
+    RoleEnum.CONSULTATION: [
+        "articles:read", "categories:read", "mouvements:read",
+        "commandes:read", "fournisseurs:read", "rapports:read"
+    ]
+}
+
+# Vérification permission
+def has_permission(user: "User", resource: str, action: str) -> bool:
+    # 1. Check custom permissions (overrides)
+    if user.permissions:
+        if f"{resource}:{action}" in user.permissions: return True
+    # 2. Check default role permissions
+    role_perms = DEFAULT_PERMISSIONS.get(user.role, [])
+    return (f"{resource}:{action}" in role_perms or
+            f"{resource}:*" in role_perms or
+            "*:*" in role_perms)
+```
+
+**Protection des endpoints** :
+
+```python
+from app.permissions import require_permission
+
+@router.post("/api/articles", dependencies=[Depends(require_permission("articles", "create"))])
+def create_article(...):
+    # Endpoint protégé : Seuls les users avec "articles:create" peuvent accéder
+    pass
+```
+
+**Audit Trail sur tous les modèles** :
+- 11 modèles enrichis : Article, Categorie, Tag, Photo, Fournisseur, Emplacement, LigneCommande, User, Mouvement, Commande
+- Colonnes : `created_by` et `updated_by` (Foreign Keys vers users.id)
+- Pattern dans CRUD :
+  ```python
+  def create_article(db, article_data, current_user):
+      db_article = models.Article(..., created_by=current_user.id)
+
+  def update_article(db, article_id, article_data, current_user):
+      db_article.updated_by = current_user.id
+  ```
+- Relations viewonly : `creator = relationship("User", foreign_keys=[created_by], viewonly=True)`
+
+**JWT enrichi** :
+- Payload contient : `username`, `user_id`, `role`, `exp`
+- Durée de vie : 24 heures (1440 minutes)
+- Performance : Role dans JWT évite DB lookup à chaque requête
+- Limitation actuelle : Changement de rôle ne force pas logout immédiat (token valide 24h)
+
+**Validations admin strictes** (`backend/app/routers/users.py`) :
+```python
+def update_user_role(user_id, role_update, current_user):
+    if user_id == current_user.id:
+        raise HTTPException(400, "Impossible de changer son propre rôle")
+    # ...
+
+def deactivate_user(user_id, current_user):
+    if user_id == current_user.id:
+        raise HTTPException(400, "Impossible de se désactiver soi-même")
+
+    active_admins = db.query(User).filter(
+        User.role == RoleEnum.ADMIN, User.is_active == True
+    ).count()
+
+    target_user = db.query(User).get(user_id)
+    if target_user.role == RoleEnum.ADMIN and active_admins <= 1:
+        raise HTTPException(400, "Au moins 1 admin actif requis")
+```
+
+**Frontend - Hook usePermissions** (`frontend/src/hooks/usePermissions.js`) :
+
+```javascript
+const {
+  hasPermission,      // Fonction de base
+  isAdmin,            // role === 'admin'
+  canCreate,          // hasPermission(resource, 'create')
+  canUpdate,          // hasPermission(resource, 'update')
+  canDelete,          // hasPermission(resource, 'delete')
+  canExport           // hasPermission(resource, 'export')
+} = usePermissions()
+```
+
+**Rendering conditionnel** (pattern appliqué sur 12 pages) :
+
+```javascript
+function Articles() {
+  const { canCreate, canUpdate, canDelete } = usePermissions()
+
+  return (
+    <>
+      {canCreate('articles') && <button onClick={handleCreate}>Créer</button>}
+      {canUpdate('articles') && <button onClick={handleEdit}>Modifier</button>}
+      {canDelete('articles') && <button onClick={handleDelete}>Supprimer</button>}
+    </>
+  )
+}
+```
+
+**Navigation filtrée** (`frontend/src/components/layout/Layout.jsx`) :
+
+```javascript
+const navItems = [
+  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/articles', icon: Package, label: 'Articles', permission: { resource: 'articles', action: 'read' } },
+  { path: '/users', icon: Users, label: 'Utilisateurs', permission: { resource: 'users', action: 'read' } },
+]
+
+const visibleNavItems = useMemo(() => {
+  return navItems.filter(item => {
+    if (!item.permission) return true
+    return hasPermission(item.permission.resource, item.permission.action)
+  })
+}, [hasPermission])
+```
+
+**Badge de rôle** :
+- Couleurs : Admin (violet #8b5cf6), Gestionnaire (bleu #3b82f6), Technicien (vert #10b981), Consultation (gris #6b7280)
+- Affiché dans Layout sidebar sous le nom d'utilisateur
+
+**Page Users** (`frontend/src/pages/Users.jsx`) :
+- Accessible uniquement aux admins (`hasPermission('users', 'read')`)
+- CRUD complet : Créer, modifier rôle, permissions custom, désactiver
+- 3 modals : UserModal (création), RoleModal (changement rôle), PermissionsModal (23+ checkboxes)
+- Badges colorés selon rôle et statut (actif/inactif)
+
+**Points critiques** :
+
+1. **Double validation obligatoire** :
+   - Frontend masque les boutons (UX)
+   - Backend bloque les endpoints (sécurité)
+   - Ne JAMAIS se fier uniquement au frontend
+
+2. **JWT cache invalidation** :
+   - Problème : Changement de rôle ne force pas logout immédiat
+   - Solution court terme : Frontend invalide token localStorage après modification
+   - Solution long terme (v1.7.0) : Refresh tokens + token blacklist
+
+3. **Permissions personnalisées** :
+   - Admin peut override permissions d'un user via champ JSON
+   - Custom permissions prioritaires sur role defaults
+   - Exemple : Technicien avec permission custom `articles:create`
+
+4. **Migration mono-user → multi-users** :
+   - Ancien code mono-user supprimé dans `/api/auth/register`
+   - Plusieurs comptes peuvent être créés
+   - Premier utilisateur créé = admin recommandé
+
+5. **Mouvement.created_by special case** :
+   - Ancien format : String(100) contenant username
+   - Nouveau format : ForeignKey(users.id)
+   - Migration nécessaire si données existantes (voir `backend/migrate_mouvements.py`)
+
+**Optimisations** :
+- Permission check dans JWT (< 1ms, pas de DB query)
+- `useMemo` pour filtre navigation (évite re-calculs)
+- `useCallback` pour hasPermission (évite re-création fonction)
+- React Query cache users (invalidation après mutations)
+
+**Ressources disponibles** (23+ permissions configurables) :
+- Articles : read, create, update, delete
+- Catégories : read, create, update, delete
+- Tags : read, create, update, delete
+- Fournisseurs : read, create, update, delete
+- Emplacements : read, create, update, delete
+- Mouvements : read, create
+- Commandes : read, create, update, delete
+- Rapports : read, export
+- Utilisateurs : read, create, update, delete
+
+### Version portable complète - Particularités importantes
+
+**Localisation** : `deployment/portable-demo/build-complet/inventaire-portable-complet-v1.1.0/`
+
+**Structure du package** :
+```
+inventaire-portable-complet-v1.1.0/
+├── python/               # Python 3.11.8 embedded avec toutes dépendances
+├── backend/              # Code FastAPI complet
+│   ├── app/
+│   ├── database/         # Base de données SQLite
+│   └── run.py            # Point d'entrée personnalisé
+├── frontend/             # Build React (pas de sous-dossier dist)
+│   ├── index.html        # ← Directement dans frontend/
+│   └── assets/
+├── data/
+│   ├── exports/
+│   └── uploads/
+├── logs/
+│   ├── backend.log
+│   └── frontend.log
+├── Lancer Inventaire.bat # Script principal
+├── Arreter Inventaire.bat
+└── LISEZMOI.txt          # Documentation utilisateur
+```
+
+**Points critiques** :
+
+1. **Python embedded configuration** :
+   - Fichier `python/python311._pth` DOIT contenir "import site" pour activer site-packages
+   - pip installé manuellement via get-pip.py
+   - Dépendances dans `python/Lib/site-packages/`
+
+2. **Script de lancement** (Lancer Inventaire.bat) :
+   - **IMPORTANT** : Frontend dans `frontend/` (PAS `frontend/dist/`)
+   - Commande : `cd frontend` puis `python\python.exe -m http.server 5173`
+   - **ERREUR COURANTE** : `cd frontend\dist` cause "Le chemin d'accès spécifié est introuvable"
+
+3. **Base de données démo** :
+   - Créée par `scripts/create-demo-db.py`
+   - Contient 50+ articles, 5 catégories hiérarchiques, 10 tags, 30 mouvements
+   - Localisation : `backend/database/inventaire.db`
+
+4. **Build du package** :
+   - Script automatisé : `deployment/portable-demo/scripts/build-portable-auto.bat`
+   - Télécharge Python 3.11.8 embedded depuis python.org
+   - Installe toutes les dépendances backend
+   - Copie frontend/dist → frontend/
+   - Crée base de données démo
+   - Génère scripts de lancement
+
+5. **Limitations** :
+   - Windows uniquement (Python embedded est spécifique Windows)
+   - Mono-utilisateur (une seule instance à la fois)
+   - Pas de multi-threading (http.server simple thread)
+
+**Scripts disponibles** :
+- `build-portable-auto.bat` : Build automatisé sans interaction
+- `build-portable-complet.bat` : Build avec pauses pour vérification
+- `create-demo-db.py` : Génère base de données avec données réalistes
+
+**Déploiement** :
+1. Extraire le ZIP n'importe où (Bureau, clé USB, etc.)
+2. Double-cliquer "Lancer Inventaire.bat"
+3. Attendre 20 secondes (backend démarre, puis frontend)
+4. Navigateur s'ouvre automatiquement sur http://localhost:5173
+5. Login : admin / admin
+
+**Documentation utilisateur complète** : Voir `LISEZMOI.txt` dans le package

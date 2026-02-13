@@ -1,0 +1,193 @@
+========================================
+  INVENTAIRE D'ATELIER - VERSION DEMO
+========================================
+
+Bienvenue dans la demonstration portable de l'application d'inventaire d'atelier !
+
+Cette version ne necessite AUCUNE INSTALLATION et peut etre executee directement
+depuis une cle USB ou un dossier sur votre ordinateur.
+
+
+## LANCEMENT RAPIDE
+
+1. Double-cliquez sur "Lancer Inventaire.bat"
+2. Attendez environ 10 secondes (30 secondes lors de la premiere execution)
+3. Le navigateur s'ouvre automatiquement
+4. Connectez-vous avec les identifiants suivants :
+   - Username : admin
+   - Password : admin
+
+
+## ARRET DE L'APPLICATION
+
+Pour arreter l'application proprement :
+1. Double-cliquez sur "Arreter Inventaire.bat"
+OU
+2. Appuyez sur Ctrl+C dans la fenetre console qui s'est ouverte
+
+
+## FONCTIONNALITES PRINCIPALES
+
+✅ Gestion des articles
+   - Creation, modification, suppression
+   - Categories hierarchiques (categorie > sous-categorie)
+   - Systeme de tags
+   - Recherche avancee avec filtres
+
+✅ Gestion du stock
+   - Mouvements ENTREE et SORTIE
+   - Historique complet
+   - Alertes stock bas
+
+✅ Statistiques et rapports
+   - Dashboard avec statistiques en temps reel
+   - Valeur totale du stock
+   - Articles en stock bas
+   - Exports CSV et PDF
+
+✅ Interface moderne et responsive
+   - Fonctionne sur ordinateur, tablette et mobile
+   - Design intuitif
+   - Notifications en temps reel
+
+
+## DONNEES DE DEMONSTRATION
+
+La base de donnees contient des exemples pre-remplis pour vous permettre
+d'explorer toutes les fonctionnalites :
+
+- 5 categories principales avec sous-categories :
+  * Materiaux (Bois, Metal, Plastique, Autres)
+  * Consommables (Quincaillerie, Colles & Mastics, Electricite, etc.)
+  * Outillage (Manuel, Electrique, Mesure & Tracage, Specialise)
+  * Pieces Detachees (Impression 3D, Electronique, Plomberie, Mecanique)
+  * Projets (Menuiserie, Electricite, Plomberie, etc.)
+
+- 50+ articles d'exemple
+- 30+ mouvements de stock
+- 10+ tags (machine, projet, urgent, etc.)
+
+
+## STRUCTURE DES FICHIERS
+
+inventaire-portable/
+├── Lancer Inventaire.bat    ← Double-clic pour demarrer
+├── Arreter Inventaire.bat   ← Double-clic pour arreter
+├── LISEZMOI.txt              ← Ce fichier
+├── python/                   ← Python portable (ne pas modifier)
+├── backend/                  ← Code serveur
+├── frontend/                 ← Interface utilisateur
+├── database/                 ← Base de donnees SQLite
+│   └── inventaire.db         ← Vos donnees sont sauvegardees ici
+├── data/                     ← Donnees applicatives
+│   ├── exports/              ← Fichiers CSV/PDF exportes
+│   └── uploads/              ← Photos articles (futur)
+└── logs/                     ← Logs pour debogage
+
+
+## DONNEES PERSISTANTES
+
+⚠️ IMPORTANT : Toutes vos modifications sont sauvegardees dans le fichier
+   database/inventaire.db
+
+Pour reinitialiser la demo avec les donnees d'origine :
+1. Arreter l'application
+2. Supprimer database/inventaire.db
+3. Copier database/inventaire-demo-backup.db vers database/inventaire.db
+4. Relancer l'application
+
+
+## UTILISATION SUR CLE USB
+
+Cette version est parfaite pour une utilisation nomade :
+- Copiez le dossier complet sur une cle USB (8 GB minimum recommande)
+- Branchez la cle sur n'importe quel PC Windows
+- Lancez l'application (aucune installation requise)
+- Vos donnees restent sur la cle USB
+
+
+## CONFIGURATION REQUISE
+
+- Systeme d'exploitation : Windows 7/8/10/11 (64-bit)
+- RAM : 2 GB minimum (4 GB recommande)
+- Espace disque : 500 MB minimum
+- Navigateur web moderne (Chrome, Firefox, Edge, Opera)
+- Permissions : Aucune permission administrateur requise
+
+
+## NOTES TECHNIQUES
+
+- Backend : FastAPI (Python) sur http://localhost:8000
+- Frontend : React sur http://localhost:5173
+- Base de donnees : SQLite (fichier local)
+- Pas de connexion internet requise (fonctionne 100% hors-ligne)
+
+
+## LIMITATIONS VERSION DEMO
+
+Cette version portable est concue pour :
+✅ Demonstrations
+✅ Tests
+✅ Formation
+✅ Usage personnel leger
+
+Elle n'est PAS recommandee pour :
+❌ Usage intensif multi-utilisateurs
+❌ Environnement de production critique
+❌ Stockage de grandes quantites de donnees (>10 000 articles)
+
+Pour un usage professionnel, consultez les options de deploiement
+sur serveur ou NAS.
+
+
+## DEPANNAGE
+
+### L'application ne demarre pas
+1. Verifiez que le dossier python/ existe et contient python.exe
+2. Consultez le fichier logs/backend.log pour les erreurs
+3. Assurez-vous qu'aucun autre programme n'utilise les ports 8000 ou 5173
+
+### Erreur "Port deja utilise"
+1. Arretez l'application avec "Arreter Inventaire.bat"
+2. Ouvrez le Gestionnaire des taches (Ctrl+Shift+Esc)
+3. Arretez tous les processus python.exe
+4. Relancez l'application
+
+### Le navigateur ne s'ouvre pas automatiquement
+1. Ouvrez manuellement votre navigateur
+2. Allez a l'adresse : http://localhost:5173
+
+### Erreur de connexion
+1. Utilisez les identifiants : admin / admin
+2. Si le probleme persiste, consultez logs/backend.log
+
+
+## SECURITE
+
+⚠️ Cette version demo utilise des identifiants par defaut.
+   Pour un usage reel, changez le mot de passe apres la premiere connexion.
+
+Les mots de passe sont stockes de maniere securisee (hashe avec bcrypt)
+dans la base de donnees.
+
+
+## SUPPORT ET DOCUMENTATION
+
+Pour plus d'informations, consultez :
+- Documentation complete : docs/ROADMAP.md
+- Code source : https://github.com/votre-username/inventaire
+- Rapporter un bug : https://github.com/votre-username/inventaire/issues
+
+
+## LICENCE
+
+Application developpee pour un usage personnel.
+Code source disponible sous licence MIT.
+
+
+========================================
+Version 1.1.0 - Fevrier 2026
+Developpe avec Claude Sonnet 4.5
+========================================
+
+Merci d'avoir essaye cette demonstration !

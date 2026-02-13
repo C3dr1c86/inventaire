@@ -4,7 +4,7 @@
  * Affiche les statistiques clés et les alertes de stock bas.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -12,20 +12,47 @@ import { getStatistiques, getRapportStockBas } from '../services/rapportService'
 import { createArticle, getArticles } from '../services/articleService'
 import { createCategorie } from '../services/categorieService'
 import { createTag } from '../services/tagService'
-import { AlertTriangle, Package, Layers, ArrowRightLeft, FileText, Plus, Search, Tag } from 'lucide-react'
+import { createFournisseur } from '../services/fournisseurService'
+import { createEmplacement } from '../services/emplacementService'
+import { AlertTriangle, Package, Layers, ArrowRightLeft, FileText, Plus, Tag, Truck, MapPin } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import ArticleForm from '../components/articles/ArticleForm'
 import CategorieForm from '../components/categories/CategorieForm'
 import TagForm from '../components/tags/TagForm'
+import FournisseurForm from '../components/fournisseurs/FournisseurForm'
+import EmplacementForm from '../components/emplacements/EmplacementForm'
+import SearchBar from '../components/common/SearchBar'
+import { usePermissions } from '../hooks/usePermissions'
 
 function Dashboard() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { canCreate } = usePermissions()
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false)
   const [isCategorieModalOpen, setIsCategorieModalOpen] = useState(false)
   const [isTagModalOpen, setIsTagModalOpen] = useState(false)
+  const [isFournisseurModalOpen, setIsFournisseurModalOpen] = useState(false)
+  const [isEmplacementModalOpen, setIsEmplacementModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState(null)
+
+  // Debounce pour la recherche (attendre 500ms après la dernière frappe)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Lancer la recherche automatiquement quand debouncedSearchQuery change
+  useEffect(() => {
+    if (debouncedSearchQuery.trim()) {
+      handleSearch()
+    } else {
+      setSearchResults(null)
+    }
+  }, [debouncedSearchQuery])
 
   // Récupérer les statistiques
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -41,15 +68,14 @@ function Dashboard() {
 
   // Query de recherche (manuelle avec enabled: false)
   const { refetch: searchRefetch, isLoading: searchLoading } = useQuery({
-    queryKey: ['search-articles', searchQuery],
-    queryFn: () => getArticles({ search: searchQuery }),
+    queryKey: ['search-articles', debouncedSearchQuery],
+    queryFn: () => getArticles({ search: debouncedSearchQuery }),
     enabled: false
   })
 
-  // Handlers de recherche
-  const handleSearch = async (e) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
+  // Handlers de recherche (appelé automatiquement par useEffect)
+  const handleSearch = async () => {
+    if (debouncedSearchQuery.trim()) {
       const result = await searchRefetch()
       if (result.error) {
         toast.error('Erreur lors de la recherche')
@@ -72,8 +98,14 @@ function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries(['statistiques'])
       queryClient.invalidateQueries(['articles'])
+      queryClient.invalidateQueries(['search-articles'])
+      queryClient.invalidateQueries(['stock-bas'])
       setIsArticleModalOpen(false)
       toast.success('Article créé avec succès')
+      // Rafraîchir les résultats de recherche si une recherche est active
+      if (searchResults) {
+        searchRefetch()
+      }
     },
     onError: (error) => {
       toast.error(error.response?.data?.detail || 'Erreur lors de la création de l\'article')
@@ -107,6 +139,34 @@ function Dashboard() {
     }
   })
 
+  // Mutation pour créer un fournisseur
+  const createFournisseurMutation = useMutation({
+    mutationFn: createFournisseur,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['fournisseurs'])
+      setIsFournisseurModalOpen(false)
+      toast.success('Fournisseur créé avec succès')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Erreur lors de la création du fournisseur')
+    }
+  })
+
+  // Mutation pour créer un emplacement
+  const createEmplacementMutation = useMutation({
+    mutationFn: createEmplacement,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['emplacements'])
+      queryClient.invalidateQueries(['emplacements-racines'])
+      queryClient.invalidateQueries(['emplacements-tree'])
+      setIsEmplacementModalOpen(false)
+      toast.success('Emplacement créé avec succès')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Erreur lors de la création de l\'emplacement')
+    }
+  })
+
   if (statsLoading || stockBasLoading) {
     return (
       <div>
@@ -121,45 +181,44 @@ function Dashboard() {
       <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>Dashboard</h1>
 
       {/* Barre de recherche globale */}
-      <div className="card" style={{ marginBottom: '2rem' }}>
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <div style={{ flex: 1, position: 'relative' }}>
-            <Search
-              size={18}
-              style={{
-                position: 'absolute',
-                left: '0.75rem',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#6c757d'
-              }}
-            />
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Rechercher un article par nom, SKU ou description..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ paddingLeft: '2.5rem' }}
-            />
-          </div>
+      <div style={{ position: 'relative' }}>
+        <SearchBar
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Rechercher un article par nom, SKU ou description..."
+          autoFocus={false}
+        />
+        {searchResults && (
           <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={!searchQuery.trim() || searchLoading}
+            type="button"
+            className="btn btn-secondary"
+            onClick={clearSearch}
+            style={{
+              position: 'absolute',
+              top: '1.5rem',
+              right: '1.5rem',
+              zIndex: 10
+            }}
           >
-            {searchLoading ? 'Recherche...' : 'Rechercher'}
+            Effacer
           </button>
-          {searchResults && (
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={clearSearch}
-            >
-              Effacer
-            </button>
-          )}
-        </form>
+        )}
+        {searchLoading && (
+          <div style={{
+            position: 'absolute',
+            top: '1.5rem',
+            right: searchResults ? '8rem' : '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            color: '#007bff',
+            fontWeight: 500,
+            zIndex: 10
+          }}>
+            <div className="spinner-border spinner-border-sm" role="status"></div>
+            Recherche...
+          </div>
+        )}
       </div>
 
       {/* Résultats de recherche */}
@@ -234,7 +293,7 @@ function Dashboard() {
       <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
         <div
           className="stat-card"
-          style={{ background: 'linear-gradient(135deg, #1f77b4, #1565a8)', cursor: 'pointer' }}
+          style={{ background: 'linear-gradient(135deg, #007bff, #0056b3)', cursor: 'pointer' }}
           onClick={() => navigate('/articles')}
         >
           <div className="stat-value">{stats?.nombre_articles || 0}</div>
@@ -246,7 +305,7 @@ function Dashboard() {
 
         <div
           className="stat-card"
-          style={{ background: 'linear-gradient(135deg, #ff7f0e, #e06d00)', cursor: 'pointer' }}
+          style={{ background: 'linear-gradient(135deg, #28a745, #1e7e34)', cursor: 'pointer' }}
           onClick={() => navigate('/categories')}
         >
           <div className="stat-value">{stats?.nombre_categories || 0}</div>
@@ -258,7 +317,7 @@ function Dashboard() {
 
         <div
           className="stat-card"
-          style={{ background: 'linear-gradient(135deg, #d62728, #b81f1f)', cursor: 'pointer' }}
+          style={{ background: 'linear-gradient(135deg, #dc3545, #bd2130)', cursor: 'pointer' }}
           onClick={() => navigate('/articles?stock_bas=true')}
         >
           <div className="stat-value">{stats?.nombre_articles_stock_bas || 0}</div>
@@ -297,18 +356,56 @@ function Dashboard() {
         <div className="card-body">
           {/* Boutons de création rapide */}
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-            <button className="btn btn-primary" onClick={() => setIsArticleModalOpen(true)}>
-              <Plus size={18} />
-              Créer un article
-            </button>
-            <button className="btn btn-primary" onClick={() => setIsCategorieModalOpen(true)}>
-              <Plus size={18} />
-              Créer une catégorie
-            </button>
-            <button className="btn btn-primary" onClick={() => setIsTagModalOpen(true)}>
-              <Tag size={18} />
-              Créer un tag
-            </button>
+            {canCreate('articles') && (
+              <button
+                className="btn"
+                onClick={() => setIsArticleModalOpen(true)}
+                style={{ backgroundColor: '#007bff', color: '#fff', border: 'none' }}
+              >
+                <Package size={18} />
+                Créer un article
+              </button>
+            )}
+            {canCreate('categories') && (
+              <button
+                className="btn"
+                onClick={() => setIsCategorieModalOpen(true)}
+                style={{ backgroundColor: '#28a745', color: '#fff', border: 'none' }}
+              >
+                <Layers size={18} />
+                Créer une catégorie
+              </button>
+            )}
+            {canCreate('tags') && (
+              <button
+                className="btn"
+                onClick={() => setIsTagModalOpen(true)}
+                style={{ backgroundColor: '#fd7e14', color: '#fff', border: 'none' }}
+              >
+                <Tag size={18} />
+                Créer un tag
+              </button>
+            )}
+            {canCreate('fournisseurs') && (
+              <button
+                className="btn"
+                onClick={() => setIsFournisseurModalOpen(true)}
+                style={{ backgroundColor: '#6f42c1', color: '#fff', border: 'none' }}
+              >
+                <Truck size={18} />
+                Créer un fournisseur
+              </button>
+            )}
+            {canCreate('emplacements') && (
+              <button
+                className="btn"
+                onClick={() => setIsEmplacementModalOpen(true)}
+                style={{ backgroundColor: '#17a2b8', color: '#fff', border: 'none' }}
+              >
+                <MapPin size={18} />
+                Créer un emplacement
+              </button>
+            )}
           </div>
 
           {/* Séparateur */}
@@ -390,6 +487,36 @@ function Dashboard() {
           onSubmit={(data) => createTagMutation.mutate(data)}
           onCancel={() => setIsTagModalOpen(false)}
           isSubmitting={createTagMutation.isPending}
+        />
+      </Modal>
+
+      {/* Modal de création de fournisseur */}
+      <Modal
+        isOpen={isFournisseurModalOpen}
+        onClose={() => setIsFournisseurModalOpen(false)}
+        title="Créer un fournisseur"
+        size="medium"
+      >
+        <FournisseurForm
+          fournisseur={null}
+          onSubmit={(data) => createFournisseurMutation.mutate(data)}
+          onCancel={() => setIsFournisseurModalOpen(false)}
+          isSubmitting={createFournisseurMutation.isPending}
+        />
+      </Modal>
+
+      {/* Modal de création d'emplacement */}
+      <Modal
+        isOpen={isEmplacementModalOpen}
+        onClose={() => setIsEmplacementModalOpen(false)}
+        title="Créer un emplacement"
+        size="medium"
+      >
+        <EmplacementForm
+          emplacement={null}
+          onSubmit={(data) => createEmplacementMutation.mutate(data)}
+          onCancel={() => setIsEmplacementModalOpen(false)}
+          isSubmitting={createEmplacementMutation.isPending}
         />
       </Modal>
     </div>
