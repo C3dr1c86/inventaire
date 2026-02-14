@@ -2,8 +2,6 @@
 Tests pour l'authentification et la gestion des utilisateurs
 """
 
-import pytest
-
 
 class TestRegister:
     """Tests pour l'endpoint /api/auth/register"""

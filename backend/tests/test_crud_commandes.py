@@ -2,7 +2,6 @@
 Tests pour les opérations CRUD sur les commandes fournisseurs
 """
 
-import pytest
 from datetime import datetime
 
 

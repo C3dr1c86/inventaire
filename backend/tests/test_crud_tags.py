@@ -2,8 +2,6 @@
 Tests pour les tags
 """
 
-import pytest
-
 
 class TestCreateTag:
     """Tests pour la création de tags"""

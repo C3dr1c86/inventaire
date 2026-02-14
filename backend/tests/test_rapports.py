@@ -2,8 +2,6 @@
 Tests pour les rapports et exports
 """
 
-import pytest
-
 
 class TestStatistiques:
     """Tests pour les statistiques globales"""
@@ -12,7 +10,7 @@ class TestStatistiques:
         self, client, admin_token, sample_article, db, admin_user
     ):
         """Récupère les statistiques globales"""
-        from app.models import Article, Categorie
+        from app.models import Article
 
         # Créer quelques articles supplémentaires
         article2 = Article(

@@ -6,14 +6,13 @@ dans différents formats.
 """
 
 import csv
-import os
 from io import StringIO, BytesIO
 from typing import List
 from datetime import datetime
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, letter
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch, cm
+from reportlab.lib.units import cm
 from reportlab.platypus import (
     SimpleDocTemplate,
     Table,
@@ -23,7 +22,7 @@ from reportlab.platypus import (
     Image,
     PageBreak,
 )
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.enums import TA_CENTER
 import barcode
 from barcode.writer import ImageWriter
 import qrcode

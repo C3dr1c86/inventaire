@@ -2,8 +2,6 @@
 Tests pour les opérations CRUD sur les catégories
 """
 
-import pytest
-
 
 class TestCreateCategorie:
     """Tests pour la création de catégories"""

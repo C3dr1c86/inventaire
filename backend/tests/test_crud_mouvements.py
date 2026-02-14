@@ -2,8 +2,6 @@
 Tests pour les mouvements de stock
 """
 
-import pytest
-
 
 class TestCreateMouvement:
     """Tests pour la création de mouvements"""

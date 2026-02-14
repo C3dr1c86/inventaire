@@ -2,8 +2,6 @@
 Tests pour les fournisseurs
 """
 
-import pytest
-
 
 class TestCreateFournisseur:
     """Tests pour la création de fournisseurs"""

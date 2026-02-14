@@ -77,7 +77,7 @@ def init_db():
     os.makedirs("database", exist_ok=True)
 
     # Importer tous les modèles pour que Base les connaisse
-    from app import models
+    from app import models  # noqa: F401
 
     # Créer toutes les tables
     Base.metadata.create_all(bind=engine)

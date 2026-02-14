@@ -8,7 +8,6 @@ et assurent la validation automatique des entrées/sorties.
 from pydantic import BaseModel, Field, validator, EmailStr
 from typing import Optional, Literal, List
 from datetime import datetime, date
-from decimal import Decimal
 from app.models import RoleEnum
 
 # ============================================================================

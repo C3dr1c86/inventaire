@@ -10,10 +10,10 @@ Endpoints:
 - POST /api/rapports/export/barcodes-pdf - Export PDF codes-barres personnalisé
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
-from fastapi.responses import Response, StreamingResponse
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
-from typing import Optional, Literal, List
+from typing import Literal, List
 from datetime import datetime
 from pydantic import BaseModel
 

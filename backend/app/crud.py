@@ -200,7 +200,10 @@ def delete_categorie(db: Session, categorie_id: int) -> bool:
         children_count = len(db_categorie.children)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Impossible de supprimer '{db_categorie.nom}' car elle contient {children_count} sous-catégorie(s). Supprimez d'abord les sous-catégories.",
+            detail=(
+                f"Impossible de supprimer '{db_categorie.nom}' car elle contient "
+                f"{children_count} sous-catégorie(s). Supprimez d'abord les sous-catégories."
+            ),
         )
 
     # Supprimer la catégorie (articles mis à NULL grâce à ondelete="SET NULL")
@@ -221,7 +224,7 @@ def get_categories_racines(db: Session) -> List[models.Categorie]:
     Returns:
         Liste des catégories de niveau 0 (sans parent)
     """
-    return db.query(models.Categorie).filter(models.Categorie.parent_id == None).all()
+    return db.query(models.Categorie).filter(models.Categorie.parent_id.is_(None)).all()
 
 
 def get_categories_tree(db: Session) -> List[models.Categorie]:
@@ -238,7 +241,7 @@ def get_categories_tree(db: Session) -> List[models.Categorie]:
 
     categories_racines = (
         db.query(models.Categorie)
-        .filter(models.Categorie.parent_id == None)
+        .filter(models.Categorie.parent_id.is_(None))
         .options(joinedload(models.Categorie.children))
         .all()
     )
@@ -879,8 +882,6 @@ def get_valeur_totale_stock(db: Session) -> dict:
     Returns:
         Dictionnaire avec valeur totale et détails par catégorie
     """
-    from sqlalchemy import func, case
-
     # Valeur totale et nombre d'articles - Une seule requête avec agrégation
     totaux = db.query(
         func.count(models.Article.id).label("nombre_articles"),
@@ -1630,7 +1631,7 @@ def get_emplacements_racines(db: Session) -> List[models.Emplacement]:
     """
     return (
         db.query(models.Emplacement)
-        .filter(models.Emplacement.parent_id == None)
+        .filter(models.Emplacement.parent_id.is_(None))
         .order_by(models.Emplacement.code)
         .all()
     )
@@ -1651,7 +1652,7 @@ def get_emplacements_tree(db: Session) -> List[models.Emplacement]:
     """
     return (
         db.query(models.Emplacement)
-        .filter(models.Emplacement.parent_id == None)
+        .filter(models.Emplacement.parent_id.is_(None))
         .options(
             joinedload(models.Emplacement.children).joinedload(
                 models.Emplacement.children
@@ -1889,8 +1890,6 @@ def get_emplacements_suggestions_by_category(
         Liste de dictionnaires avec les suggestions d'emplacements
         Format: [{"emplacement": Emplacement, "count": int}, ...]
     """
-    from sqlalchemy import func
-
     # Vérifier que la catégorie existe
     categorie = get_categorie(db, categorie_id)
     if not categorie:
@@ -2206,7 +2205,8 @@ def deactivate_user(
         active_admins = (
             db.query(models.User)
             .filter(
-                models.User.role == models.RoleEnum.ADMIN, models.User.is_active == True
+                models.User.role == models.RoleEnum.ADMIN,
+                models.User.is_active.is_(True),
             )
             .count()
         )

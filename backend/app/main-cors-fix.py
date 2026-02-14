@@ -7,7 +7,6 @@ VERSION NAS : CORS ultra-permissif avec gestion explicite des OPTIONS
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from app.database import init_db
 import os
 

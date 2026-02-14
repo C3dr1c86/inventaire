@@ -2,7 +2,6 @@
 Tests pour le système de permissions
 """
 
-import pytest
 from app.permissions import has_permission, DEFAULT_PERMISSIONS
 from app.models import RoleEnum, User
 

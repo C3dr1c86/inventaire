@@ -2,8 +2,6 @@
 Tests pour les opérations CRUD sur les articles
 """
 
-import pytest
-
 
 class TestCreateArticle:
     """Tests pour la création d'articles"""
