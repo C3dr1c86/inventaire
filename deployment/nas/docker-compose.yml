@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ghcr.io/c3dr1c86/inventaire/backend:${DOCKER_IMAGE_TAG:-latest}
+    container_name: inventaire-backend
+    restart: unless-stopped
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=sqlite:///./database/inventaire.db
+      - CORS_ORIGINS=${CORS_ORIGINS}
+    volumes:
+      - ./data/database:/app/database
+      - ./data/exports:/app/exports
+      - ./data/uploads:/app/uploads
+    healthcheck:
+      test: python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health').read()" || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - inventaire-network
+
+  frontend:
+    image: ghcr.io/c3dr1c86/inventaire/frontend:${DOCKER_IMAGE_TAG:-latest}
+    container_name: inventaire-frontend
+    restart: unless-stopped
+    environment:
+      - VITE_API_URL=${VITE_API_URL}
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - inventaire-network
+
+networks:
+  inventaire-network:
+    driver: bridge
+
+volumes:
+  backend_data:
+  frontend_assets:
