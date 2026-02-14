@@ -1,6 +1,8 @@
-# Environnement virtuel Python
+# Environnements virtuels Python
 venv/
 env/
+ENV/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
@@ -8,27 +10,57 @@ __pycache__/
 .Python
 
 # Base de données locale (sera créée dans le conteneur)
-database/*.db
-database/*.db-journal
+database/
+*.db
+*.sqlite
+*.sqlite3
 
-# Exports locaux
-exports/*
+# Fichiers de test
+tests/
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.cover
 
-# IDE
+# Exports et uploads (seront créés dans les volumes)
+exports/
+uploads/
+data/
+
+# IDE et éditeurs
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+.DS_Store
 
-# Tests
-.pytest_cache/
-htmlcov/
-.coverage
-
-# Divers
+# Git
 .git/
 .gitignore
+.gitattributes
+
+# Documentation
 README.md
+*.md
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Logs
 *.log
-.env
-.env.local
+logs/
+
+# Fichiers temporaires
+tmp/
+temp/
+*.tmp
+
+# Migration scripts (pas nécessaires en production)
+migrate_*.py
+seed_database.py
+fix_*.py
+.flake8
