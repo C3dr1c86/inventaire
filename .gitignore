@@ -71,3 +71,4 @@ docker-compose.override.yml
 
 # Backups
 backup-*.tar.gz
+.claude/
