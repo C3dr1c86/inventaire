@@ -11,17 +11,23 @@ from sqlalchemy.orm import sessionmaker
 import os
 
 # URL de connexion à la base de données SQLite
-# En mode test, utiliser une database en mémoire
+# En mode test, utiliser une database en mémoire PARTAGÉE
+# (cache=shared permet à plusieurs connexions d'accéder à la même DB en mémoire)
 if os.getenv("TESTING") == "1":
-    DATABASE_URL = "sqlite:///:memory:"
+    DATABASE_URL = "sqlite:///file:memdb?mode=memory&cache=shared&uri=true"
 else:
     DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./database/inventaire.db")
 
 # Créer le moteur SQLAlchemy
 # check_same_thread=False est nécessaire pour SQLite avec FastAPI
+# En mode test (URI), on ajoute aussi uri=True pour que SQLAlchemy comprenne l'URI
+connect_args = {"check_same_thread": False}
+if os.getenv("TESTING") == "1":
+    connect_args["uri"] = True
+
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False},
+    connect_args=connect_args,
     echo=False,  # Mettre à True pour voir les requêtes SQL dans les logs
 )
 
