@@ -26,7 +26,8 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     Créer un nouveau compte utilisateur.
 
     **Mode multi-utilisateurs** : Plusieurs utilisateurs peuvent être créés.
-    Les nouveaux utilisateurs sont créés avec le rôle par défaut (consultation).
+    **Premier utilisateur** : Le premier utilisateur créé est automatiquement admin.
+    Les utilisateurs suivants sont créés avec le rôle par défaut (consultation).
 
     Args:
         user: Informations de l'utilisateur à créer
@@ -38,7 +39,17 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     Raises:
         HTTPException 400: Si le username ou email existe déjà
     """
-    # Créer l'utilisateur (le CRUD gère la validation unicité username/email + hashage password)
+    # Vérifier si c'est le premier utilisateur
+    user_count = db.query(models.User).count()
+
+    # Si premier utilisateur, le créer en tant qu'admin
+    if user_count == 0:
+        user_data = user.model_dump()
+        user_data["role"] = models.RoleEnum.ADMIN
+        user_admin = schemas.UserCreate(**user_data)
+        return crud.create_user(db, user_admin)
+
+    # Sinon, créer avec le rôle par défaut
     return crud.create_user(db, user)
 
 
