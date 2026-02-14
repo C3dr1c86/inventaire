@@ -21,7 +21,7 @@ email-validator>=2.0.0
 fastapi-cors==0.0.6
 
 # Export et génération de documents
-reportlab==4.0.9
+reportlab==4.4.10
 openpyxl==3.1.2
 
 # Génération de codes-barres et QR codes
