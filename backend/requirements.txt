@@ -30,7 +30,7 @@ qrcode==7.4.2
 Pillow>=11.0.0
 
 # Variables d'environnement
-python-dotenv==1.0.0
+python-dotenv==1.2.1
 
 # Utilitaires
 python-dateutil==2.8.2
