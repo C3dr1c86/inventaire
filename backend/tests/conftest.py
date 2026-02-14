@@ -5,12 +5,8 @@ Configuration et fixtures globales pour les tests pytest
 import os
 import pytest
 
-
-# Hook pytest pour configurer l'environnement AVANT toute importation
-def pytest_configure(config):
-    """Configure l'environnement de test avant l'exécution des tests"""
-    os.environ["TESTING"] = "1"
-
+# CRITIQUE: Définir TESTING=1 AVANT les imports pour que database.py utilise :memory:
+os.environ["TESTING"] = "1"
 
 # Maintenant on peut importer l'application
 from fastapi.testclient import TestClient
