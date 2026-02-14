@@ -8,8 +8,9 @@ WORKDIR /build
 # Copier package.json et package-lock.json pour cache Docker
 COPY package*.json ./
 
-# Installer les dépendances
-RUN npm ci --only=production
+# Installer TOUTES les dépendances (y compris devDependencies pour le build)
+# vite, @vitejs/plugin-react, etc. sont nécessaires pour npm run build
+RUN npm ci
 
 # Copier le code source
 COPY public/ ./public/
