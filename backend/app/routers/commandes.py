@@ -31,10 +31,12 @@ router = APIRouter()
 def liste_commandes(
     skip: int = Query(0, ge=0, description="Nombre d'éléments à sauter"),
     limit: int = Query(100, ge=1, le=500, description="Nombre d'éléments à retourner"),
-    statut: Optional[str] = Query(None, description="Filtre par statut (BROUILLON, ENVOYEE, RECUE, ANNULEE)"),
+    statut: Optional[str] = Query(
+        None, description="Filtre par statut (BROUILLON, ENVOYEE, RECUE, ANNULEE)"
+    ),
     fournisseur_id: Optional[int] = Query(None, description="Filtre par fournisseur"),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Récupère la liste paginée de toutes les commandes avec filtres optionnels.
@@ -54,18 +56,11 @@ def liste_commandes(
         Liste paginée de commandes avec le total
     """
     commandes, total = crud.get_commandes(
-        db,
-        skip=skip,
-        limit=limit,
-        statut=statut,
-        fournisseur_id=fournisseur_id
+        db, skip=skip, limit=limit, statut=statut, fournisseur_id=fournisseur_id
     )
 
     return schemas.PaginatedCommandes(
-        items=commandes,
-        total=total,
-        skip=skip,
-        limit=limit
+        items=commandes, total=total, skip=skip, limit=limit
     )
 
 
@@ -73,7 +68,7 @@ def liste_commandes(
 def lire_commande(
     commande_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Récupère une commande spécifique par son ID.
@@ -92,16 +87,18 @@ def lire_commande(
     if not commande:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Commande {commande_id} non trouvée"
+            detail=f"Commande {commande_id} non trouvée",
         )
     return commande
 
 
-@router.post("/", response_model=schemas.CommandeResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=schemas.CommandeResponse, status_code=status.HTTP_201_CREATED
+)
 def creer_commande(
     commande: schemas.CommandeCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Crée une nouvelle commande avec statut BROUILLON.
@@ -134,7 +131,7 @@ def modifier_commande(
     commande_id: int,
     commande_update: schemas.CommandeUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Met à jour une commande existante.
@@ -162,7 +159,7 @@ def modifier_commande(
 def supprimer_commande(
     commande_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Supprime une commande.
@@ -190,7 +187,7 @@ def supprimer_commande(
 def envoyer_commande(
     commande_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Envoie une commande (BROUILLON → ENVOYEE).
@@ -215,7 +212,7 @@ def envoyer_commande(
 def recevoir_commande(
     commande_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Réceptionne une commande (ENVOYEE → RECUE).
@@ -247,7 +244,7 @@ def recevoir_commande(
 def annuler_commande(
     commande_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Annule une commande (BROUILLON ou ENVOYEE → ANNULEE).
@@ -272,7 +269,7 @@ def annuler_commande(
 def generer_pdf_commande(
     commande_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Génère le PDF du bon de commande.
@@ -294,7 +291,7 @@ def generer_pdf_commande(
     if not commande:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Commande {commande_id} non trouvée"
+            detail=f"Commande {commande_id} non trouvée",
         )
 
     # Générer le PDF
@@ -305,5 +302,5 @@ def generer_pdf_commande(
         media_type="application/pdf",
         headers={
             "Content-Disposition": f"attachment; filename=commande_{commande.numero_commande}.pdf"
-        }
+        },
     )

@@ -16,7 +16,7 @@ app = FastAPI(
     description="API REST pour gérer un inventaire d'articles avec suivi des mouvements de stock",
     version="1.0.0",
     docs_url="/docs",  # Documentation Swagger UI
-    redoc_url="/redoc"  # Documentation ReDoc
+    redoc_url="/redoc",  # Documentation ReDoc
 )
 
 # Configuration CORS pour permettre les requêtes depuis le frontend
@@ -53,7 +53,7 @@ async def root():
         "message": "Bienvenue sur l'API de gestion d'inventaire",
         "version": "1.0.0",
         "documentation": "/docs",
-        "status": "running"
+        "status": "running",
     }
 
 
@@ -67,10 +67,7 @@ async def health_check():
     Returns:
         dict: Status de l'API
     """
-    return {
-        "status": "healthy",
-        "message": "L'API fonctionne correctement"
-    }
+    return {"status": "healthy", "message": "L'API fonctionne correctement"}
 
 
 # Importer les routers
@@ -93,5 +90,5 @@ if __name__ == "__main__":
         "app.main:app",
         host=os.getenv("API_HOST", "0.0.0.0"),
         port=int(os.getenv("API_PORT", 8000)),
-        reload=True  # Auto-reload en développement
+        reload=True,  # Auto-reload en développement
     )

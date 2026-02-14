@@ -118,7 +118,7 @@ function ArticleForm({ article, onSubmit, onCancel, isSubmitting }) {
           // Boîte - Remonter toute la hiérarchie
           // On a besoin de charger parent.parent_id (zone)
           try {
-            const etagereData = await getSousEmplacements(emplacement.parent_id)
+            await getSousEmplacements(emplacement.parent_id)
             // Trouver l'étagère dans la réponse pour obtenir son parent_id
             // Mais on peut aussi utiliser article.emplacement.parent qui devrait être chargé
             if (article.emplacement.parent && article.emplacement.parent.parent_id) {

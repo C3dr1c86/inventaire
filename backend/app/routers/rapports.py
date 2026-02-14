@@ -38,8 +38,7 @@ class QRCodesExportRequest(BaseModel):
 
 @router.get("/statistiques", response_model=schemas.StatistiquesResponse)
 def obtenir_statistiques(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
 ):
     """
     Récupère les statistiques globales de l'inventaire.
@@ -62,8 +61,7 @@ def obtenir_statistiques(
 
 @router.get("/stock-bas", response_model=schemas.RapportStockBas)
 def rapport_stock_bas(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
 ):
     """
     Génère un rapport des articles en stock bas.
@@ -78,16 +76,12 @@ def rapport_stock_bas(
         Liste des articles en stock bas
     """
     articles = crud.get_articles_stock_bas(db)
-    return schemas.RapportStockBas(
-        articles=articles,
-        total=len(articles)
-    )
+    return schemas.RapportStockBas(articles=articles, total=len(articles))
 
 
 @router.get("/valeur-totale", response_model=schemas.RapportValeurTotale)
 def rapport_valeur_totale(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
 ):
     """
     Calcule la valeur totale du stock avec détails par catégorie.
@@ -106,12 +100,11 @@ def rapport_valeur_totale(
 
 @router.get("/export/csv")
 def export_csv(
-    type_export: Literal['articles', 'mouvements', 'stock-bas'] = Query(
-        'articles',
-        description="Type d'export à générer"
+    type_export: Literal["articles", "mouvements", "stock-bas"] = Query(
+        "articles", description="Type d'export à générer"
     ),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Exporte des données au format CSV.
@@ -133,17 +126,17 @@ def export_csv(
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    if type_export == 'articles':
+    if type_export == "articles":
         articles, _ = crud.get_articles(db, skip=0, limit=10000)
         csv_content = export_service.export_articles_csv(articles)
         filename = f"inventaire_articles_{timestamp}.csv"
 
-    elif type_export == 'mouvements':
+    elif type_export == "mouvements":
         mouvements, _ = crud.get_mouvements(db, skip=0, limit=10000)
         csv_content = export_service.export_mouvements_csv(mouvements)
         filename = f"inventaire_mouvements_{timestamp}.csv"
 
-    elif type_export == 'stock-bas':
+    elif type_export == "stock-bas":
         articles = crud.get_articles_stock_bas(db)
         csv_content = export_service.export_stock_bas_csv(articles)
         filename = f"inventaire_stock_bas_{timestamp}.csv"
@@ -151,7 +144,7 @@ def export_csv(
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Type d'export invalide : {type_export}"
+            detail=f"Type d'export invalide : {type_export}",
         )
 
     # Retourner le CSV
@@ -160,19 +153,18 @@ def export_csv(
         media_type="text/csv",
         headers={
             "Content-Disposition": f"attachment; filename={filename}",
-            "Content-Type": "text/csv; charset=utf-8"
-        }
+            "Content-Type": "text/csv; charset=utf-8",
+        },
     )
 
 
 @router.get("/export/pdf")
 def export_pdf(
-    type_export: Literal['inventaire', 'stock-bas'] = Query(
-        'inventaire',
-        description="Type d'export à générer"
+    type_export: Literal["inventaire", "stock-bas"] = Query(
+        "inventaire", description="Type d'export à générer"
     ),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Exporte des données au format PDF.
@@ -193,16 +185,15 @@ def export_pdf(
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    if type_export == 'inventaire':
+    if type_export == "inventaire":
         articles, _ = crud.get_articles(db, skip=0, limit=10000)
         valeur_info = crud.get_valeur_totale_stock(db)
         pdf_content = export_service.export_inventaire_pdf(
-            articles,
-            valeur_info['valeur_totale']
+            articles, valeur_info["valeur_totale"]
         )
         filename = f"rapport_inventaire_{timestamp}.pdf"
 
-    elif type_export == 'stock-bas':
+    elif type_export == "stock-bas":
         articles = crud.get_articles_stock_bas(db)
         pdf_content = export_service.export_stock_bas_pdf(articles)
         filename = f"alerte_stock_bas_{timestamp}.pdf"
@@ -210,7 +201,7 @@ def export_pdf(
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Type d'export invalide : {type_export}"
+            detail=f"Type d'export invalide : {type_export}",
         )
 
     # Retourner le PDF
@@ -219,8 +210,8 @@ def export_pdf(
         media_type="application/pdf",
         headers={
             "Content-Disposition": f"attachment; filename={filename}",
-            "Content-Type": "application/pdf"
-        }
+            "Content-Type": "application/pdf",
+        },
     )
 
 
@@ -228,7 +219,7 @@ def export_pdf(
 def export_barcodes_pdf(
     request: BarcodesExportRequest,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Génère un PDF avec les codes-barres des articles sélectionnés.
@@ -249,8 +240,7 @@ def export_barcodes_pdf(
     """
     if not request.article_ids:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Aucun article sélectionné"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Aucun article sélectionné"
         )
 
     # Récupérer les articles depuis la base de données
@@ -260,7 +250,7 @@ def export_barcodes_pdf(
         if not article:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Article {article_id} non trouvé"
+                detail=f"Article {article_id} non trouvé",
             )
         articles.append(article)
 
@@ -268,14 +258,11 @@ def export_barcodes_pdf(
     try:
         pdf_content = export_service.export_barcodes_pdf(articles)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la génération du PDF : {str(e)}"
+            detail=f"Erreur lors de la génération du PDF : {str(e)}",
         )
 
     # Nom du fichier avec timestamp
@@ -288,8 +275,8 @@ def export_barcodes_pdf(
         media_type="application/pdf",
         headers={
             "Content-Disposition": f"attachment; filename={filename}",
-            "Content-Type": "application/pdf"
-        }
+            "Content-Type": "application/pdf",
+        },
     )
 
 
@@ -297,7 +284,7 @@ def export_barcodes_pdf(
 def export_emplacements_qrcodes_pdf(
     request: QRCodesExportRequest,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Génère un PDF avec les QR codes des emplacements sélectionnés.
@@ -319,7 +306,7 @@ def export_emplacements_qrcodes_pdf(
     if not request.emplacement_ids:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Aucun emplacement sélectionné"
+            detail="Aucun emplacement sélectionné",
         )
 
     # Récupérer les emplacements depuis la base de données
@@ -329,7 +316,7 @@ def export_emplacements_qrcodes_pdf(
         if not emplacement:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Emplacement {emplacement_id} non trouvé"
+                detail=f"Emplacement {emplacement_id} non trouvé",
             )
         emplacements.append(emplacement)
 
@@ -339,7 +326,7 @@ def export_emplacements_qrcodes_pdf(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la génération du PDF : {str(e)}"
+            detail=f"Erreur lors de la génération du PDF : {str(e)}",
         )
 
     # Nom du fichier avec timestamp
@@ -352,8 +339,8 @@ def export_emplacements_qrcodes_pdf(
         media_type="application/pdf",
         headers={
             "Content-Disposition": f"attachment; filename={filename}",
-            "Content-Type": "application/pdf"
-        }
+            "Content-Type": "application/pdf",
+        },
     )
 
 
@@ -361,7 +348,7 @@ def export_emplacements_qrcodes_pdf(
 def export_fournisseurs(
     format: str,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """Exporte tous les fournisseurs en CSV ou PDF"""
     fournisseurs = crud.get_fournisseurs(db)
@@ -371,27 +358,34 @@ def export_fournisseurs(
         return Response(
             content=csv_content,
             media_type="text/csv",
-            headers={"Content-Disposition": f"attachment; filename=fournisseurs_{datetime.now().strftime('%Y%m%d')}.csv"}
+            headers={
+                "Content-Disposition": f"attachment; filename=fournisseurs_{datetime.now().strftime('%Y%m%d')}.csv"
+            },
         )
     elif format == "pdf":
         pdf_content = export_service.export_fournisseurs_pdf(fournisseurs)
         return Response(
             content=pdf_content,
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=fournisseurs_{datetime.now().strftime('%Y%m%d')}.pdf"}
+            headers={
+                "Content-Disposition": f"attachment; filename=fournisseurs_{datetime.now().strftime('%Y%m%d')}.pdf"
+            },
         )
     else:
-        raise HTTPException(status_code=400, detail="Format non supporté (csv ou pdf uniquement)")
+        raise HTTPException(
+            status_code=400, detail="Format non supporté (csv ou pdf uniquement)"
+        )
 
 
 @router.get("/export/tags-{format}")
 def export_tags(
     format: str,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """Exporte tous les tags en CSV ou PDF"""
     from sqlalchemy.orm import joinedload
+
     tags = db.query(models.Tag).options(joinedload(models.Tag.articles)).all()
 
     if format == "csv":
@@ -399,46 +393,62 @@ def export_tags(
         return Response(
             content=csv_content,
             media_type="text/csv",
-            headers={"Content-Disposition": f"attachment; filename=tags_{datetime.now().strftime('%Y%m%d')}.csv"}
+            headers={
+                "Content-Disposition": f"attachment; filename=tags_{datetime.now().strftime('%Y%m%d')}.csv"
+            },
         )
     elif format == "pdf":
         pdf_content = export_service.export_tags_pdf(tags)
         return Response(
             content=pdf_content,
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=tags_{datetime.now().strftime('%Y%m%d')}.pdf"}
+            headers={
+                "Content-Disposition": f"attachment; filename=tags_{datetime.now().strftime('%Y%m%d')}.pdf"
+            },
         )
     else:
-        raise HTTPException(status_code=400, detail="Format non supporté (csv ou pdf uniquement)")
+        raise HTTPException(
+            status_code=400, detail="Format non supporté (csv ou pdf uniquement)"
+        )
 
 
 @router.get("/export/emplacements-{format}")
 def export_emplacements_data(
     format: str,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """Exporte tous les emplacements en CSV ou PDF"""
     from sqlalchemy.orm import joinedload
-    emplacements = db.query(models.Emplacement).options(
-        joinedload(models.Emplacement.parent),
-        joinedload(models.Emplacement.articles)
-    ).all()
+
+    emplacements = (
+        db.query(models.Emplacement)
+        .options(
+            joinedload(models.Emplacement.parent),
+            joinedload(models.Emplacement.articles),
+        )
+        .all()
+    )
 
     if format == "csv":
         csv_content = export_service.export_emplacements_csv(emplacements)
         return Response(
             content=csv_content,
             media_type="text/csv",
-            headers={"Content-Disposition": f"attachment; filename=emplacements_{datetime.now().strftime('%Y%m%d')}.csv"}
+            headers={
+                "Content-Disposition": f"attachment; filename=emplacements_{datetime.now().strftime('%Y%m%d')}.csv"
+            },
         )
     elif format == "pdf":
         pdf_content = export_service.export_emplacements_pdf(emplacements)
         return Response(
             content=pdf_content,
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=emplacements_{datetime.now().strftime('%Y%m%d')}.pdf"}
+            headers={
+                "Content-Disposition": f"attachment; filename=emplacements_{datetime.now().strftime('%Y%m%d')}.pdf"
+            },
         )
     else:
-        raise HTTPException(status_code=400, detail="Format non supporté (csv ou pdf uniquement)")
-
+        raise HTTPException(
+            status_code=400, detail="Format non supporté (csv ou pdf uniquement)"
+        )

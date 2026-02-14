@@ -61,7 +61,7 @@ const QRScanner = ({ onScan, onError, onClose }) => {
           stopScanning()
           onScan(decodedText)
         },
-        (errorMessage) => {
+        () => {
           // Erreur de scan (normale pendant le scan)
           // On ne fait rien ici pour éviter de polluer la console
         }

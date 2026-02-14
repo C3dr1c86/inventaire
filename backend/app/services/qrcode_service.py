@@ -40,7 +40,7 @@ def generate_qrcode(data: str) -> BytesIO:
 
     # Sauvegarder dans un buffer en mémoire
     buffer = BytesIO()
-    img.save(buffer, format='PNG')
+    img.save(buffer, format="PNG")
     buffer.seek(0)  # Revenir au début du buffer
 
     return buffer

@@ -26,9 +26,11 @@ def liste_mouvements(
     skip: int = Query(0, ge=0, description="Nombre d'éléments à sauter"),
     limit: int = Query(100, ge=1, le=500, description="Nombre d'éléments à retourner"),
     article_id: Optional[int] = Query(None, description="Filtre par article"),
-    type_mouvement: Optional[str] = Query(None, pattern="^(ENTREE|SORTIE)$", description="Filtre par type"),
+    type_mouvement: Optional[str] = Query(
+        None, pattern="^(ENTREE|SORTIE)$", description="Filtre par type"
+    ),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Récupère la liste de tous les mouvements avec pagination et filtres.
@@ -50,18 +52,11 @@ def liste_mouvements(
         Liste paginée de mouvements avec le total
     """
     mouvements, total = crud.get_mouvements(
-        db,
-        skip=skip,
-        limit=limit,
-        article_id=article_id,
-        type_mouvement=type_mouvement
+        db, skip=skip, limit=limit, article_id=article_id, type_mouvement=type_mouvement
     )
 
     return schemas.PaginatedMouvements(
-        items=mouvements,
-        total=total,
-        skip=skip,
-        limit=limit
+        items=mouvements, total=total, skip=skip, limit=limit
     )
 
 
@@ -71,7 +66,7 @@ def historique_article(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Récupère l'historique complet des mouvements d'un article spécifique.
@@ -93,21 +88,15 @@ def historique_article(
     if not article:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Article {article_id} non trouvé"
+            detail=f"Article {article_id} non trouvé",
         )
 
     mouvements, total = crud.get_mouvements(
-        db,
-        skip=skip,
-        limit=limit,
-        article_id=article_id
+        db, skip=skip, limit=limit, article_id=article_id
     )
 
     return schemas.PaginatedMouvements(
-        items=mouvements,
-        total=total,
-        skip=skip,
-        limit=limit
+        items=mouvements, total=total, skip=skip, limit=limit
     )
 
 
@@ -115,7 +104,7 @@ def historique_article(
 def lire_mouvement(
     mouvement_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Récupère un mouvement spécifique par son ID.
@@ -134,16 +123,21 @@ def lire_mouvement(
     if not mouvement:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Mouvement {mouvement_id} non trouvé"
+            detail=f"Mouvement {mouvement_id} non trouvé",
         )
     return mouvement
 
 
-@router.post("/", response_model=schemas.MouvementWithArticle, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_permission("mouvements", "create"))])
+@router.post(
+    "/",
+    response_model=schemas.MouvementWithArticle,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission("mouvements", "create"))],
+)
 def creer_mouvement(
     mouvement: schemas.MouvementCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Crée un nouveau mouvement de stock (entrée ou sortie).

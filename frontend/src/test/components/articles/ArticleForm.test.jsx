@@ -21,19 +21,19 @@ vi.mock('../../../services/emplacementService', () => ({
 
 // Mock des composants complexes
 vi.mock('../../../components/tags/TagInput', () => ({
-  default: ({ value, onChange }) => (
+  default: () => (
     <div data-testid="tag-input">TagInput Mock</div>
   )
 }))
 
 vi.mock('../../../components/fournisseurs/FournisseurInput', () => ({
-  default: ({ value, onChange }) => (
+  default: () => (
     <div data-testid="fournisseur-input">FournisseurInput Mock</div>
   )
 }))
 
 vi.mock('../../../components/articles/PhotoUpload', () => ({
-  default: ({ articleId }) => (
+  default: () => (
     <div data-testid="photo-upload">PhotoUpload Mock</div>
   )
 }))

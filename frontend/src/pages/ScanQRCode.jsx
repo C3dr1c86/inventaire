@@ -15,7 +15,6 @@ import { toast } from 'react-toastify'
 
 function ScanQRCode() {
   const navigate = useNavigate()
-  const [scannedData, setScannedData] = useState(null)
   const [scanType, setScanType] = useState(null) // 'emplacement' ou 'article'
   const [emplacementId, setEmplacementId] = useState(null)
   const [articleSku, setArticleSku] = useState(null)
@@ -71,7 +70,7 @@ function ScanQRCode() {
           return
         }
 
-        setScannedData(cleanText)
+        // setScannedData(cleanText) - Variable removed as it was not used
         setScanType('emplacement')
         setEmplacementId(id)
         setArticleSku(null)
@@ -80,7 +79,7 @@ function ScanQRCode() {
       }
       // Sinon, considérer que c'est un code-barres d'article (SKU)
       else {
-        setScannedData(cleanText)
+        // setScannedData(cleanText) - Variable removed as it was not used
         setScanType('article')
         setArticleSku(cleanText)
         setEmplacementId(null)
@@ -101,7 +100,7 @@ function ScanQRCode() {
 
   // Réinitialiser et rescanner
   const handleRescan = () => {
-    setScannedData(null)
+    // setScannedData(null) - Variable removed as it was not used
     setScanType(null)
     setEmplacementId(null)
     setArticleSku(null)
@@ -258,16 +257,16 @@ function ScanQRCode() {
               </h3>
               <ul style={{ paddingLeft: '1.5rem', color: '#666' }}>
                 <li style={{ marginBottom: '0.5rem' }}>
-                  Autorisez l'accès à la caméra lorsque demandé
+                  Autorisez l&apos;accès à la caméra lorsque demandé
                 </li>
                 <li style={{ marginBottom: '0.5rem' }}>
-                  Positionnez le QR code d'un emplacement devant la caméra
+                  Positionnez le QR code d&apos;un emplacement devant la caméra
                 </li>
                 <li style={{ marginBottom: '0.5rem' }}>
                   Attendez que le scan se fasse automatiquement
                 </li>
                 <li>
-                  La liste des articles de l'emplacement s'affichera
+                  La liste des articles de l&apos;emplacement s&apos;affichera
                 </li>
               </ul>
             </div>
@@ -462,7 +461,7 @@ function ScanQRCode() {
                 <AlertCircle size={48} style={{ color: '#dc3545', marginBottom: '1rem' }} />
                 <h3 style={{ color: '#dc3545', marginBottom: '1rem' }}>Emplacement introuvable</h3>
                 <p style={{ color: '#666', marginBottom: '2rem' }}>
-                  L'emplacement scanné n'existe pas ou a été supprimé.
+                  L&apos;emplacement scanné n&apos;existe pas ou a été supprimé.
                 </p>
                 <button
                   className="btn btn-primary"

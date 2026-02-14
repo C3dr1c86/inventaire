@@ -14,7 +14,6 @@ from ..database import get_db
 from ..auth import get_current_user
 from ..services import qrcode_service
 
-
 router = APIRouter()
 
 
@@ -23,7 +22,7 @@ def liste_emplacements(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Récupère la liste de tous les emplacements (structure plate).
@@ -42,8 +41,7 @@ def liste_emplacements(
 
 @router.get("/racines", response_model=List[schemas.EmplacementResponse])
 def liste_emplacements_racines(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
 ):
     """
     Récupère uniquement les Zones (emplacements racines, parent_id = NULL).
@@ -60,8 +58,7 @@ def liste_emplacements_racines(
 
 @router.get("/tree", response_model=List[schemas.EmplacementResponse])
 def arbre_emplacements(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
 ):
     """
     Récupère l'arbre hiérarchique complet (3 niveaux : Zone → Étagère → Boîte).
@@ -83,7 +80,7 @@ def arbre_emplacements(
 def recuperer_emplacement(
     emplacement_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Récupère un emplacement par son ID.
@@ -103,16 +100,18 @@ def recuperer_emplacement(
     if not emplacement:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Emplacement {emplacement_id} non trouvé"
+            detail=f"Emplacement {emplacement_id} non trouvé",
         )
     return emplacement
 
 
-@router.get("/{emplacement_id}/children", response_model=List[schemas.EmplacementResponse])
+@router.get(
+    "/{emplacement_id}/children", response_model=List[schemas.EmplacementResponse]
+)
 def recuperer_sous_emplacements(
     emplacement_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Récupère les sous-emplacements directs d'un parent.
@@ -134,7 +133,7 @@ def recuperer_articles_emplacement(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Récupère tous les articles stockés dans un emplacement.
@@ -160,7 +159,7 @@ def suggestions_par_categorie(
     categorie_id: int,
     limit: int = 5,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Suggère des emplacements pour un nouvel article basé sur sa catégorie.
@@ -187,7 +186,7 @@ def suggestions_par_categorie(
 def generer_qrcode(
     emplacement_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Génère un QR code pour l'emplacement (téléchargement PNG).
@@ -209,7 +208,7 @@ def generer_qrcode(
     if not emplacement:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Emplacement {emplacement_id} non trouvé"
+            detail=f"Emplacement {emplacement_id} non trouvé",
         )
 
     # Générer QR code avec format : "emplacement:id:code"
@@ -222,15 +221,17 @@ def generer_qrcode(
         media_type="image/png",
         headers={
             "Content-Disposition": f"attachment; filename=qrcode_{emplacement.code}.png"
-        }
+        },
     )
 
 
-@router.post("/", response_model=schemas.EmplacementResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=schemas.EmplacementResponse, status_code=status.HTTP_201_CREATED
+)
 def creer_emplacement(
     emplacement: schemas.EmplacementCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Crée un nouvel emplacement.
@@ -260,7 +261,7 @@ def modifier_emplacement(
     emplacement_id: int,
     emplacement: schemas.EmplacementUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Met à jour un emplacement existant.
@@ -289,7 +290,7 @@ def modifier_emplacement(
 def supprimer_emplacement(
     emplacement_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Supprime un emplacement.

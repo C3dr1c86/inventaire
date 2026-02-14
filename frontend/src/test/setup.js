@@ -1,4 +1,4 @@
-import { expect, afterEach, vi } from 'vitest'
+import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 
@@ -26,7 +26,7 @@ Object.defineProperty(window, 'matchMedia', {
 window.scrollTo = vi.fn()
 
 // Mock de IntersectionObserver (pour composants avec lazy loading)
-global.IntersectionObserver = class IntersectionObserver {
+globalThis.IntersectionObserver = class IntersectionObserver {
   constructor() {}
   disconnect() {}
   observe() {}
@@ -37,4 +37,4 @@ global.IntersectionObserver = class IntersectionObserver {
 }
 
 // Variables d'environnement de test
-process.env.VITE_API_URL = 'http://localhost:8000/api'
+import.meta.env.VITE_API_URL = 'http://localhost:8000/api'

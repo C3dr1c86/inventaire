@@ -27,7 +27,7 @@ def liste_categories(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Récupère la liste de toutes les catégories.
@@ -46,8 +46,7 @@ def liste_categories(
 
 @router.get("/racines", response_model=List[schemas.CategorieResponse])
 def liste_categories_racines(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
 ):
     """
     Récupère uniquement les catégories racines (niveau 0).
@@ -63,8 +62,7 @@ def liste_categories_racines(
 
 @router.get("/tree", response_model=List[schemas.CategorieResponse])
 def arbre_categories(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
 ):
     """
     Récupère l'arbre complet des catégories avec sous-catégories.
@@ -97,7 +95,7 @@ def arbre_categories(
 def lire_categorie(
     categorie_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Récupère une catégorie spécifique par son ID.
@@ -116,16 +114,21 @@ def lire_categorie(
     if not categorie:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Catégorie {categorie_id} non trouvée"
+            detail=f"Catégorie {categorie_id} non trouvée",
         )
     return categorie
 
 
-@router.post("/", response_model=schemas.CategorieResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_permission("categories", "create"))])
+@router.post(
+    "/",
+    response_model=schemas.CategorieResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission("categories", "create"))],
+)
 def creer_categorie(
     categorie: schemas.CategorieCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Crée une nouvelle catégorie.
@@ -143,12 +146,16 @@ def creer_categorie(
     return crud.create_categorie(db, categorie, current_user)
 
 
-@router.put("/{categorie_id}", response_model=schemas.CategorieResponse, dependencies=[Depends(require_permission("categories", "update"))])
+@router.put(
+    "/{categorie_id}",
+    response_model=schemas.CategorieResponse,
+    dependencies=[Depends(require_permission("categories", "update"))],
+)
 def modifier_categorie(
     categorie_id: int,
     categorie_update: schemas.CategorieUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Met à jour une catégorie existante.
@@ -168,11 +175,15 @@ def modifier_categorie(
     return crud.update_categorie(db, categorie_id, categorie_update, current_user)
 
 
-@router.delete("/{categorie_id}", response_model=schemas.MessageResponse, dependencies=[Depends(require_permission("categories", "delete"))])
+@router.delete(
+    "/{categorie_id}",
+    response_model=schemas.MessageResponse,
+    dependencies=[Depends(require_permission("categories", "delete"))],
+)
 def supprimer_categorie(
     categorie_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Supprime une catégorie.
@@ -201,7 +212,7 @@ def supprimer_categorie(
 def sous_categories(
     categorie_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Récupère les sous-catégories d'une catégorie donnée.
@@ -221,8 +232,7 @@ def sous_categories(
     categorie = crud.get_categorie(db, categorie_id)
     if not categorie:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Catégorie introuvable"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Catégorie introuvable"
         )
 
     children = crud.get_children(db, categorie_id)

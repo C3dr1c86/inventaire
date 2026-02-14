@@ -278,7 +278,7 @@ function Users() {
         >
           <form onSubmit={handleCreateUser}>
             <div className="form-group">
-              <label>Nom d'utilisateur *</label>
+              <label>Nom d&apos;utilisateur *</label>
               <input
                 type="text"
                 className="form-control"

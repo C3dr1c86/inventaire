@@ -18,7 +18,9 @@ const createWrapperWithUser = (user) => {
   authService.getStoredToken.mockReturnValue(user ? 'fake-token' : null)
   authService.getCurrentUser.mockResolvedValue(user)
 
-  return ({ children }) => <AuthProvider>{children}</AuthProvider>
+  const Wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>
+  Wrapper.displayName = 'TestAuthProviderWrapper'
+  return Wrapper
 }
 
 describe('usePermissions', () => {

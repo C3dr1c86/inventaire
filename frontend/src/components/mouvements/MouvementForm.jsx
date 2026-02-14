@@ -24,7 +24,7 @@ function MouvementForm({ onSubmit, onCancel, isSubmitting }) {
   const dropdownRef = useRef(null)
 
   // Charger les articles avec recherche
-  const { data: articlesData, isLoading: articlesLoading, refetch } = useQuery({
+  const { data: articlesData, isLoading: articlesLoading } = useQuery({
     queryKey: ['articles-search', searchQuery],
     queryFn: () => getArticles({ search: searchQuery, limit: 20 }),
     enabled: showDropdown || searchQuery.length > 0

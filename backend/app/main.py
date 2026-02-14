@@ -12,6 +12,7 @@ import os
 
 # Charger les variables d'environnement depuis le fichier .env
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # Créer l'instance FastAPI
@@ -20,7 +21,7 @@ app = FastAPI(
     description="API REST pour gérer un inventaire d'articles avec suivi des mouvements de stock",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
     # Note : redirect_slashes=False est nécessaire seulement pour Docker avec Nginx reverse proxy
     # En développement local, on laisse le comportement par défaut (True) pour que /api/categories redirige vers /api/categories/
 )
@@ -29,7 +30,9 @@ app = FastAPI(
 # En production avec Nginx reverse proxy, CORS n'est pas nécessaire
 from fastapi.middleware.cors import CORSMiddleware
 
-origins = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+origins = os.getenv(
+    "CORS_ORIGINS", "http://localhost:5173,http://localhost:3000"
+).split(",")
 
 app.add_middleware(
     CORSMiddleware,
@@ -65,7 +68,7 @@ async def root():
         "message": "Bienvenue sur l'API de gestion d'inventaire",
         "version": "1.0.0",
         "documentation": "/docs",
-        "status": "running"
+        "status": "running",
     }
 
 
@@ -79,14 +82,23 @@ async def health_check():
     Returns:
         dict: Status de l'API
     """
-    return {
-        "status": "healthy",
-        "message": "L'API fonctionne correctement"
-    }
+    return {"status": "healthy", "message": "L'API fonctionne correctement"}
 
 
 # Importer les routers
-from app.routers import categories, articles, mouvements, rapports, tags, fournisseurs, auth, photos, emplacements, commandes, users
+from app.routers import (
+    categories,
+    articles,
+    mouvements,
+    rapports,
+    tags,
+    fournisseurs,
+    auth,
+    photos,
+    emplacements,
+    commandes,
+    users,
+)
 
 # Inclure les routers dans l'application
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
@@ -96,8 +108,12 @@ app.include_router(articles.router, prefix="/api/articles", tags=["Articles"])
 app.include_router(mouvements.router, prefix="/api/mouvements", tags=["Mouvements"])
 app.include_router(rapports.router, prefix="/api/rapports", tags=["Rapports"])
 app.include_router(tags.router, prefix="/api/tags", tags=["Tags"])
-app.include_router(fournisseurs.router, prefix="/api/fournisseurs", tags=["Fournisseurs"])
-app.include_router(emplacements.router, prefix="/api/emplacements", tags=["Emplacements"])
+app.include_router(
+    fournisseurs.router, prefix="/api/fournisseurs", tags=["Fournisseurs"]
+)
+app.include_router(
+    emplacements.router, prefix="/api/emplacements", tags=["Emplacements"]
+)
 app.include_router(photos.router, prefix="/api/articles", tags=["Photos"])
 app.include_router(commandes.router, prefix="/api/commandes", tags=["Commandes"])
 
@@ -116,5 +132,5 @@ if __name__ == "__main__":
         "app.main:app",
         host=os.getenv("API_HOST", "0.0.0.0"),
         port=int(os.getenv("API_PORT", 8000)),
-        reload=True  # Auto-reload en développement
+        reload=True,  # Auto-reload en développement
     )

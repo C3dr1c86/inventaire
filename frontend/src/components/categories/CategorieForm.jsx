@@ -8,8 +8,6 @@ import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getCategoriesRacines } from '../../services/categorieService'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
-
 function CategorieForm({ categorie, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState({
     nom: '',

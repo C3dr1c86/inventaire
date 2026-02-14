@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 # CRUD CATÉGORIES
 # ============================================================================
 
+
 def get_categorie(db: Session, categorie_id: int) -> Optional[models.Categorie]:
     """
     Récupère une catégorie par son ID.
@@ -31,7 +32,9 @@ def get_categorie(db: Session, categorie_id: int) -> Optional[models.Categorie]:
     Returns:
         Catégorie trouvée ou None
     """
-    return db.query(models.Categorie).filter(models.Categorie.id == categorie_id).first()
+    return (
+        db.query(models.Categorie).filter(models.Categorie.id == categorie_id).first()
+    )
 
 
 def get_categorie_by_nom(db: Session, nom: str) -> Optional[models.Categorie]:
@@ -48,7 +51,9 @@ def get_categorie_by_nom(db: Session, nom: str) -> Optional[models.Categorie]:
     return db.query(models.Categorie).filter(models.Categorie.nom == nom).first()
 
 
-def get_categories(db: Session, skip: int = 0, limit: int = 100) -> List[models.Categorie]:
+def get_categories(
+    db: Session, skip: int = 0, limit: int = 100
+) -> List[models.Categorie]:
     """
     Récupère la liste de toutes les catégories avec pagination.
 
@@ -63,7 +68,9 @@ def get_categories(db: Session, skip: int = 0, limit: int = 100) -> List[models.
     return db.query(models.Categorie).offset(skip).limit(limit).all()
 
 
-def create_categorie(db: Session, categorie: schemas.CategorieCreate, current_user: models.User) -> models.Categorie:
+def create_categorie(
+    db: Session, categorie: schemas.CategorieCreate, current_user: models.User
+) -> models.Categorie:
     """
     Crée une nouvelle catégorie.
 
@@ -87,20 +94,28 @@ def create_categorie(db: Session, categorie: schemas.CategorieCreate, current_us
     validate_hierarchy(db, None, categorie.parent_id)
 
     # Vérifier unicité du nom pour le même parent
-    existing = db.query(models.Categorie)\
-        .filter(models.Categorie.nom == categorie.nom)\
-        .filter(models.Categorie.parent_id == categorie.parent_id)\
+    existing = (
+        db.query(models.Categorie)
+        .filter(models.Categorie.nom == categorie.nom)
+        .filter(models.Categorie.parent_id == categorie.parent_id)
         .first()
+    )
 
     if existing:
-        parent_name = "racine" if categorie.parent_id is None else f"parent ID {categorie.parent_id}"
+        parent_name = (
+            "racine"
+            if categorie.parent_id is None
+            else f"parent ID {categorie.parent_id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Une catégorie '{categorie.nom}' existe déjà pour {parent_name}"
+            detail=f"Une catégorie '{categorie.nom}' existe déjà pour {parent_name}",
         )
 
     # Créer la catégorie avec audit trail
-    db_categorie = models.Categorie(**categorie.model_dump(), created_by=current_user.id)
+    db_categorie = models.Categorie(
+        **categorie.model_dump(), created_by=current_user.id
+    )
     db.add(db_categorie)
     db.commit()
     db.refresh(db_categorie)
@@ -111,7 +126,7 @@ def update_categorie(
     db: Session,
     categorie_id: int,
     categorie_update: schemas.CategorieUpdate,
-    current_user: models.User
+    current_user: models.User,
 ) -> models.Categorie:
     """
     Met à jour une catégorie existante.
@@ -132,13 +147,16 @@ def update_categorie(
     if not db_categorie:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Catégorie {categorie_id} non trouvée"
+            detail=f"Catégorie {categorie_id} non trouvée",
         )
 
     # Si le parent_id est modifié, valider la hiérarchie
     update_data = categorie_update.model_dump(exclude_unset=True)
-    if 'parent_id' in update_data and update_data['parent_id'] != db_categorie.parent_id:
-        validate_hierarchy(db, categorie_id, update_data['parent_id'])
+    if (
+        "parent_id" in update_data
+        and update_data["parent_id"] != db_categorie.parent_id
+    ):
+        validate_hierarchy(db, categorie_id, update_data["parent_id"])
 
     # Mettre à jour les champs modifiés
     for field, value in update_data.items():
@@ -174,7 +192,7 @@ def delete_categorie(db: Session, categorie_id: int) -> bool:
     if not db_categorie:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Catégorie {categorie_id} non trouvée"
+            detail=f"Catégorie {categorie_id} non trouvée",
         )
 
     # VALIDATION : Bloquer suppression si enfants
@@ -182,7 +200,7 @@ def delete_categorie(db: Session, categorie_id: int) -> bool:
         children_count = len(db_categorie.children)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Impossible de supprimer '{db_categorie.nom}' car elle contient {children_count} sous-catégorie(s). Supprimez d'abord les sous-catégories."
+            detail=f"Impossible de supprimer '{db_categorie.nom}' car elle contient {children_count} sous-catégorie(s). Supprimez d'abord les sous-catégories.",
         )
 
     # Supprimer la catégorie (articles mis à NULL grâce à ondelete="SET NULL")
@@ -194,6 +212,7 @@ def delete_categorie(db: Session, categorie_id: int) -> bool:
 # ============================================================================
 # CRUD CATÉGORIES - Fonctions hiérarchiques
 # ============================================================================
+
 
 def get_categories_racines(db: Session) -> List[models.Categorie]:
     """
@@ -217,10 +236,12 @@ def get_categories_tree(db: Session) -> List[models.Categorie]:
     """
     from sqlalchemy.orm import joinedload
 
-    categories_racines = db.query(models.Categorie)\
-        .filter(models.Categorie.parent_id == None)\
-        .options(joinedload(models.Categorie.children))\
+    categories_racines = (
+        db.query(models.Categorie)
+        .filter(models.Categorie.parent_id == None)
+        .options(joinedload(models.Categorie.children))
         .all()
+    )
 
     return categories_racines
 
@@ -236,7 +257,9 @@ def get_children(db: Session, parent_id: int) -> List[models.Categorie]:
     Returns:
         Liste des sous-catégories (niveau 1) de cette catégorie
     """
-    return db.query(models.Categorie).filter(models.Categorie.parent_id == parent_id).all()
+    return (
+        db.query(models.Categorie).filter(models.Categorie.parent_id == parent_id).all()
+    )
 
 
 def has_children(db: Session, categorie_id: int) -> bool:
@@ -250,11 +273,17 @@ def has_children(db: Session, categorie_id: int) -> bool:
     Returns:
         True si la catégorie a au moins une sous-catégorie
     """
-    count = db.query(models.Categorie).filter(models.Categorie.parent_id == categorie_id).count()
+    count = (
+        db.query(models.Categorie)
+        .filter(models.Categorie.parent_id == categorie_id)
+        .count()
+    )
     return count > 0
 
 
-def validate_hierarchy(db: Session, categorie_id: Optional[int], parent_id: Optional[int]) -> None:
+def validate_hierarchy(
+    db: Session, categorie_id: Optional[int], parent_id: Optional[int]
+) -> None:
     """
     Valide les contraintes hiérarchiques avant création/modification.
 
@@ -279,7 +308,7 @@ def validate_hierarchy(db: Session, categorie_id: Optional[int], parent_id: Opti
     if not parent:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Catégorie parente avec ID {parent_id} introuvable"
+            detail=f"Catégorie parente avec ID {parent_id} introuvable",
         )
 
     # VALIDATION 1 : Limiter à 2 niveaux
@@ -287,7 +316,7 @@ def validate_hierarchy(db: Session, categorie_id: Optional[int], parent_id: Opti
     if parent.parent_id is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Impossible de créer une sous-catégorie de '{parent.nom}' car elle est déjà une sous-catégorie. Maximum 2 niveaux autorisés."
+            detail=f"Impossible de créer une sous-catégorie de '{parent.nom}' car elle est déjà une sous-catégorie. Maximum 2 niveaux autorisés.",
         )
 
     # VALIDATION 2 : Empêcher boucles circulaires (si modification)
@@ -295,13 +324,14 @@ def validate_hierarchy(db: Session, categorie_id: Optional[int], parent_id: Opti
     if categorie_id is not None and parent_id == categorie_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Une catégorie ne peut pas être son propre parent"
+            detail="Une catégorie ne peut pas être son propre parent",
         )
 
 
 # ============================================================================
 # CRUD ARTICLES
 # ============================================================================
+
 
 def get_article(db: Session, article_id: int) -> Optional[models.Article]:
     """
@@ -314,14 +344,16 @@ def get_article(db: Session, article_id: int) -> Optional[models.Article]:
     Returns:
         Article trouvé ou None
     """
-    return db.query(models.Article)\
-        .options(joinedload(models.Article.categorie))\
-        .options(joinedload(models.Article.emplacement))\
-        .options(joinedload(models.Article.tags))\
-        .options(joinedload(models.Article.photos))\
-        .options(joinedload(models.Article.fournisseurs))\
-        .filter(models.Article.id == article_id)\
+    return (
+        db.query(models.Article)
+        .options(joinedload(models.Article.categorie))
+        .options(joinedload(models.Article.emplacement))
+        .options(joinedload(models.Article.tags))
+        .options(joinedload(models.Article.photos))
+        .options(joinedload(models.Article.fournisseurs))
+        .filter(models.Article.id == article_id)
         .first()
+    )
 
 
 def get_article_by_sku(db: Session, sku: str) -> Optional[models.Article]:
@@ -349,7 +381,7 @@ def get_articles(
     emplacement_id: Optional[Union[int, str]] = None,
     stock_bas: bool = False,
     sort_by: Optional[str] = None,
-    order: str = "asc"
+    order: str = "asc",
 ) -> tuple[List[models.Article], int]:
     """
     Récupère la liste des articles avec filtres, tri et pagination.
@@ -370,12 +402,14 @@ def get_articles(
     Returns:
         Tuple (liste des articles, nombre total)
     """
-    query = db.query(models.Article)\
-        .options(joinedload(models.Article.categorie))\
-        .options(joinedload(models.Article.emplacement))\
-        .options(joinedload(models.Article.tags))\
-        .options(joinedload(models.Article.photos))\
+    query = (
+        db.query(models.Article)
+        .options(joinedload(models.Article.categorie))
+        .options(joinedload(models.Article.emplacement))
+        .options(joinedload(models.Article.tags))
+        .options(joinedload(models.Article.photos))
         .options(joinedload(models.Article.fournisseurs))
+    )
 
     # Filtre de recherche
     if search:
@@ -384,19 +418,25 @@ def get_articles(
             or_(
                 models.Article.nom.ilike(search_pattern),
                 models.Article.description.ilike(search_pattern),
-                models.Article.sku.ilike(search_pattern)
+                models.Article.sku.ilike(search_pattern),
             )
         )
 
     # Filtre par catégorie (inclut les sous-catégories si la catégorie est parente)
     if categorie_id:
         # Récupérer la catégorie sélectionnée
-        categorie = db.query(models.Categorie).filter(models.Categorie.id == categorie_id).first()
+        categorie = (
+            db.query(models.Categorie)
+            .filter(models.Categorie.id == categorie_id)
+            .first()
+        )
         if categorie:
             # Si la catégorie a des sous-catégories, inclure leur ID dans le filtre
             if categorie.children:
                 # Créer une liste avec l'ID de la catégorie parente + tous les IDs des enfants
-                categorie_ids = [categorie_id] + [child.id for child in categorie.children]
+                categorie_ids = [categorie_id] + [
+                    child.id for child in categorie.children
+                ]
                 query = query.filter(models.Article.categorie_id.in_(categorie_ids))
             else:
                 # Pas de sous-catégories, filtre simple
@@ -411,11 +451,13 @@ def get_articles(
 
     # Filtre par fournisseur
     if fournisseur_id:
-        query = query.join(models.Article.fournisseurs).filter(models.Fournisseur.id == fournisseur_id)
+        query = query.join(models.Article.fournisseurs).filter(
+            models.Fournisseur.id == fournisseur_id
+        )
 
     # Filtre par emplacement
     if emplacement_id:
-        if emplacement_id == 'null':
+        if emplacement_id == "null":
             # Filtre articles sans emplacement
             query = query.filter(models.Article.emplacement_id.is_(None))
         else:
@@ -429,23 +471,27 @@ def get_articles(
     if sort_by:
         # Mapping des colonnes autorisées pour le tri
         sort_columns = {
-            'id': models.Article.id,
-            'nom': models.Article.nom,
-            'sku': models.Article.sku,
-            'quantite': models.Article.quantite,
-            'prix_unitaire': models.Article.prix_unitaire,
-            'valeur': models.Article.quantite * models.Article.prix_unitaire,
-            'categorie': models.Categorie.nom
+            "id": models.Article.id,
+            "nom": models.Article.nom,
+            "sku": models.Article.sku,
+            "quantite": models.Article.quantite,
+            "prix_unitaire": models.Article.prix_unitaire,
+            "valeur": models.Article.quantite * models.Article.prix_unitaire,
+            "categorie": models.Categorie.nom,
         }
 
         if sort_by in sort_columns:
             # Joindre la table catégorie si on trie par catégorie
-            if sort_by == 'categorie':
-                query = query.join(models.Categorie, models.Article.categorie_id == models.Categorie.id, isouter=True)
+            if sort_by == "categorie":
+                query = query.join(
+                    models.Categorie,
+                    models.Article.categorie_id == models.Categorie.id,
+                    isouter=True,
+                )
 
             # Appliquer l'ordre de tri
             sort_column = sort_columns[sort_by]
-            if order.lower() == 'desc':
+            if order.lower() == "desc":
                 query = query.order_by(sort_column.desc())
             else:
                 query = query.order_by(sort_column.asc())
@@ -459,7 +505,9 @@ def get_articles(
     return articles, total
 
 
-def create_article(db: Session, article: schemas.ArticleCreate, current_user: models.User) -> models.Article:
+def create_article(
+    db: Session, article: schemas.ArticleCreate, current_user: models.User
+) -> models.Article:
     """
     Crée un nouvel article.
 
@@ -478,14 +526,14 @@ def create_article(db: Session, article: schemas.ArticleCreate, current_user: mo
     if article.sku and get_article_by_sku(db, article.sku):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Un article avec le SKU '{article.sku}' existe déjà"
+            detail=f"Un article avec le SKU '{article.sku}' existe déjà",
         )
 
     # Vérifier que la catégorie existe (si fournie)
     if article.categorie_id and not get_categorie(db, article.categorie_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Catégorie {article.categorie_id} non trouvée"
+            detail=f"Catégorie {article.categorie_id} non trouvée",
         )
 
     # Valider la capacité de l'emplacement (si fourni)
@@ -494,8 +542,8 @@ def create_article(db: Session, article: schemas.ArticleCreate, current_user: mo
 
     # Extraire les tag_ids et fournisseur_ids avant de créer l'article
     article_data = article.model_dump()
-    tag_ids = article_data.pop('tag_ids', [])
-    fournisseur_ids = article_data.pop('fournisseur_ids', [])
+    tag_ids = article_data.pop("tag_ids", [])
+    fournisseur_ids = article_data.pop("fournisseur_ids", [])
 
     # Créer l'article avec audit trail
     db_article = models.Article(**article_data, created_by=current_user.id)
@@ -524,7 +572,7 @@ def update_article(
     db: Session,
     article_id: int,
     article_update: schemas.ArticleUpdate,
-    current_user: models.User
+    current_user: models.User,
 ) -> models.Article:
     """
     Met à jour un article existant.
@@ -545,7 +593,7 @@ def update_article(
     if not db_article:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Article {article_id} non trouvé"
+            detail=f"Article {article_id} non trouvé",
         )
 
     # Vérifier que le nouveau SKU n'est pas déjà pris
@@ -554,21 +602,31 @@ def update_article(
         if existing and existing.id != article_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Un article avec le SKU '{article_update.sku}' existe déjà"
+                detail=f"Un article avec le SKU '{article_update.sku}' existe déjà",
             )
 
     # Vérifier que la catégorie existe (si modifiée)
-    if article_update.categorie_id and not get_categorie(db, article_update.categorie_id):
+    if article_update.categorie_id and not get_categorie(
+        db, article_update.categorie_id
+    ):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Catégorie {article_update.categorie_id} non trouvée"
+            detail=f"Catégorie {article_update.categorie_id} non trouvée",
         )
 
     # Valider la capacité de l'emplacement (si modifié)
     if article_update.emplacement_id is not None:
         # Calculer delta de quantité si l'emplacement change
-        ancienne_quantite = db_article.quantite if db_article.emplacement_id == article_update.emplacement_id else 0
-        nouvelle_quantite = article_update.quantite if article_update.quantite is not None else db_article.quantite
+        ancienne_quantite = (
+            db_article.quantite
+            if db_article.emplacement_id == article_update.emplacement_id
+            else 0
+        )
+        nouvelle_quantite = (
+            article_update.quantite
+            if article_update.quantite is not None
+            else db_article.quantite
+        )
         delta_quantite = nouvelle_quantite - ancienne_quantite
         validate_emplacement_capacite(db, article_update.emplacement_id, delta_quantite)
 
@@ -576,8 +634,8 @@ def update_article(
     update_data = article_update.model_dump(exclude_unset=True)
 
     # Extraire les tag_ids et fournisseur_ids s'ils sont présents
-    tag_ids = update_data.pop('tag_ids', None)
-    fournisseur_ids = update_data.pop('fournisseur_ids', None)
+    tag_ids = update_data.pop("tag_ids", None)
+    fournisseur_ids = update_data.pop("fournisseur_ids", None)
 
     # Mettre à jour les champs simples
     for field, value in update_data.items():
@@ -627,7 +685,7 @@ def delete_article(db: Session, article_id: int) -> bool:
     if not db_article:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Article {article_id} non trouvé"
+            detail=f"Article {article_id} non trouvé",
         )
 
     db.delete(db_article)
@@ -638,6 +696,7 @@ def delete_article(db: Session, article_id: int) -> bool:
 # ============================================================================
 # CRUD MOUVEMENTS
 # ============================================================================
+
 
 def get_mouvement(db: Session, mouvement_id: int) -> Optional[models.Mouvement]:
     """
@@ -650,10 +709,14 @@ def get_mouvement(db: Session, mouvement_id: int) -> Optional[models.Mouvement]:
     Returns:
         Mouvement trouvé ou None
     """
-    return db.query(models.Mouvement)\
-        .options(joinedload(models.Mouvement.article).joinedload(models.Article.categorie))\
-        .filter(models.Mouvement.id == mouvement_id)\
+    return (
+        db.query(models.Mouvement)
+        .options(
+            joinedload(models.Mouvement.article).joinedload(models.Article.categorie)
+        )
+        .filter(models.Mouvement.id == mouvement_id)
         .first()
+    )
 
 
 def get_mouvements(
@@ -661,7 +724,7 @@ def get_mouvements(
     skip: int = 0,
     limit: int = 100,
     article_id: Optional[int] = None,
-    type_mouvement: Optional[str] = None
+    type_mouvement: Optional[str] = None,
 ) -> tuple[List[models.Mouvement], int]:
     """
     Récupère la liste des mouvements avec filtres et pagination.
@@ -676,9 +739,13 @@ def get_mouvements(
     Returns:
         Tuple (liste des mouvements, nombre total)
     """
-    query = db.query(models.Mouvement)\
-        .options(joinedload(models.Mouvement.article).joinedload(models.Article.categorie))\
+    query = (
+        db.query(models.Mouvement)
+        .options(
+            joinedload(models.Mouvement.article).joinedload(models.Article.categorie)
+        )
         .order_by(models.Mouvement.created_at.desc())
+    )
 
     # Filtre par article
     if article_id:
@@ -697,7 +764,9 @@ def get_mouvements(
     return mouvements, total
 
 
-def create_mouvement(db: Session, mouvement: schemas.MouvementCreate, current_user: models.User) -> models.Mouvement:
+def create_mouvement(
+    db: Session, mouvement: schemas.MouvementCreate, current_user: models.User
+) -> models.Mouvement:
     """
     Crée un nouveau mouvement et met à jour le stock de l'article.
 
@@ -719,20 +788,20 @@ def create_mouvement(db: Session, mouvement: schemas.MouvementCreate, current_us
     if not article:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Article {mouvement.article_id} non trouvé"
+            detail=f"Article {mouvement.article_id} non trouvé",
         )
 
     # Calculer la nouvelle quantité
     quantite_avant = article.quantite
 
-    if mouvement.type == 'ENTREE':
+    if mouvement.type == "ENTREE":
         quantite_apres = quantite_avant + mouvement.quantite
     else:  # SORTIE
         if quantite_avant < mouvement.quantite:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Stock insuffisant. Stock actuel: {quantite_avant}, "
-                       f"quantité demandée: {mouvement.quantite}"
+                f"quantité demandée: {mouvement.quantite}",
             )
         quantite_apres = quantite_avant - mouvement.quantite
 
@@ -744,7 +813,7 @@ def create_mouvement(db: Session, mouvement: schemas.MouvementCreate, current_us
         quantite_avant=quantite_avant,
         quantite_apres=quantite_apres,
         motif=mouvement.motif,
-        created_by=current_user.id
+        created_by=current_user.id,
     )
 
     # Mettre à jour la quantité de l'article
@@ -761,20 +830,23 @@ def create_mouvement(db: Session, mouvement: schemas.MouvementCreate, current_us
         logger.error(f"Erreur d'intégrité lors de la création du mouvement: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Données invalides pour le mouvement"
+            detail="Données invalides pour le mouvement",
         )
     except Exception as e:
         db.rollback()
-        logger.error(f"Erreur inattendue lors de la création du mouvement: {e}", exc_info=True)
+        logger.error(
+            f"Erreur inattendue lors de la création du mouvement: {e}", exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erreur serveur lors de la création du mouvement"
+            detail="Erreur serveur lors de la création du mouvement",
         )
 
 
 # ============================================================================
 # FONCTIONS POUR LES RAPPORTS
 # ============================================================================
+
 
 def get_articles_stock_bas(db: Session) -> List[models.Article]:
     """
@@ -786,11 +858,13 @@ def get_articles_stock_bas(db: Session) -> List[models.Article]:
     Returns:
         Liste des articles en stock bas
     """
-    return db.query(models.Article)\
-        .options(joinedload(models.Article.categorie))\
-        .options(joinedload(models.Article.tags))\
-        .filter(models.Article.quantite < models.Article.quantite_min)\
+    return (
+        db.query(models.Article)
+        .options(joinedload(models.Article.categorie))
+        .options(joinedload(models.Article.tags))
+        .filter(models.Article.quantite < models.Article.quantite_min)
         .all()
+    )
 
 
 def get_valeur_totale_stock(db: Session) -> dict:
@@ -809,8 +883,10 @@ def get_valeur_totale_stock(db: Session) -> dict:
 
     # Valeur totale et nombre d'articles - Une seule requête avec agrégation
     totaux = db.query(
-        func.count(models.Article.id).label('nombre_articles'),
-        func.sum(models.Article.quantite * models.Article.prix_unitaire).label('valeur_totale')
+        func.count(models.Article.id).label("nombre_articles"),
+        func.sum(models.Article.quantite * models.Article.prix_unitaire).label(
+            "valeur_totale"
+        ),
     ).first()
 
     nombre_articles = totaux[0] if totaux else 0
@@ -818,20 +894,24 @@ def get_valeur_totale_stock(db: Session) -> dict:
 
     # Détails par catégorie - Une seule requête avec JOIN et GROUP BY
     # Utilise COALESCE pour gérer les articles sans catégorie
-    resultats = db.query(
-        func.coalesce(models.Categorie.nom, 'Sans catégorie').label('categorie'),
-        func.count(models.Article.id).label('nombre_articles'),
-        func.sum(models.Article.quantite * models.Article.prix_unitaire).label('valeur')
-    )\
-    .outerjoin(models.Categorie, models.Article.categorie_id == models.Categorie.id)\
-    .group_by(models.Categorie.nom)\
-    .all()
+    resultats = (
+        db.query(
+            func.coalesce(models.Categorie.nom, "Sans catégorie").label("categorie"),
+            func.count(models.Article.id).label("nombre_articles"),
+            func.sum(models.Article.quantite * models.Article.prix_unitaire).label(
+                "valeur"
+            ),
+        )
+        .outerjoin(models.Categorie, models.Article.categorie_id == models.Categorie.id)
+        .group_by(models.Categorie.nom)
+        .all()
+    )
 
     details_par_categorie = [
         {
             "categorie": resultat.categorie,
             "nombre_articles": resultat.nombre_articles,
-            "valeur": float(resultat.valeur) if resultat.valeur else 0.0
+            "valeur": float(resultat.valeur) if resultat.valeur else 0.0,
         }
         for resultat in resultats
     ]
@@ -839,7 +919,7 @@ def get_valeur_totale_stock(db: Session) -> dict:
     return {
         "valeur_totale": valeur_totale,
         "nombre_articles": nombre_articles,
-        "details_par_categorie": details_par_categorie
+        "details_par_categorie": details_par_categorie,
     }
 
 
@@ -856,21 +936,24 @@ def get_statistiques(db: Session) -> dict:
     nombre_articles = db.query(models.Article).count()
     nombre_categories = db.query(models.Categorie).count()
     valeur_info = get_valeur_totale_stock(db)
-    nombre_stock_bas = db.query(models.Article)\
-        .filter(models.Article.quantite < models.Article.quantite_min)\
+    nombre_stock_bas = (
+        db.query(models.Article)
+        .filter(models.Article.quantite < models.Article.quantite_min)
         .count()
+    )
 
     return {
         "nombre_articles": nombre_articles,
         "nombre_categories": nombre_categories,
         "valeur_totale_stock": valeur_info["valeur_totale"],
-        "nombre_articles_stock_bas": nombre_stock_bas
+        "nombre_articles_stock_bas": nombre_stock_bas,
     }
 
 
 # ============================================================================
 # CRUD TAGS
 # ============================================================================
+
 
 def get_tag(db: Session, tag_id: int) -> Optional[models.Tag]:
     """
@@ -915,7 +998,9 @@ def get_tags(db: Session, skip: int = 0, limit: int = 100) -> List[models.Tag]:
     return db.query(models.Tag).offset(skip).limit(limit).all()
 
 
-def create_tag(db: Session, tag: schemas.TagCreate, current_user: models.User) -> models.Tag:
+def create_tag(
+    db: Session, tag: schemas.TagCreate, current_user: models.User
+) -> models.Tag:
     """
     Crée un nouveau tag.
 
@@ -933,7 +1018,7 @@ def create_tag(db: Session, tag: schemas.TagCreate, current_user: models.User) -
     if get_tag_by_nom(db, tag.nom):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Un tag avec le nom '{tag.nom}' existe déjà"
+            detail=f"Un tag avec le nom '{tag.nom}' existe déjà",
         )
 
     db_tag = models.Tag(**tag.model_dump(), created_by=current_user.id)
@@ -943,7 +1028,9 @@ def create_tag(db: Session, tag: schemas.TagCreate, current_user: models.User) -
     return db_tag
 
 
-def update_tag(db: Session, tag_id: int, tag_update: schemas.TagUpdate, current_user: models.User) -> models.Tag:
+def update_tag(
+    db: Session, tag_id: int, tag_update: schemas.TagUpdate, current_user: models.User
+) -> models.Tag:
     """
     Met à jour un tag.
 
@@ -962,8 +1049,7 @@ def update_tag(db: Session, tag_id: int, tag_update: schemas.TagUpdate, current_
     db_tag = get_tag(db, tag_id)
     if not db_tag:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Tag {tag_id} non trouvé"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Tag {tag_id} non trouvé"
         )
 
     # Vérifier unicité du nom si modifié
@@ -972,7 +1058,7 @@ def update_tag(db: Session, tag_id: int, tag_update: schemas.TagUpdate, current_
         if existing and existing.id != tag_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Un tag avec le nom '{tag_update.nom}' existe déjà"
+                detail=f"Un tag avec le nom '{tag_update.nom}' existe déjà",
             )
 
     update_data = tag_update.model_dump(exclude_unset=True)
@@ -1004,8 +1090,7 @@ def delete_tag(db: Session, tag_id: int) -> bool:
     db_tag = get_tag(db, tag_id)
     if not db_tag:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Tag {tag_id} non trouvé"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Tag {tag_id} non trouvé"
         )
 
     db.delete(db_tag)
@@ -1032,14 +1117,13 @@ def add_tag_to_article(db: Session, article_id: int, tag_id: int) -> models.Arti
     if not article:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Article {article_id} non trouvé"
+            detail=f"Article {article_id} non trouvé",
         )
 
     tag = get_tag(db, tag_id)
     if not tag:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Tag {tag_id} non trouvé"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Tag {tag_id} non trouvé"
         )
 
     # Vérifier si le tag n'est pas déjà associé
@@ -1051,7 +1135,9 @@ def add_tag_to_article(db: Session, article_id: int, tag_id: int) -> models.Arti
     return article
 
 
-def remove_tag_from_article(db: Session, article_id: int, tag_id: int) -> models.Article:
+def remove_tag_from_article(
+    db: Session, article_id: int, tag_id: int
+) -> models.Article:
     """
     Retire un tag d'un article.
 
@@ -1070,14 +1156,13 @@ def remove_tag_from_article(db: Session, article_id: int, tag_id: int) -> models
     if not article:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Article {article_id} non trouvé"
+            detail=f"Article {article_id} non trouvé",
         )
 
     tag = get_tag(db, tag_id)
     if not tag:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Tag {tag_id} non trouvé"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Tag {tag_id} non trouvé"
         )
 
     if tag in article.tags:
@@ -1092,6 +1177,7 @@ def remove_tag_from_article(db: Session, article_id: int, tag_id: int) -> models
 # CRUD FOURNISSEURS
 # ============================================================================
 
+
 def get_fournisseur(db: Session, fournisseur_id: int) -> Optional[models.Fournisseur]:
     """
     Récupère un fournisseur par son ID.
@@ -1103,7 +1189,11 @@ def get_fournisseur(db: Session, fournisseur_id: int) -> Optional[models.Fournis
     Returns:
         Fournisseur trouvé ou None
     """
-    return db.query(models.Fournisseur).filter(models.Fournisseur.id == fournisseur_id).first()
+    return (
+        db.query(models.Fournisseur)
+        .filter(models.Fournisseur.id == fournisseur_id)
+        .first()
+    )
 
 
 def get_fournisseur_by_nom(db: Session, nom: str) -> Optional[models.Fournisseur]:
@@ -1120,7 +1210,9 @@ def get_fournisseur_by_nom(db: Session, nom: str) -> Optional[models.Fournisseur
     return db.query(models.Fournisseur).filter(models.Fournisseur.nom == nom).first()
 
 
-def get_fournisseurs(db: Session, skip: int = 0, limit: int = 100) -> List[models.Fournisseur]:
+def get_fournisseurs(
+    db: Session, skip: int = 0, limit: int = 100
+) -> List[models.Fournisseur]:
     """
     Récupère tous les fournisseurs.
 
@@ -1135,7 +1227,9 @@ def get_fournisseurs(db: Session, skip: int = 0, limit: int = 100) -> List[model
     return db.query(models.Fournisseur).offset(skip).limit(limit).all()
 
 
-def create_fournisseur(db: Session, fournisseur: schemas.FournisseurCreate, current_user: models.User) -> models.Fournisseur:
+def create_fournisseur(
+    db: Session, fournisseur: schemas.FournisseurCreate, current_user: models.User
+) -> models.Fournisseur:
     """
     Crée un nouveau fournisseur.
 
@@ -1153,17 +1247,24 @@ def create_fournisseur(db: Session, fournisseur: schemas.FournisseurCreate, curr
     if get_fournisseur_by_nom(db, fournisseur.nom):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Un fournisseur avec le nom '{fournisseur.nom}' existe déjà"
+            detail=f"Un fournisseur avec le nom '{fournisseur.nom}' existe déjà",
         )
 
-    db_fournisseur = models.Fournisseur(**fournisseur.model_dump(), created_by=current_user.id)
+    db_fournisseur = models.Fournisseur(
+        **fournisseur.model_dump(), created_by=current_user.id
+    )
     db.add(db_fournisseur)
     db.commit()
     db.refresh(db_fournisseur)
     return db_fournisseur
 
 
-def update_fournisseur(db: Session, fournisseur_id: int, fournisseur_update: schemas.FournisseurUpdate, current_user: models.User) -> models.Fournisseur:
+def update_fournisseur(
+    db: Session,
+    fournisseur_id: int,
+    fournisseur_update: schemas.FournisseurUpdate,
+    current_user: models.User,
+) -> models.Fournisseur:
     """
     Met à jour un fournisseur.
 
@@ -1183,7 +1284,7 @@ def update_fournisseur(db: Session, fournisseur_id: int, fournisseur_update: sch
     if not db_fournisseur:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fournisseur {fournisseur_id} non trouvé"
+            detail=f"Fournisseur {fournisseur_id} non trouvé",
         )
 
     # Vérifier unicité du nom si modifié
@@ -1192,7 +1293,7 @@ def update_fournisseur(db: Session, fournisseur_id: int, fournisseur_update: sch
         if existing and existing.id != fournisseur_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Un fournisseur avec le nom '{fournisseur_update.nom}' existe déjà"
+                detail=f"Un fournisseur avec le nom '{fournisseur_update.nom}' existe déjà",
             )
 
     update_data = fournisseur_update.model_dump(exclude_unset=True)
@@ -1225,14 +1326,14 @@ def delete_fournisseur(db: Session, fournisseur_id: int) -> bool:
     if not db_fournisseur:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fournisseur {fournisseur_id} non trouvé"
+            detail=f"Fournisseur {fournisseur_id} non trouvé",
         )
 
     # Vérifier si le fournisseur est associé à des articles
     if db_fournisseur.articles:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Impossible de supprimer le fournisseur '{db_fournisseur.nom}' car il est associé à {len(db_fournisseur.articles)} article(s)"
+            detail=f"Impossible de supprimer le fournisseur '{db_fournisseur.nom}' car il est associé à {len(db_fournisseur.articles)} article(s)",
         )
 
     db.delete(db_fournisseur)
@@ -1240,7 +1341,9 @@ def delete_fournisseur(db: Session, fournisseur_id: int) -> bool:
     return True
 
 
-def add_fournisseur_to_article(db: Session, article_id: int, fournisseur_id: int) -> models.Article:
+def add_fournisseur_to_article(
+    db: Session, article_id: int, fournisseur_id: int
+) -> models.Article:
     """
     Associe un fournisseur à un article.
 
@@ -1259,14 +1362,14 @@ def add_fournisseur_to_article(db: Session, article_id: int, fournisseur_id: int
     if not article:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Article {article_id} non trouvé"
+            detail=f"Article {article_id} non trouvé",
         )
 
     fournisseur = get_fournisseur(db, fournisseur_id)
     if not fournisseur:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fournisseur {fournisseur_id} non trouvé"
+            detail=f"Fournisseur {fournisseur_id} non trouvé",
         )
 
     # Vérifier si le fournisseur n'est pas déjà associé
@@ -1278,7 +1381,9 @@ def add_fournisseur_to_article(db: Session, article_id: int, fournisseur_id: int
     return article
 
 
-def remove_fournisseur_from_article(db: Session, article_id: int, fournisseur_id: int) -> models.Article:
+def remove_fournisseur_from_article(
+    db: Session, article_id: int, fournisseur_id: int
+) -> models.Article:
     """
     Retire un fournisseur d'un article.
 
@@ -1297,14 +1402,14 @@ def remove_fournisseur_from_article(db: Session, article_id: int, fournisseur_id
     if not article:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Article {article_id} non trouvé"
+            detail=f"Article {article_id} non trouvé",
         )
 
     fournisseur = get_fournisseur(db, fournisseur_id)
     if not fournisseur:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fournisseur {fournisseur_id} non trouvé"
+            detail=f"Fournisseur {fournisseur_id} non trouvé",
         )
 
     if fournisseur in article.fournisseurs:
@@ -1315,7 +1420,9 @@ def remove_fournisseur_from_article(db: Session, article_id: int, fournisseur_id
     return article
 
 
-def get_articles_by_fournisseur(db: Session, fournisseur_id: int, skip: int = 0, limit: int = 100) -> List[models.Article]:
+def get_articles_by_fournisseur(
+    db: Session, fournisseur_id: int, skip: int = 0, limit: int = 100
+) -> List[models.Article]:
     """
     Récupère tous les articles d'un fournisseur.
 
@@ -1335,26 +1442,31 @@ def get_articles_by_fournisseur(db: Session, fournisseur_id: int, skip: int = 0,
     if not fournisseur:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fournisseur {fournisseur_id} non trouvé"
+            detail=f"Fournisseur {fournisseur_id} non trouvé",
         )
 
-    return db.query(models.Article)\
-        .join(models.article_fournisseurs)\
-        .filter(models.article_fournisseurs.c.fournisseur_id == fournisseur_id)\
-        .options(joinedload(models.Article.categorie))\
-        .options(joinedload(models.Article.tags))\
-        .options(joinedload(models.Article.photos))\
-        .options(joinedload(models.Article.fournisseurs))\
-        .offset(skip)\
-        .limit(limit)\
+    return (
+        db.query(models.Article)
+        .join(models.article_fournisseurs)
+        .filter(models.article_fournisseurs.c.fournisseur_id == fournisseur_id)
+        .options(joinedload(models.Article.categorie))
+        .options(joinedload(models.Article.tags))
+        .options(joinedload(models.Article.photos))
+        .options(joinedload(models.Article.fournisseurs))
+        .offset(skip)
+        .limit(limit)
         .all()
+    )
 
 
 # ============================================================================
 # FONCTIONS CRUD POUR LES EMPLACEMENTS
 # ============================================================================
 
-def validate_emplacement_hierarchy(db: Session, parent_id: Optional[int], current_id: Optional[int] = None) -> None:
+
+def validate_emplacement_hierarchy(
+    db: Session, parent_id: Optional[int], current_id: Optional[int] = None
+) -> None:
     """
     Valide la hiérarchie des emplacements (max 3 niveaux).
 
@@ -1374,25 +1486,27 @@ def validate_emplacement_hierarchy(db: Session, parent_id: Optional[int], curren
     if not parent:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Emplacement parent {parent_id} non trouvé"
+            detail=f"Emplacement parent {parent_id} non trouvé",
         )
 
     # Empêcher boucles circulaires (parent = self)
     if current_id and parent_id == current_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Un emplacement ne peut pas être son propre parent"
+            detail="Un emplacement ne peut pas être son propre parent",
         )
 
     # Bloquer si parent est niveau 2 (Boîte) → Empêche 4e niveau
     if parent.niveau >= 2:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Impossible de créer un sous-emplacement sous '{parent.code}' (niveau {parent.niveau}). Maximum 3 niveaux : Zone → Étagère → Boîte"
+            detail=f"Impossible de créer un sous-emplacement sous '{parent.code}' (niveau {parent.niveau}). Maximum 3 niveaux : Zone → Étagère → Boîte",
         )
 
 
-def validate_emplacement_capacite(db: Session, emplacement_id: int, delta_quantite: int) -> None:
+def validate_emplacement_capacite(
+    db: Session, emplacement_id: int, delta_quantite: int
+) -> None:
     """
     Valide que l'ajout d'articles ne dépasse pas la capacité max.
 
@@ -1408,7 +1522,7 @@ def validate_emplacement_capacite(db: Session, emplacement_id: int, delta_quanti
     if not emplacement:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Emplacement {emplacement_id} non trouvé"
+            detail=f"Emplacement {emplacement_id} non trouvé",
         )
 
     # Si capacite_max = NULL, pas de limite
@@ -1424,9 +1538,9 @@ def validate_emplacement_capacite(db: Session, emplacement_id: int, delta_quanti
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Capacité de l'emplacement '{emplacement.code}' dépassée. "
-                   f"Disponible: {emplacement.capacite_max - quantite_actuelle}, "
-                   f"Demandé: {delta_quantite}, "
-                   f"Capacité max: {emplacement.capacite_max}"
+            f"Disponible: {emplacement.capacite_max - quantite_actuelle}, "
+            f"Demandé: {delta_quantite}, "
+            f"Capacité max: {emplacement.capacite_max}",
         )
 
 
@@ -1441,9 +1555,11 @@ def has_children_emplacement(db: Session, emplacement_id: int) -> bool:
     Returns:
         True si l'emplacement a des enfants, False sinon
     """
-    count = db.query(models.Emplacement)\
-        .filter(models.Emplacement.parent_id == emplacement_id)\
+    count = (
+        db.query(models.Emplacement)
+        .filter(models.Emplacement.parent_id == emplacement_id)
         .count()
+    )
     return count > 0
 
 
@@ -1458,7 +1574,11 @@ def get_emplacement(db: Session, emplacement_id: int) -> Optional[models.Emplace
     Returns:
         Emplacement ou None si non trouvé
     """
-    return db.query(models.Emplacement).filter(models.Emplacement.id == emplacement_id).first()
+    return (
+        db.query(models.Emplacement)
+        .filter(models.Emplacement.id == emplacement_id)
+        .first()
+    )
 
 
 def get_emplacement_by_code(db: Session, code: str) -> Optional[models.Emplacement]:
@@ -1475,7 +1595,9 @@ def get_emplacement_by_code(db: Session, code: str) -> Optional[models.Emplaceme
     return db.query(models.Emplacement).filter(models.Emplacement.code == code).first()
 
 
-def get_emplacements(db: Session, skip: int = 0, limit: int = 100) -> List[models.Emplacement]:
+def get_emplacements(
+    db: Session, skip: int = 0, limit: int = 100
+) -> List[models.Emplacement]:
     """
     Récupère tous les emplacements (structure plate).
 
@@ -1487,11 +1609,13 @@ def get_emplacements(db: Session, skip: int = 0, limit: int = 100) -> List[model
     Returns:
         Liste des emplacements
     """
-    return db.query(models.Emplacement)\
-        .order_by(models.Emplacement.code)\
-        .offset(skip)\
-        .limit(limit)\
+    return (
+        db.query(models.Emplacement)
+        .order_by(models.Emplacement.code)
+        .offset(skip)
+        .limit(limit)
         .all()
+    )
 
 
 def get_emplacements_racines(db: Session) -> List[models.Emplacement]:
@@ -1504,10 +1628,12 @@ def get_emplacements_racines(db: Session) -> List[models.Emplacement]:
     Returns:
         Liste des Zones (parent_id = NULL)
     """
-    return db.query(models.Emplacement)\
-        .filter(models.Emplacement.parent_id == None)\
-        .order_by(models.Emplacement.code)\
+    return (
+        db.query(models.Emplacement)
+        .filter(models.Emplacement.parent_id == None)
+        .order_by(models.Emplacement.code)
         .all()
+    )
 
 
 def get_emplacements_tree(db: Session) -> List[models.Emplacement]:
@@ -1523,14 +1649,17 @@ def get_emplacements_tree(db: Session) -> List[models.Emplacement]:
     Returns:
         Liste des Zones avec children imbriqués (3 niveaux)
     """
-    return db.query(models.Emplacement)\
-        .filter(models.Emplacement.parent_id == None)\
+    return (
+        db.query(models.Emplacement)
+        .filter(models.Emplacement.parent_id == None)
         .options(
-            joinedload(models.Emplacement.children)
-            .joinedload(models.Emplacement.children)  # 2e fois pour children.children
-        )\
-        .order_by(models.Emplacement.code)\
+            joinedload(models.Emplacement.children).joinedload(
+                models.Emplacement.children
+            )  # 2e fois pour children.children
+        )
+        .order_by(models.Emplacement.code)
         .all()
+    )
 
 
 def get_children_emplacement(db: Session, parent_id: int) -> List[models.Emplacement]:
@@ -1544,13 +1673,17 @@ def get_children_emplacement(db: Session, parent_id: int) -> List[models.Emplace
     Returns:
         Liste des enfants directs
     """
-    return db.query(models.Emplacement)\
-        .filter(models.Emplacement.parent_id == parent_id)\
-        .order_by(models.Emplacement.code)\
+    return (
+        db.query(models.Emplacement)
+        .filter(models.Emplacement.parent_id == parent_id)
+        .order_by(models.Emplacement.code)
         .all()
+    )
 
 
-def create_emplacement(db: Session, emplacement: schemas.EmplacementCreate, current_user: models.User) -> models.Emplacement:
+def create_emplacement(
+    db: Session, emplacement: schemas.EmplacementCreate, current_user: models.User
+) -> models.Emplacement:
     """
     Crée un nouvel emplacement.
 
@@ -1569,7 +1702,7 @@ def create_emplacement(db: Session, emplacement: schemas.EmplacementCreate, curr
     if get_emplacement_by_code(db, emplacement.code):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Un emplacement avec le code '{emplacement.code}' existe déjà"
+            detail=f"Un emplacement avec le code '{emplacement.code}' existe déjà",
         )
 
     # Valider hiérarchie
@@ -1581,7 +1714,7 @@ def create_emplacement(db: Session, emplacement: schemas.EmplacementCreate, curr
         description=emplacement.description,
         capacite_max=emplacement.capacite_max,
         parent_id=emplacement.parent_id,
-        created_by=current_user.id
+        created_by=current_user.id,
     )
 
     db.add(db_emplacement)
@@ -1590,7 +1723,12 @@ def create_emplacement(db: Session, emplacement: schemas.EmplacementCreate, curr
     return db_emplacement
 
 
-def update_emplacement(db: Session, emplacement_id: int, emplacement: schemas.EmplacementUpdate, current_user: models.User) -> models.Emplacement:
+def update_emplacement(
+    db: Session,
+    emplacement_id: int,
+    emplacement: schemas.EmplacementUpdate,
+    current_user: models.User,
+) -> models.Emplacement:
     """
     Met à jour un emplacement existant.
 
@@ -1610,7 +1748,7 @@ def update_emplacement(db: Session, emplacement_id: int, emplacement: schemas.Em
     if not db_emplacement:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Emplacement {emplacement_id} non trouvé"
+            detail=f"Emplacement {emplacement_id} non trouvé",
         )
 
     # Vérifier unicité du code (si modifié)
@@ -1618,12 +1756,17 @@ def update_emplacement(db: Session, emplacement_id: int, emplacement: schemas.Em
         if get_emplacement_by_code(db, emplacement.code):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Un emplacement avec le code '{emplacement.code}' existe déjà"
+                detail=f"Un emplacement avec le code '{emplacement.code}' existe déjà",
             )
 
     # Valider hiérarchie (si parent_id modifié)
-    if emplacement.parent_id is not None and emplacement.parent_id != db_emplacement.parent_id:
-        validate_emplacement_hierarchy(db, emplacement.parent_id, current_id=emplacement_id)
+    if (
+        emplacement.parent_id is not None
+        and emplacement.parent_id != db_emplacement.parent_id
+    ):
+        validate_emplacement_hierarchy(
+            db, emplacement.parent_id, current_id=emplacement_id
+        )
 
     # Mettre à jour les champs
     if emplacement.code is not None:
@@ -1663,7 +1806,7 @@ def delete_emplacement(db: Session, emplacement_id: int) -> bool:
     if not db_emplacement:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Emplacement {emplacement_id} non trouvé"
+            detail=f"Emplacement {emplacement_id} non trouvé",
         )
 
     # DOUBLE validation (différence avec Catégories)
@@ -1673,14 +1816,14 @@ def delete_emplacement(db: Session, emplacement_id: int) -> bool:
         children_count = len(db_emplacement.children)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Impossible de supprimer '{db_emplacement.code}' car il contient {children_count} sous-emplacement(s). Supprimez-les d'abord."
+            detail=f"Impossible de supprimer '{db_emplacement.code}' car il contient {children_count} sous-emplacement(s). Supprimez-les d'abord.",
         )
 
     # 2. Bloquer si articles associés
     if db_emplacement.articles:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Impossible de supprimer '{db_emplacement.code}' car il contient {len(db_emplacement.articles)} article(s). Reclassez-les d'abord."
+            detail=f"Impossible de supprimer '{db_emplacement.code}' car il contient {len(db_emplacement.articles)} article(s). Reclassez-les d'abord.",
         )
 
     # Supprimer
@@ -1689,7 +1832,9 @@ def delete_emplacement(db: Session, emplacement_id: int) -> bool:
     return True
 
 
-def get_articles_by_emplacement(db: Session, emplacement_id: int, skip: int = 0, limit: int = 100) -> List[models.Article]:
+def get_articles_by_emplacement(
+    db: Session, emplacement_id: int, skip: int = 0, limit: int = 100
+) -> List[models.Article]:
     """
     Récupère tous les articles d'un emplacement.
 
@@ -1709,22 +1854,26 @@ def get_articles_by_emplacement(db: Session, emplacement_id: int, skip: int = 0,
     if not emplacement:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Emplacement {emplacement_id} non trouvé"
+            detail=f"Emplacement {emplacement_id} non trouvé",
         )
 
-    return db.query(models.Article)\
-        .filter(models.Article.emplacement_id == emplacement_id)\
-        .options(joinedload(models.Article.categorie))\
-        .options(joinedload(models.Article.emplacement))\
-        .options(joinedload(models.Article.tags))\
-        .options(joinedload(models.Article.photos))\
-        .options(joinedload(models.Article.fournisseurs))\
-        .offset(skip)\
-        .limit(limit)\
+    return (
+        db.query(models.Article)
+        .filter(models.Article.emplacement_id == emplacement_id)
+        .options(joinedload(models.Article.categorie))
+        .options(joinedload(models.Article.emplacement))
+        .options(joinedload(models.Article.tags))
+        .options(joinedload(models.Article.photos))
+        .options(joinedload(models.Article.fournisseurs))
+        .offset(skip)
+        .limit(limit)
         .all()
+    )
 
 
-def get_emplacements_suggestions_by_category(db: Session, categorie_id: int, limit: int = 5) -> List[dict]:
+def get_emplacements_suggestions_by_category(
+    db: Session, categorie_id: int, limit: int = 5
+) -> List[dict]:
     """
     Suggère des emplacements pour un article basé sur sa catégorie.
 
@@ -1747,32 +1896,35 @@ def get_emplacements_suggestions_by_category(db: Session, categorie_id: int, lim
     if not categorie:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Catégorie {categorie_id} non trouvée"
+            detail=f"Catégorie {categorie_id} non trouvée",
         )
 
     # Trouver les emplacements les plus utilisés pour cette catégorie
     # GROUP BY emplacement_id et compter le nombre d'articles
-    results = db.query(
-        models.Article.emplacement_id,
-        func.count(models.Article.id).label('count')
-    )\
-    .filter(models.Article.categorie_id == categorie_id)\
-    .filter(models.Article.emplacement_id.isnot(None))\
-    .group_by(models.Article.emplacement_id)\
-    .order_by(func.count(models.Article.id).desc())\
-    .limit(limit)\
-    .all()
+    results = (
+        db.query(
+            models.Article.emplacement_id, func.count(models.Article.id).label("count")
+        )
+        .filter(models.Article.categorie_id == categorie_id)
+        .filter(models.Article.emplacement_id.isnot(None))
+        .group_by(models.Article.emplacement_id)
+        .order_by(func.count(models.Article.id).desc())
+        .limit(limit)
+        .all()
+    )
 
     # Charger les détails complets des emplacements
     suggestions = []
     for emplacement_id, count in results:
         emplacement = get_emplacement(db, emplacement_id)
         if emplacement:
-            suggestions.append({
-                "emplacement": emplacement,
-                "count": count,
-                "raison": f"{count} article(s) de cette catégorie"
-            })
+            suggestions.append(
+                {
+                    "emplacement": emplacement,
+                    "count": count,
+                    "raison": f"{count} article(s) de cette catégorie",
+                }
+            )
 
     return suggestions
 
@@ -1780,6 +1932,7 @@ def get_emplacements_suggestions_by_category(db: Session, categorie_id: int, lim
 # ============================================================================
 # FONCTIONS CRUD POUR LES UTILISATEURS
 # ============================================================================
+
 
 def get_user(db: Session, user_id: int) -> Optional[models.User]:
     """
@@ -1823,7 +1976,9 @@ def get_user_by_email(db: Session, email: str) -> Optional[models.User]:
     return db.query(models.User).filter(models.User.email == email).first()
 
 
-def create_user(db: Session, user: schemas.UserCreate, current_user: Optional[models.User] = None) -> models.User:
+def create_user(
+    db: Session, user: schemas.UserCreate, current_user: Optional[models.User] = None
+) -> models.User:
     """
     Crée un nouvel utilisateur avec un mot de passe haché.
 
@@ -1844,14 +1999,13 @@ def create_user(db: Session, user: schemas.UserCreate, current_user: Optional[mo
     if get_user_by_username(db, user.username):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ce nom d'utilisateur existe déjà"
+            detail="Ce nom d'utilisateur existe déjà",
         )
 
     # Vérifier unicité de l'email
     if get_user_by_email(db, user.email):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cet email existe déjà"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Cet email existe déjà"
         )
 
     # Hasher le mot de passe
@@ -1863,7 +2017,7 @@ def create_user(db: Session, user: schemas.UserCreate, current_user: Optional[mo
         email=user.email,
         hashed_password=hashed_password,
         is_active=True,
-        created_by=current_user.id if current_user else None
+        created_by=current_user.id if current_user else None,
     )
 
     db.add(db_user)
@@ -1873,7 +2027,9 @@ def create_user(db: Session, user: schemas.UserCreate, current_user: Optional[mo
     return db_user
 
 
-def authenticate_user(db: Session, username: str, password: str) -> Optional[models.User]:
+def authenticate_user(
+    db: Session, username: str, password: str
+) -> Optional[models.User]:
     """
     Authentifie un utilisateur avec son username et mot de passe.
 
@@ -1909,10 +2065,18 @@ def get_users(db: Session, skip: int = 0, limit: int = 100) -> list[models.User]
     Returns:
         Liste des utilisateurs
     """
-    return db.query(models.User).order_by(models.User.created_at.desc()).offset(skip).limit(limit).all()
+    return (
+        db.query(models.User)
+        .order_by(models.User.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
-def update_user_role(db: Session, user_id: int, new_role: models.RoleEnum, current_user: models.User) -> models.User:
+def update_user_role(
+    db: Session, user_id: int, new_role: models.RoleEnum, current_user: models.User
+) -> models.User:
     """
     Change le rôle d'un utilisateur.
 
@@ -1938,14 +2102,14 @@ def update_user_role(db: Session, user_id: int, new_role: models.RoleEnum, curre
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Utilisateur {user_id} non trouvé"
+            detail=f"Utilisateur {user_id} non trouvé",
         )
 
     # Empêcher un utilisateur de modifier son propre rôle
     if user_id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Impossible de modifier votre propre rôle"
+            detail="Impossible de modifier votre propre rôle",
         )
 
     # Mettre à jour le rôle
@@ -1958,7 +2122,12 @@ def update_user_role(db: Session, user_id: int, new_role: models.RoleEnum, curre
     return user
 
 
-def update_user_permissions(db: Session, user_id: int, permissions: Optional[list[str]], current_user: models.User) -> models.User:
+def update_user_permissions(
+    db: Session,
+    user_id: int,
+    permissions: Optional[list[str]],
+    current_user: models.User,
+) -> models.User:
     """
     Met à jour les permissions custom d'un utilisateur.
 
@@ -1981,7 +2150,7 @@ def update_user_permissions(db: Session, user_id: int, permissions: Optional[lis
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Utilisateur {user_id} non trouvé"
+            detail=f"Utilisateur {user_id} non trouvé",
         )
 
     # Mettre à jour les permissions (None = reset)
@@ -1994,7 +2163,9 @@ def update_user_permissions(db: Session, user_id: int, permissions: Optional[lis
     return user
 
 
-def deactivate_user(db: Session, user_id: int, current_user: models.User) -> models.User:
+def deactivate_user(
+    db: Session, user_id: int, current_user: models.User
+) -> models.User:
     """
     Désactive un utilisateur (is_active = False).
 
@@ -2020,27 +2191,30 @@ def deactivate_user(db: Session, user_id: int, current_user: models.User) -> mod
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Utilisateur {user_id} non trouvé"
+            detail=f"Utilisateur {user_id} non trouvé",
         )
 
     # Empêcher de se désactiver soi-même
     if user_id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Impossible de vous désactiver vous-même"
+            detail="Impossible de vous désactiver vous-même",
         )
 
     # Vérifier qu'il reste au moins 1 admin actif
     if user.role == models.RoleEnum.ADMIN and user.is_active:
-        active_admins = db.query(models.User).filter(
-            models.User.role == models.RoleEnum.ADMIN,
-            models.User.is_active == True
-        ).count()
+        active_admins = (
+            db.query(models.User)
+            .filter(
+                models.User.role == models.RoleEnum.ADMIN, models.User.is_active == True
+            )
+            .count()
+        )
 
         if active_admins <= 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Impossible de désactiver le dernier administrateur actif"
+                detail="Impossible de désactiver le dernier administrateur actif",
             )
 
     # Désactiver l'utilisateur
@@ -2057,6 +2231,7 @@ def deactivate_user(db: Session, user_id: int, current_user: models.User) -> mod
 # CRUD PHOTOS
 # ============================================================================
 
+
 def get_photos_by_article(db: Session, article_id: int) -> List[models.Photo]:
     """
     Récupère toutes les photos d'un article.
@@ -2068,10 +2243,12 @@ def get_photos_by_article(db: Session, article_id: int) -> List[models.Photo]:
     Returns:
         Liste des photos de l'article, ordonnées par date de création
     """
-    return db.query(models.Photo)\
-        .filter(models.Photo.article_id == article_id)\
-        .order_by(models.Photo.created_at)\
+    return (
+        db.query(models.Photo)
+        .filter(models.Photo.article_id == article_id)
+        .order_by(models.Photo.created_at)
         .all()
+    )
 
 
 def get_photo(db: Session, photo_id: int) -> Optional[models.Photo]:
@@ -2096,7 +2273,7 @@ def create_photo(
     thumbnail_path: str,
     file_size: int,
     mime_type: str,
-    current_user: models.User
+    current_user: models.User,
 ) -> models.Photo:
     """
     Crée un enregistrement de photo en base de données.
@@ -2129,14 +2306,14 @@ def create_photo(
         raise HTTPException(status_code=404, detail="Article introuvable")
 
     # Vérifier limite de 5 photos par article
-    current_photos_count = db.query(models.Photo)\
-        .filter(models.Photo.article_id == article_id)\
-        .count()
+    current_photos_count = (
+        db.query(models.Photo).filter(models.Photo.article_id == article_id).count()
+    )
 
     if current_photos_count >= 5:
         raise HTTPException(
             status_code=400,
-            detail="Limite de 5 photos par article atteinte. Supprimez une photo existante avant d'en ajouter une nouvelle."
+            detail="Limite de 5 photos par article atteinte. Supprimez une photo existante avant d'en ajouter une nouvelle.",
         )
 
     # Créer la photo
@@ -2147,7 +2324,7 @@ def create_photo(
         thumbnail_path=thumbnail_path,
         file_size=file_size,
         mime_type=mime_type,
-        created_by=current_user.id
+        created_by=current_user.id,
     )
 
     db.add(db_photo)
@@ -2190,6 +2367,7 @@ def delete_photo(db: Session, photo_id: int) -> bool:
 # CRUD COMMANDES
 # ============================================================================
 
+
 def get_commande(db: Session, commande_id: int) -> Optional[models.Commande]:
     """
     Récupère une commande par son ID avec toutes ses relations.
@@ -2201,13 +2379,15 @@ def get_commande(db: Session, commande_id: int) -> Optional[models.Commande]:
     Returns:
         La commande avec fournisseur et lignes, ou None si non trouvée
     """
-    return db.query(models.Commande)\
+    return (
+        db.query(models.Commande)
         .options(
             joinedload(models.Commande.fournisseur),
-            joinedload(models.Commande.lignes).joinedload(models.LigneCommande.article)
-        )\
-        .filter(models.Commande.id == commande_id)\
+            joinedload(models.Commande.lignes).joinedload(models.LigneCommande.article),
+        )
+        .filter(models.Commande.id == commande_id)
         .first()
+    )
 
 
 def get_commandes(
@@ -2215,7 +2395,7 @@ def get_commandes(
     skip: int = 0,
     limit: int = 100,
     statut: Optional[str] = None,
-    fournisseur_id: Optional[int] = None
+    fournisseur_id: Optional[int] = None,
 ) -> Tuple[List[models.Commande], int]:
     """
     Récupère une liste paginée de commandes avec filtres optionnels.
@@ -2230,11 +2410,9 @@ def get_commandes(
     Returns:
         Tuple (liste de commandes, nombre total)
     """
-    query = db.query(models.Commande)\
-        .options(
-            joinedload(models.Commande.fournisseur),
-            joinedload(models.Commande.lignes)
-        )
+    query = db.query(models.Commande).options(
+        joinedload(models.Commande.fournisseur), joinedload(models.Commande.lignes)
+    )
 
     # Filtres
     if statut:
@@ -2246,15 +2424,19 @@ def get_commandes(
     total = query.count()
 
     # Appliquer pagination et tri par date de création descendante
-    commandes = query.order_by(models.Commande.created_at.desc())\
-        .offset(skip)\
-        .limit(limit)\
+    commandes = (
+        query.order_by(models.Commande.created_at.desc())
+        .offset(skip)
+        .limit(limit)
         .all()
+    )
 
     return commandes, total
 
 
-def get_commandes_by_fournisseur(db: Session, fournisseur_id: int) -> List[models.Commande]:
+def get_commandes_by_fournisseur(
+    db: Session, fournisseur_id: int
+) -> List[models.Commande]:
     """
     Récupère toutes les commandes d'un fournisseur.
 
@@ -2265,17 +2447,17 @@ def get_commandes_by_fournisseur(db: Session, fournisseur_id: int) -> List[model
     Returns:
         Liste des commandes du fournisseur
     """
-    return db.query(models.Commande)\
-        .options(joinedload(models.Commande.lignes))\
-        .filter(models.Commande.fournisseur_id == fournisseur_id)\
-        .order_by(models.Commande.created_at.desc())\
+    return (
+        db.query(models.Commande)
+        .options(joinedload(models.Commande.lignes))
+        .filter(models.Commande.fournisseur_id == fournisseur_id)
+        .order_by(models.Commande.created_at.desc())
         .all()
+    )
 
 
 def create_commande(
-    db: Session,
-    commande: schemas.CommandeCreate,
-    current_user: models.User
+    db: Session, commande: schemas.CommandeCreate, current_user: models.User
 ) -> models.Commande:
     """
     Crée une nouvelle commande avec ses lignes.
@@ -2306,24 +2488,26 @@ def create_commande(
     if not fournisseur:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fournisseur {commande.fournisseur_id} non trouvé"
+            detail=f"Fournisseur {commande.fournisseur_id} non trouvé",
         )
 
     # Vérifier unicité du numéro de commande
-    existing = db.query(models.Commande)\
-        .filter(models.Commande.numero_commande == commande.numero_commande)\
+    existing = (
+        db.query(models.Commande)
+        .filter(models.Commande.numero_commande == commande.numero_commande)
         .first()
+    )
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Le numéro de commande '{commande.numero_commande}' existe déjà"
+            detail=f"Le numéro de commande '{commande.numero_commande}' existe déjà",
         )
 
     # Valider qu'il y a au moins une ligne
     if not commande.lignes or len(commande.lignes) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Une commande doit contenir au moins une ligne"
+            detail="Une commande doit contenir au moins une ligne",
         )
 
     # Calculer le montant total
@@ -2334,7 +2518,7 @@ def create_commande(
         if not article:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Article {ligne_data.article_id} non trouvé"
+                detail=f"Article {ligne_data.article_id} non trouvé",
             )
         montant_total += ligne_data.quantite_commandee * ligne_data.prix_unitaire
 
@@ -2346,7 +2530,7 @@ def create_commande(
         date_reception_prevue=commande.date_reception_prevue,
         notes=commande.notes,
         montant_total=montant_total,
-        created_by=current_user.id
+        created_by=current_user.id,
     )
 
     db.add(db_commande)
@@ -2359,7 +2543,7 @@ def create_commande(
             article_id=ligne_data.article_id,
             quantite_commandee=ligne_data.quantite_commandee,
             quantite_recue=0,  # Pas encore reçue
-            prix_unitaire=ligne_data.prix_unitaire
+            prix_unitaire=ligne_data.prix_unitaire,
         )
         db.add(db_ligne)
 
@@ -2373,7 +2557,7 @@ def update_commande(
     db: Session,
     commande_id: int,
     commande_update: schemas.CommandeUpdate,
-    current_user: models.User
+    current_user: models.User,
 ) -> models.Commande:
     """
     Met à jour une commande existante.
@@ -2401,27 +2585,29 @@ def update_commande(
     if not db_commande:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Commande {commande_id} non trouvée"
+            detail=f"Commande {commande_id} non trouvée",
         )
 
     # Interdire modification si commande RECUE ou ANNULEE
     if db_commande.statut in ["RECUE", "ANNULEE"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Impossible de modifier une commande {db_commande.statut}"
+            detail=f"Impossible de modifier une commande {db_commande.statut}",
         )
 
     # Mettre à jour les champs simples
     if commande_update.numero_commande is not None:
         # Vérifier unicité du nouveau numéro
-        existing = db.query(models.Commande)\
-            .filter(models.Commande.numero_commande == commande_update.numero_commande)\
-            .filter(models.Commande.id != commande_id)\
+        existing = (
+            db.query(models.Commande)
+            .filter(models.Commande.numero_commande == commande_update.numero_commande)
+            .filter(models.Commande.id != commande_id)
             .first()
+        )
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Le numéro de commande '{commande_update.numero_commande}' existe déjà"
+                detail=f"Le numéro de commande '{commande_update.numero_commande}' existe déjà",
             )
         db_commande.numero_commande = commande_update.numero_commande
 
@@ -2431,7 +2617,7 @@ def update_commande(
         if not fournisseur:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Fournisseur {commande_update.fournisseur_id} non trouvé"
+                detail=f"Fournisseur {commande_update.fournisseur_id} non trouvé",
             )
         db_commande.fournisseur_id = commande_update.fournisseur_id
 
@@ -2450,13 +2636,13 @@ def update_commande(
         if db_commande.statut != "BROUILLON":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Les lignes ne peuvent être modifiées que pour les commandes BROUILLON"
+                detail="Les lignes ne peuvent être modifiées que pour les commandes BROUILLON",
             )
 
         # Supprimer toutes les anciennes lignes
-        db.query(models.LigneCommande)\
-            .filter(models.LigneCommande.commande_id == commande_id)\
-            .delete()
+        db.query(models.LigneCommande).filter(
+            models.LigneCommande.commande_id == commande_id
+        ).delete()
 
         # Créer les nouvelles lignes et recalculer montant_total
         montant_total = 0.0
@@ -2466,7 +2652,7 @@ def update_commande(
             if not article:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Article {ligne_data.article_id} non trouvé"
+                    detail=f"Article {ligne_data.article_id} non trouvé",
                 )
 
             db_ligne = models.LigneCommande(
@@ -2474,7 +2660,7 @@ def update_commande(
                 article_id=ligne_data.article_id,
                 quantite_commandee=ligne_data.quantite_commandee,
                 quantite_recue=0,
-                prix_unitaire=ligne_data.prix_unitaire
+                prix_unitaire=ligne_data.prix_unitaire,
             )
             db.add(db_ligne)
             montant_total += ligne_data.quantite_commandee * ligne_data.prix_unitaire
@@ -2490,7 +2676,9 @@ def update_commande(
     return db_commande
 
 
-def update_commande_statut(db: Session, commande_id: int, nouveau_statut: str, current_user: models.User) -> models.Commande:
+def update_commande_statut(
+    db: Session, commande_id: int, nouveau_statut: str, current_user: models.User
+) -> models.Commande:
     """
     Change le statut d'une commande avec validation du workflow.
 
@@ -2523,7 +2711,7 @@ def update_commande_statut(db: Session, commande_id: int, nouveau_statut: str, c
     if not db_commande:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Commande {commande_id} non trouvée"
+            detail=f"Commande {commande_id} non trouvée",
         )
 
     statut_actuel = db_commande.statut
@@ -2533,13 +2721,13 @@ def update_commande_statut(db: Session, commande_id: int, nouveau_statut: str, c
         "BROUILLON": ["ENVOYEE", "ANNULEE"],
         "ENVOYEE": ["RECUE", "ANNULEE"],
         "RECUE": [],  # Statut final
-        "ANNULEE": []  # Statut final
+        "ANNULEE": [],  # Statut final
     }
 
     if nouveau_statut not in transitions_autorisees.get(statut_actuel, []):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Transition {statut_actuel} → {nouveau_statut} non autorisée"
+            detail=f"Transition {statut_actuel} → {nouveau_statut} non autorisée",
         )
 
     # Appliquer le changement de statut
@@ -2583,13 +2771,13 @@ def delete_commande(db: Session, commande_id: int) -> bool:
     if not db_commande:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Commande {commande_id} non trouvée"
+            detail=f"Commande {commande_id} non trouvée",
         )
 
     if db_commande.statut != "BROUILLON":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Impossible de supprimer une commande {db_commande.statut}. Seules les commandes BROUILLON peuvent être supprimées."
+            detail=f"Impossible de supprimer une commande {db_commande.statut}. Seules les commandes BROUILLON peuvent être supprimées.",
         )
 
     db.delete(db_commande)
@@ -2626,13 +2814,13 @@ def recevoir_commande(db: Session, commande_id: int) -> models.Commande:
     if not db_commande:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Commande {commande_id} non trouvée"
+            detail=f"Commande {commande_id} non trouvée",
         )
 
     if db_commande.statut != "ENVOYEE":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Seules les commandes ENVOYEE peuvent être réceptionnées (statut actuel : {db_commande.statut})"
+            detail=f"Seules les commandes ENVOYEE peuvent être réceptionnées (statut actuel : {db_commande.statut})",
         )
 
     # Réceptionner chaque ligne et mettre à jour le stock
@@ -2645,7 +2833,7 @@ def recevoir_commande(db: Session, commande_id: int) -> models.Commande:
         if not article:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Article {ligne.article_id} non trouvé"
+                detail=f"Article {ligne.article_id} non trouvé",
             )
 
         # Sauvegarder quantité avant mise à jour
@@ -2661,7 +2849,7 @@ def recevoir_commande(db: Session, commande_id: int) -> models.Commande:
             quantite=ligne.quantite_recue,
             quantite_avant=quantite_avant,
             quantite_apres=article.quantite,
-            motif=f"Réception commande N°{db_commande.numero_commande}"
+            motif=f"Réception commande N°{db_commande.numero_commande}",
         )
         db.add(db_mouvement)
 

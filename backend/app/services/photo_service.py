@@ -16,7 +16,6 @@ import shutil
 from typing import Tuple
 from datetime import datetime
 
-
 # Configuration
 UPLOAD_DIR = Path("uploads/articles")
 THUMBNAIL_SIZE = (150, 150)
@@ -37,7 +36,7 @@ def validate_photo(file: UploadFile) -> None:
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(
             status_code=400,
-            detail=f"Type de fichier non supporté. Formats acceptés : {', '.join(ALLOWED_MIME_TYPES)}"
+            detail=f"Type de fichier non supporté. Formats acceptés : {', '.join(ALLOWED_MIME_TYPES)}",
         )
 
 
@@ -84,7 +83,7 @@ def save_photo(article_id: int, file: UploadFile) -> Tuple[str, str, int]:
         return (
             str(filepath.relative_to("uploads")),
             str(thumbnail_path.relative_to("uploads")),
-            file_size
+            file_size,
         )
 
     except Exception as e:
@@ -96,7 +95,7 @@ def save_photo(article_id: int, file: UploadFile) -> Tuple[str, str, int]:
 
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la sauvegarde de la photo : {str(e)}"
+            detail=f"Erreur lors de la sauvegarde de la photo : {str(e)}",
         )
 
 
@@ -143,7 +142,7 @@ def generate_thumbnail(source_path: Path, thumbnail_path: Path) -> None:
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la génération de la miniature : {str(e)}"
+            detail=f"Erreur lors de la génération de la miniature : {str(e)}",
         )
 
 
@@ -173,4 +172,6 @@ def delete_photo_files(filepath: str, thumbnail_path: str) -> None:
         if full_thumbnail_path.exists():
             os.remove(full_thumbnail_path)
     except Exception as e:
-        print(f"Erreur lors de la suppression de la miniature {full_thumbnail_path}: {str(e)}")
+        print(
+            f"Erreur lors de la suppression de la miniature {full_thumbnail_path}: {str(e)}"
+        )

@@ -13,11 +13,14 @@ from app.database import get_db
 from app.auth import create_access_token, get_current_user
 from app.permissions import get_user_permissions
 
-
 router = APIRouter()
 
 
-@router.post("/register", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=schemas.UserResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     """
     Créer un nouveau compte utilisateur.
@@ -40,7 +43,9 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=schemas.Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+):
     """
     Se connecter et obtenir un token JWT.
 
@@ -67,8 +72,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Compte utilisateur inactif"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Compte utilisateur inactif"
         )
 
     # Créer le token JWT enrichi (avec user_id et role)
@@ -104,5 +108,5 @@ def read_users_me(current_user: models.User = Depends(get_current_user)):
         role=current_user.role,
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,
-        permissions=permissions
+        permissions=permissions,
     )

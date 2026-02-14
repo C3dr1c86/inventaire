@@ -7,7 +7,22 @@ Ce module définit les tables de la base de données :
 - Mouvement : Historique des mouvements de stock (entrées/sorties)
 """
 
-from sqlalchemy import Column, Integer, String, Text, Float, Boolean, ForeignKey, DateTime, Date, CheckConstraint, Table, Numeric, Enum, JSON
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    Float,
+    Boolean,
+    ForeignKey,
+    DateTime,
+    Date,
+    CheckConstraint,
+    Table,
+    Numeric,
+    Enum,
+    JSON,
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -20,22 +35,43 @@ class Categorie(Base):
 
     Supporte une hiérarchie à 2 niveaux : catégories racines et sous-catégories.
     """
+
     __tablename__ = "categories"
 
     # Colonnes
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    nom = Column(String(100), nullable=False, index=True)  # Retrait de unique=True pour permettre même nom sous parents différents
+    nom = Column(
+        String(100), nullable=False, index=True
+    )  # Retrait de unique=True pour permettre même nom sous parents différents
     description = Column(Text, nullable=True)
-    parent_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=True, index=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
-    updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    parent_id = Column(
+        Integer,
+        ForeignKey("categories.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+    created_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    updated_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # Relations
     # Auto-référence pour la hiérarchie
     parent = relationship("Categorie", remote_side=[id], back_populates="children")
-    children = relationship("Categorie", back_populates="parent", cascade="all, delete-orphan")
+    children = relationship(
+        "Categorie", back_populates="parent", cascade="all, delete-orphan"
+    )
     # Note: Articles reclassés en "Sans catégorie" (categorie_id = NULL) lors suppression
     articles = relationship("Article", back_populates="categorie")
 
@@ -58,7 +94,9 @@ class Categorie(Base):
         return self.nom
 
     def __repr__(self):
-        return f"<Categorie(id={self.id}, nom='{self.nom}', parent_id={self.parent_id})>"
+        return (
+            f"<Categorie(id={self.id}, nom='{self.nom}', parent_id={self.parent_id})>"
+        )
 
 
 class Article(Base):
@@ -67,42 +105,81 @@ class Article(Base):
 
     Contient toutes les informations sur un article : nom, quantité, prix, etc.
     """
+
     __tablename__ = "articles"
 
     # Colonnes
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     nom = Column(String(200), nullable=False, index=True)
     quantite = Column(Integer, nullable=False, default=0)
-    quantite_min = Column(Integer, default=10, nullable=False)  # Seuil pour alerte stock bas
+    quantite_min = Column(
+        Integer, default=10, nullable=False
+    )  # Seuil pour alerte stock bas
     prix_unitaire = Column(Float, nullable=False)
-    categorie_id = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
-    emplacement_id = Column(Integer, ForeignKey("emplacements.id", ondelete="SET NULL"), nullable=True)
+    categorie_id = Column(
+        Integer, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
+    )
+    emplacement_id = Column(
+        Integer, ForeignKey("emplacements.id", ondelete="SET NULL"), nullable=True
+    )
     description = Column(Text, nullable=True)
-    sku = Column(String(50), unique=True, nullable=True, index=True)  # Code article unique
-    prix_fournisseur = Column(Float, nullable=True)  # Prix d'achat fournisseur principal
-    ref_fournisseur = Column(String(50), nullable=True)  # Référence catalogue fournisseur
+    sku = Column(
+        String(50), unique=True, nullable=True, index=True
+    )  # Code article unique
+    prix_fournisseur = Column(
+        Float, nullable=True
+    )  # Prix d'achat fournisseur principal
+    ref_fournisseur = Column(
+        String(50), nullable=True
+    )  # Référence catalogue fournisseur
     delai_livraison = Column(Integer, nullable=True)  # Délai de livraison en jours
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
-    updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+    created_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    updated_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # Contraintes de validation
     __table_args__ = (
-        CheckConstraint('quantite >= 0', name='check_quantite_positive'),
-        CheckConstraint('prix_unitaire >= 0', name='check_prix_positif'),
-        CheckConstraint('quantite_min >= 0', name='check_quantite_min_positive'),
-        CheckConstraint('prix_fournisseur >= 0 OR prix_fournisseur IS NULL', name='check_prix_fournisseur_positif'),
-        CheckConstraint('delai_livraison >= 0 OR delai_livraison IS NULL', name='check_delai_positif'),
+        CheckConstraint("quantite >= 0", name="check_quantite_positive"),
+        CheckConstraint("prix_unitaire >= 0", name="check_prix_positif"),
+        CheckConstraint("quantite_min >= 0", name="check_quantite_min_positive"),
+        CheckConstraint(
+            "prix_fournisseur >= 0 OR prix_fournisseur IS NULL",
+            name="check_prix_fournisseur_positif",
+        ),
+        CheckConstraint(
+            "delai_livraison >= 0 OR delai_livraison IS NULL",
+            name="check_delai_positif",
+        ),
     )
 
     # Relations
     categorie = relationship("Categorie", back_populates="articles")
     emplacement = relationship("Emplacement", back_populates="articles")
-    mouvements = relationship("Mouvement", back_populates="article", cascade="all, delete-orphan")
+    mouvements = relationship(
+        "Mouvement", back_populates="article", cascade="all, delete-orphan"
+    )
     tags = relationship("Tag", secondary="article_tags", back_populates="articles")
-    photos = relationship("Photo", back_populates="article", cascade="all, delete-orphan", order_by="Photo.created_at")
-    fournisseurs = relationship("Fournisseur", secondary="article_fournisseurs", back_populates="articles")
+    photos = relationship(
+        "Photo",
+        back_populates="article",
+        cascade="all, delete-orphan",
+        order_by="Photo.created_at",
+    )
+    fournisseurs = relationship(
+        "Fournisseur", secondary="article_fournisseurs", back_populates="articles"
+    )
     lignes_commande = relationship("LigneCommande", back_populates="article")
 
     # Relations audit trail
@@ -130,24 +207,36 @@ class Mouvement(Base):
     Enregistre l'historique de tous les mouvements (entrées et sorties) pour chaque article.
     Permet de tracer qui a fait quoi et quand.
     """
+
     __tablename__ = "mouvements"
 
     # Colonnes
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    article_id = Column(Integer, ForeignKey("articles.id", ondelete="CASCADE"), nullable=False, index=True)
+    article_id = Column(
+        Integer,
+        ForeignKey("articles.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     type = Column(String(20), nullable=False)  # 'ENTREE' ou 'SORTIE'
     quantite = Column(Integer, nullable=False)
     quantite_avant = Column(Integer, nullable=False)  # Quantité avant le mouvement
     quantite_apres = Column(Integer, nullable=False)  # Quantité après le mouvement
     motif = Column(Text, nullable=True)  # Raison du mouvement
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
-    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)  # Migré de String → FK
-    updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
+    created_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )  # Migré de String → FK
+    updated_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # Contraintes de validation
     __table_args__ = (
-        CheckConstraint("type IN ('ENTREE', 'SORTIE')", name='check_type_mouvement'),
-        CheckConstraint('quantite > 0', name='check_quantite_mouvement_positive'),
+        CheckConstraint("type IN ('ENTREE', 'SORTIE')", name="check_type_mouvement"),
+        CheckConstraint("quantite > 0", name="check_quantite_mouvement_positive"),
     )
 
     # Relations
@@ -168,18 +257,32 @@ class Photo(Base):
     Permet de stocker plusieurs photos par article pour identification visuelle.
     Les photos sont stockées dans uploads/articles/{article_id}/ avec miniatures générées automatiquement.
     """
+
     __tablename__ = "photos"
 
     # Colonnes
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    article_id = Column(Integer, ForeignKey("articles.id", ondelete="CASCADE"), nullable=False, index=True)
+    article_id = Column(
+        Integer,
+        ForeignKey("articles.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
     filename = Column(String(255), nullable=False)  # Nom original du fichier
-    filepath = Column(String(500), nullable=False)  # Chemin relatif depuis uploads/ (ex: articles/1/photo.jpg)
-    thumbnail_path = Column(String(500), nullable=True)  # Chemin miniature (ex: articles/1/thumbnails/photo.jpg)
+    filepath = Column(
+        String(500), nullable=False
+    )  # Chemin relatif depuis uploads/ (ex: articles/1/photo.jpg)
+    thumbnail_path = Column(
+        String(500), nullable=True
+    )  # Chemin miniature (ex: articles/1/thumbnails/photo.jpg)
     file_size = Column(Integer, nullable=False)  # Taille en octets
     mime_type = Column(String(50), nullable=False)  # image/jpeg, image/png, image/webp
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    created_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # Relations
     article = relationship("Article", back_populates="photos")
@@ -193,11 +296,21 @@ class Photo(Base):
 
 # Table d'association pour la relation many-to-many entre Article et Fournisseur
 article_fournisseurs = Table(
-    'article_fournisseurs',
+    "article_fournisseurs",
     Base.metadata,
-    Column('article_id', Integer, ForeignKey('articles.id', ondelete='CASCADE'), primary_key=True),
-    Column('fournisseur_id', Integer, ForeignKey('fournisseurs.id', ondelete='CASCADE'), primary_key=True),
-    Column('created_at', DateTime(timezone=True), server_default=func.now())
+    Column(
+        "article_id",
+        Integer,
+        ForeignKey("articles.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "fournisseur_id",
+        Integer,
+        ForeignKey("fournisseurs.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column("created_at", DateTime(timezone=True), server_default=func.now()),
 )
 
 
@@ -208,6 +321,7 @@ class Fournisseur(Base):
     Gère les informations des fournisseurs et leurs liens avec les articles.
     Un article peut avoir plusieurs fournisseurs, et un fournisseur peut fournir plusieurs articles.
     """
+
     __tablename__ = "fournisseurs"
 
     # Colonnes
@@ -219,13 +333,26 @@ class Fournisseur(Base):
     adresse = Column(String(500), nullable=True)
     site_web = Column(String(255), nullable=True)
     description = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
-    updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+    created_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    updated_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # Relation many-to-many avec Article
-    articles = relationship("Article", secondary=article_fournisseurs, back_populates="fournisseurs")
+    articles = relationship(
+        "Article", secondary=article_fournisseurs, back_populates="fournisseurs"
+    )
     commandes = relationship("Commande", back_populates="fournisseur")
 
     # Relations audit trail
@@ -238,11 +365,18 @@ class Fournisseur(Base):
 
 # Table d'association pour la relation many-to-many entre Article et Tag
 article_tags = Table(
-    'article_tags',
+    "article_tags",
     Base.metadata,
-    Column('article_id', Integer, ForeignKey('articles.id', ondelete='CASCADE'), primary_key=True),
-    Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE'), primary_key=True),
-    Column('created_at', DateTime(timezone=True), server_default=func.now())
+    Column(
+        "article_id",
+        Integer,
+        ForeignKey("articles.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True
+    ),
+    Column("created_at", DateTime(timezone=True), server_default=func.now()),
 )
 
 
@@ -254,6 +388,7 @@ class Tag(Base):
     (machine, univers, usage, etc.) en complément des catégories.
     Un article peut avoir plusieurs tags, et un tag peut être associé à plusieurs articles.
     """
+
     __tablename__ = "tags"
 
     # Colonnes
@@ -261,10 +396,21 @@ class Tag(Base):
     nom = Column(String(50), unique=True, nullable=False, index=True)
     couleur = Column(String(7), nullable=True)  # Code couleur hex (#FF5733)
     description = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
-    updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+    created_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    updated_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # Relation many-to-many avec Article
     articles = relationship("Article", secondary=article_tags, back_populates="tags")
@@ -286,6 +432,7 @@ class RoleEnum(str, enum.Enum):
     - TECHNICIEN : Consultation + création mouvements SORTIE uniquement
     - CONSULTATION : Lecture seule sur tout
     """
+
     ADMIN = "admin"
     GESTIONNAIRE = "gestionnaire"
     TECHNICIEN = "technicien"
@@ -299,6 +446,7 @@ class User(Base):
     Stocke les informations d'authentification des utilisateurs de l'application.
     Support multi-utilisateurs avec système de rôles et permissions.
     """
+
     __tablename__ = "users"
 
     # Colonnes
@@ -307,19 +455,38 @@ class User(Base):
     email = Column(String(100), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
-    role = Column(Enum(RoleEnum), nullable=False, default=RoleEnum.CONSULTATION, index=True)
+    role = Column(
+        Enum(RoleEnum), nullable=False, default=RoleEnum.CONSULTATION, index=True
+    )
     permissions = Column(JSON, nullable=True)  # Permissions custom (overrides du rôle)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
-    updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+    created_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    updated_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # Relations
-    commandes = relationship("Commande", foreign_keys="Commande.created_by", back_populates="user")
+    commandes = relationship(
+        "Commande", foreign_keys="Commande.created_by", back_populates="user"
+    )
 
     # Relations audit trail (self-referential)
-    creator = relationship("User", remote_side=[id], foreign_keys=[created_by], viewonly=True)
-    updater = relationship("User", remote_side=[id], foreign_keys=[updated_by], viewonly=True)
+    creator = relationship(
+        "User", remote_side=[id], foreign_keys=[created_by], viewonly=True
+    )
+    updater = relationship(
+        "User", remote_side=[id], foreign_keys=[updated_by], viewonly=True
+    )
 
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"
@@ -332,6 +499,7 @@ class Emplacement(Base):
     Structure hiérarchique à 3 niveaux : Zone → Étagère → Boîte
     Permet de localiser les articles dans l'atelier et de gérer les capacités de stockage.
     """
+
     __tablename__ = "emplacements"
 
     # Colonnes
@@ -339,20 +507,37 @@ class Emplacement(Base):
     code = Column(String(50), unique=True, nullable=False, index=True)
     description = Column(Text, nullable=True)
     capacite_max = Column(Integer, nullable=True)  # NULL = capacité illimitée
-    parent_id = Column(Integer, ForeignKey("emplacements.id", ondelete="CASCADE"), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
-    updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    parent_id = Column(
+        Integer, ForeignKey("emplacements.id", ondelete="CASCADE"), nullable=True
+    )
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+    created_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    updated_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # Contraintes de validation
     __table_args__ = (
-        CheckConstraint('capacite_max > 0 OR capacite_max IS NULL', name='check_capacite_positive'),
+        CheckConstraint(
+            "capacite_max > 0 OR capacite_max IS NULL", name="check_capacite_positive"
+        ),
     )
 
     # Relations auto-référence
     parent = relationship("Emplacement", remote_side=[id], back_populates="children")
-    children = relationship("Emplacement", back_populates="parent", cascade="all, delete-orphan")
+    children = relationship(
+        "Emplacement", back_populates="parent", cascade="all, delete-orphan"
+    )
     articles = relationship("Article", back_populates="emplacement")
 
     # Relations audit trail
@@ -407,6 +592,7 @@ class Emplacement(Base):
 # MODÈLES COMMANDES
 # ============================================================================
 
+
 class Commande(Base):
     """
     Modèle pour une commande fournisseur.
@@ -421,31 +607,53 @@ class Commande(Base):
     BROUILLON → ENVOYEE → RECUE
               ↘ ANNULEE ↙
     """
+
     __tablename__ = "commandes"
 
     id = Column(Integer, primary_key=True, index=True)
-    fournisseur_id = Column(Integer, ForeignKey("fournisseurs.id", ondelete="RESTRICT"), nullable=False, index=True)
+    fournisseur_id = Column(
+        Integer,
+        ForeignKey("fournisseurs.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
     numero_commande = Column(String(50), unique=True, nullable=False, index=True)
     statut = Column(
         String(20),
-        CheckConstraint("statut IN ('BROUILLON', 'ENVOYEE', 'RECUE', 'ANNULEE')", name="check_statut_commande"),
+        CheckConstraint(
+            "statut IN ('BROUILLON', 'ENVOYEE', 'RECUE', 'ANNULEE')",
+            name="check_statut_commande",
+        ),
         nullable=False,
         default="BROUILLON",
-        index=True
+        index=True,
     )
     date_commande = Column(DateTime(timezone=True), nullable=True)  # NULL si BROUILLON
     date_reception_prevue = Column(Date, nullable=True)
-    date_reception_reelle = Column(DateTime(timezone=True), nullable=True)  # NULL si pas encore reçue
-    montant_total = Column(Numeric(10, 2), CheckConstraint("montant_total >= 0", name="check_montant_positif"), nullable=False, default=0)
+    date_reception_reelle = Column(
+        DateTime(timezone=True), nullable=True
+    )  # NULL si pas encore reçue
+    montant_total = Column(
+        Numeric(10, 2),
+        CheckConstraint("montant_total >= 0", name="check_montant_positif"),
+        nullable=False,
+        default=0,
+    )
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    created_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    updated_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # Relations
     fournisseur = relationship("Fournisseur", back_populates="commandes")
-    lignes = relationship("LigneCommande", back_populates="commande", cascade="all, delete-orphan")
+    lignes = relationship(
+        "LigneCommande", back_populates="commande", cascade="all, delete-orphan"
+    )
     user = relationship("User", foreign_keys=[created_by], back_populates="commandes")
 
     # Relations audit trail
@@ -465,16 +673,42 @@ class LigneCommande(Base):
     - quantite_recue : Quantité réellement reçue (peut être différente)
     - prix_unitaire : Prix unitaire au moment de la commande
     """
+
     __tablename__ = "lignes_commande"
 
     id = Column(Integer, primary_key=True, index=True)
-    commande_id = Column(Integer, ForeignKey("commandes.id", ondelete="CASCADE"), nullable=False, index=True)
-    article_id = Column(Integer, ForeignKey("articles.id", ondelete="RESTRICT"), nullable=False, index=True)
-    quantite_commandee = Column(Integer, CheckConstraint("quantite_commandee > 0", name="check_qte_commandee_positive"), nullable=False)
-    quantite_recue = Column(Integer, CheckConstraint("quantite_recue >= 0", name="check_qte_recue_positive"), nullable=False, default=0)
-    prix_unitaire = Column(Numeric(10, 2), CheckConstraint("prix_unitaire >= 0", name="check_prix_ligne_positif"), nullable=False)
+    commande_id = Column(
+        Integer,
+        ForeignKey("commandes.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    article_id = Column(
+        Integer,
+        ForeignKey("articles.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    quantite_commandee = Column(
+        Integer,
+        CheckConstraint("quantite_commandee > 0", name="check_qte_commandee_positive"),
+        nullable=False,
+    )
+    quantite_recue = Column(
+        Integer,
+        CheckConstraint("quantite_recue >= 0", name="check_qte_recue_positive"),
+        nullable=False,
+        default=0,
+    )
+    prix_unitaire = Column(
+        Numeric(10, 2),
+        CheckConstraint("prix_unitaire >= 0", name="check_prix_ligne_positif"),
+        nullable=False,
+    )
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    created_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # Relations
     commande = relationship("Commande", back_populates="lignes")

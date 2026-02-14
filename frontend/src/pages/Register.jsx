@@ -118,7 +118,7 @@ function Register() {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="username">
-              Nom d'utilisateur <span className="required">*</span>
+              Nom d&apos;utilisateur <span className="required">*</span>
             </label>
             <input
               type="text"

@@ -5,7 +5,6 @@ import { renderWithProviders } from '../utils/testUtils'
 import Dashboard from '../../pages/Dashboard'
 import * as rapportService from '../../services/rapportService'
 import * as articleService from '../../services/articleService'
-import * as categorieService from '../../services/categorieService'
 
 // Mock authService pour AuthProvider
 vi.mock('../../services/authService', () => ({

@@ -4,7 +4,7 @@
  * Permet de lister, créer, modifier et supprimer des fournisseurs.
  */
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
 import { getFournisseurs, deleteFournisseur, createFournisseur, updateFournisseur } from '../services/fournisseurService'

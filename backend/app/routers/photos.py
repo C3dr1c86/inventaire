@@ -16,16 +16,17 @@ from app.database import get_db
 from app.auth import get_current_user
 from app.services import photo_service
 
-
 router = APIRouter()
 
 
-@router.post("/{article_id}/photos", response_model=schemas.PhotoResponse, status_code=201)
+@router.post(
+    "/{article_id}/photos", response_model=schemas.PhotoResponse, status_code=201
+)
 async def upload_photo(
     article_id: int,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Upload une photo pour un article.
@@ -65,16 +66,20 @@ async def upload_photo(
     if file_size > photo_service.MAX_FILE_SIZE:
         raise HTTPException(
             status_code=400,
-            detail=f"Fichier trop volumineux. Taille maximum : {photo_service.MAX_FILE_SIZE / (1024*1024):.1f} MB"
+            detail=f"Fichier trop volumineux. Taille maximum : {photo_service.MAX_FILE_SIZE / (1024*1024):.1f} MB",
         )
 
     # Sauvegarder photo et générer miniature
     try:
-        filepath, thumbnail_path, actual_file_size = photo_service.save_photo(article_id, file)
+        filepath, thumbnail_path, actual_file_size = photo_service.save_photo(
+            article_id, file
+        )
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de la sauvegarde : {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Erreur lors de la sauvegarde : {str(e)}"
+        )
 
     # Créer enregistrement en base
     db_photo = crud.create_photo(
@@ -85,7 +90,7 @@ async def upload_photo(
         thumbnail_path=thumbnail_path,
         file_size=actual_file_size,
         mime_type=file.content_type,
-        current_user=current_user
+        current_user=current_user,
     )
 
     return db_photo
@@ -96,7 +101,7 @@ def delete_photo(
     article_id: int,
     photo_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Supprime une photo.
@@ -132,7 +137,7 @@ def delete_photo(
     if db_photo.article_id != article_id:
         raise HTTPException(
             status_code=400,
-            detail=f"Cette photo n'appartient pas à l'article {article_id}"
+            detail=f"Cette photo n'appartient pas à l'article {article_id}",
         )
 
     # Supprimer les fichiers du système de fichiers
@@ -152,7 +157,7 @@ def delete_photo(
 def get_article_photos(
     article_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Récupère toutes les photos d'un article.

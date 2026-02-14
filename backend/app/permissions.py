@@ -16,16 +16,12 @@ if TYPE_CHECKING:
 from app.auth import get_current_user
 from app.models import RoleEnum
 
-
 # ====================================================================
 # PERMISSIONS PAR DÉFAUT PAR RÔLE
 # ====================================================================
 
 DEFAULT_PERMISSIONS = {
-    RoleEnum.ADMIN: [
-        "*:*"  # Wildcard : Accès complet à tout
-    ],
-
+    RoleEnum.ADMIN: ["*:*"],  # Wildcard : Accès complet à tout
     RoleEnum.GESTIONNAIRE: [
         # Articles
         "articles:read",
@@ -33,76 +29,60 @@ DEFAULT_PERMISSIONS = {
         "articles:update",
         "articles:delete",
         "articles:export",
-
         # Catégories
         "categories:read",
         "categories:create",
         "categories:update",
         "categories:delete",
-
         # Mouvements
         "mouvements:read",
         "mouvements:create",
         "mouvements:update",
         "mouvements:delete",
-
         # Commandes
         "commandes:read",
         "commandes:create",
         "commandes:update",
         "commandes:delete",
         "commandes:export",
-
         # Fournisseurs
         "fournisseurs:read",
         "fournisseurs:create",
         "fournisseurs:update",
         "fournisseurs:delete",
-
         # Emplacements
         "emplacements:read",
         "emplacements:create",
         "emplacements:update",
         "emplacements:delete",
-
         # Tags
         "tags:read",
         "tags:create",
         "tags:update",
         "tags:delete",
-
         # Rapports
         "rapports:read",
-        "rapports:export"
+        "rapports:export",
     ],
-
     RoleEnum.TECHNICIEN: [
         # Articles (lecture seule)
         "articles:read",
-
         # Catégories (lecture seule)
         "categories:read",
-
         # Mouvements (création SORTIE seulement + lecture)
         "mouvements:read",
         "mouvements:create",  # Validation métier : seulement SORTIE
-
         # Commandes (lecture seule)
         "commandes:read",
-
         # Fournisseurs (lecture seule)
         "fournisseurs:read",
-
         # Emplacements (lecture seule)
         "emplacements:read",
-
         # Tags (lecture seule)
         "tags:read",
-
         # Rapports (lecture seule)
-        "rapports:read"
+        "rapports:read",
     ],
-
     RoleEnum.CONSULTATION: [
         # Lecture seule sur tout
         "articles:read",
@@ -112,14 +92,15 @@ DEFAULT_PERMISSIONS = {
         "fournisseurs:read",
         "emplacements:read",
         "tags:read",
-        "rapports:read"
-    ]
+        "rapports:read",
+    ],
 }
 
 
 # ====================================================================
 # FONCTIONS DE VÉRIFICATION DES PERMISSIONS
 # ====================================================================
+
 
 def has_permission(user: "User", resource: str, action: str) -> bool:
     """
@@ -194,6 +175,7 @@ def get_user_permissions(user: "User") -> list[str]:
 # DÉPENDANCES FASTAPI
 # ====================================================================
 
+
 def require_permission(resource: str, action: str):
     """
     Dépendance FastAPI pour vérifier une permission.
@@ -219,11 +201,12 @@ def require_permission(resource: str, action: str):
         ):
             pass
     """
+
     def permission_checker(current_user: "User" = Depends(get_current_user)) -> "User":
         if not has_permission(current_user, resource, action):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Permission refusée : {resource}:{action}. Rôle requis insuffisant."
+                detail=f"Permission refusée : {resource}:{action}. Rôle requis insuffisant.",
             )
         return current_user
 
@@ -247,6 +230,6 @@ def require_admin(current_user: "User" = Depends(get_current_user)) -> "User":
     if current_user.role != RoleEnum.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Accès réservé aux administrateurs"
+            detail="Accès réservé aux administrateurs",
         )
     return current_user

@@ -17,8 +17,9 @@ app = FastAPI(
     description="API REST pour gérer un inventaire d'articles avec suivi des mouvements de stock",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
+
 
 # Middleware pour gérer les OPTIONS explicitement AVANT CORS
 @app.middleware("http")
@@ -32,10 +33,11 @@ async def handle_options(request: Request, call_next):
                 "Access-Control-Allow-Headers": "*",
                 "Access-Control-Allow-Credentials": "true",
                 "Access-Control-Max-Age": "3600",
-            }
+            },
         )
     response = await call_next(request)
     return response
+
 
 # Configuration CORS ultra-permissive
 app.add_middleware(
@@ -71,7 +73,7 @@ async def root():
         "message": "Bienvenue sur l'API de gestion d'inventaire",
         "version": "1.0.0",
         "documentation": "/docs",
-        "status": "running"
+        "status": "running",
     }
 
 
@@ -85,10 +87,7 @@ async def health_check():
     Returns:
         dict: Status de l'API
     """
-    return {
-        "status": "healthy",
-        "message": "L'API fonctionne correctement"
-    }
+    return {"status": "healthy", "message": "L'API fonctionne correctement"}
 
 
 # Importer les routers
@@ -111,5 +110,5 @@ if __name__ == "__main__":
         "app.main:app",
         host=os.getenv("API_HOST", "0.0.0.0"),
         port=int(os.getenv("API_PORT", 8000)),
-        reload=True  # Auto-reload en développement
+        reload=True,  # Auto-reload en développement
     )

@@ -22,8 +22,9 @@ else:
 engine = create_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False},
-    echo=False  # Mettre à True pour voir les requêtes SQL dans les logs
+    echo=False,  # Mettre à True pour voir les requêtes SQL dans les logs
 )
+
 
 # Activer les clés étrangères pour SQLite
 # SQLite ne les active pas par défaut
@@ -33,6 +34,7 @@ def set_sqlite_pragma(dbapi_conn, connection_record):
     cursor = dbapi_conn.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
+
 
 # Créer une session locale pour les opérations de base de données
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

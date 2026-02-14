@@ -28,7 +28,7 @@ def liste_fournisseurs(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """Récupère la liste de tous les fournisseurs."""
     fournisseurs = crud.get_fournisseurs(db, skip=skip, limit=limit)
@@ -39,23 +39,25 @@ def liste_fournisseurs(
 def lire_fournisseur(
     fournisseur_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """Récupère un fournisseur spécifique par son ID."""
     fournisseur = crud.get_fournisseur(db, fournisseur_id)
     if not fournisseur:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fournisseur {fournisseur_id} non trouvé"
+            detail=f"Fournisseur {fournisseur_id} non trouvé",
         )
     return fournisseur
 
 
-@router.post("/", response_model=schemas.FournisseurResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=schemas.FournisseurResponse, status_code=status.HTTP_201_CREATED
+)
 def creer_fournisseur(
     fournisseur: schemas.FournisseurCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """Crée un nouveau fournisseur."""
     return crud.create_fournisseur(db, fournisseur, current_user)
@@ -66,7 +68,7 @@ def modifier_fournisseur(
     fournisseur_id: int,
     fournisseur_update: schemas.FournisseurUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """Met à jour un fournisseur existant."""
     return crud.update_fournisseur(db, fournisseur_id, fournisseur_update, current_user)
@@ -76,7 +78,7 @@ def modifier_fournisseur(
 def supprimer_fournisseur(
     fournisseur_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """Supprime un fournisseur."""
     crud.delete_fournisseur(db, fournisseur_id)
@@ -85,23 +87,27 @@ def supprimer_fournisseur(
     )
 
 
-@router.post("/{fournisseur_id}/articles/{article_id}", response_model=schemas.ArticleResponse)
+@router.post(
+    "/{fournisseur_id}/articles/{article_id}", response_model=schemas.ArticleResponse
+)
 def associer_fournisseur_article(
     fournisseur_id: int,
     article_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """Associe un fournisseur à un article."""
     return crud.add_fournisseur_to_article(db, article_id, fournisseur_id)
 
 
-@router.delete("/{fournisseur_id}/articles/{article_id}", response_model=schemas.ArticleResponse)
+@router.delete(
+    "/{fournisseur_id}/articles/{article_id}", response_model=schemas.ArticleResponse
+)
 def retirer_fournisseur_article(
     fournisseur_id: int,
     article_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """Retire un fournisseur d'un article."""
     return crud.remove_fournisseur_from_article(db, article_id, fournisseur_id)
@@ -113,7 +119,7 @@ def liste_articles_fournisseur(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     """Récupère la liste des articles d'un fournisseur."""
     return crud.get_articles_by_fournisseur(db, fournisseur_id, skip=skip, limit=limit)

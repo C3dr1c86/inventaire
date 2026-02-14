@@ -16,11 +16,12 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
 
-
 # Configuration JWT
 # SECRET_KEY doit être définie dans la variable d'environnement SECRET_KEY
 # Pour générer une clé : openssl rand -hex 32
-SECRET_KEY = getenv("SECRET_KEY", "dev-key-CHANGEZ-CETTE-CLE-EN-PRODUCTION-utilisez-openssl-rand-hex-32")
+SECRET_KEY = getenv(
+    "SECRET_KEY", "dev-key-CHANGEZ-CETTE-CLE-EN-PRODUCTION-utilisez-openssl-rand-hex-32"
+)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 heures (mono-utilisateur)
 
@@ -58,7 +59,9 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict, user: models.User, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(
+    data: dict, user: models.User, expires_delta: Optional[timedelta] = None
+) -> str:
     """
     Crée un token JWT enrichi avec user_id et role.
 
@@ -75,14 +78,18 @@ def create_access_token(data: dict, user: models.User, expires_delta: Optional[t
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+        )
 
     # Enrichir le payload avec user_id et role
-    to_encode.update({
-        "exp": expire,
-        "user_id": user.id,
-        "role": user.role.value  # Convertir l'enum en string
-    })
+    to_encode.update(
+        {
+            "exp": expire,
+            "user_id": user.id,
+            "role": user.role.value,  # Convertir l'enum en string
+        }
+    )
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -108,16 +115,14 @@ def decode_access_token(token: str) -> Optional[schemas.TokenData]:
         user_id: int = payload.get("user_id")
         role: str = payload.get("role")
 
-        return schemas.TokenData(
-            username=username,
-            user_id=user_id,
-            role=role
-        )
+        return schemas.TokenData(username=username, user_id=user_id, role=role)
     except JWTError:
         return None
 
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> models.User:
+def get_current_user(
+    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+) -> models.User:
     """
     Dépendance FastAPI pour récupérer l'utilisateur actuel depuis le token JWT.
 
@@ -142,14 +147,17 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
 
     # Récupérer l'utilisateur depuis la base de données
-    user = db.query(models.User).filter(models.User.username == token_data.username).first()
+    user = (
+        db.query(models.User)
+        .filter(models.User.username == token_data.username)
+        .first()
+    )
     if user is None:
         raise credentials_exception
 
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Utilisateur inactif"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Utilisateur inactif"
         )
 
     return user

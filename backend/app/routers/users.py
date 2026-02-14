@@ -15,12 +15,12 @@ from app.permissions import require_admin
 router = APIRouter()
 
 
-@router.get("/", response_model=List[schemas.UserResponse], dependencies=[Depends(require_admin)])
-def list_users(
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db)
-):
+@router.get(
+    "/",
+    response_model=List[schemas.UserResponse],
+    dependencies=[Depends(require_admin)],
+)
+def list_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
     Liste tous les utilisateurs (admin only).
 
@@ -35,11 +35,16 @@ def list_users(
     return crud.get_users(db, skip=skip, limit=limit)
 
 
-@router.post("/", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_admin)])
+@router.post(
+    "/",
+    response_model=schemas.UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin)],
+)
 def create_user_with_role(
     user: schemas.UserCreateAdmin,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(require_admin)
+    current_user: models.User = Depends(require_admin),
 ):
     """
     Crée un nouvel utilisateur avec un rôle spécifique (admin only).
@@ -67,11 +72,12 @@ def create_user_with_role(
     return db_user
 
 
-@router.get("/{user_id}", response_model=schemas.UserResponse, dependencies=[Depends(require_admin)])
-def get_user(
-    user_id: int,
-    db: Session = Depends(get_db)
-):
+@router.get(
+    "/{user_id}",
+    response_model=schemas.UserResponse,
+    dependencies=[Depends(require_admin)],
+)
+def get_user(user_id: int, db: Session = Depends(get_db)):
     """
     Récupère les détails d'un utilisateur (admin only).
 
@@ -89,17 +95,21 @@ def get_user(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Utilisateur {user_id} non trouvé"
+            detail=f"Utilisateur {user_id} non trouvé",
         )
     return user
 
 
-@router.put("/{user_id}/role", response_model=schemas.UserResponse, dependencies=[Depends(require_admin)])
+@router.put(
+    "/{user_id}/role",
+    response_model=schemas.UserResponse,
+    dependencies=[Depends(require_admin)],
+)
 def change_user_role(
     user_id: int,
     role_update: schemas.RoleUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(require_admin)
+    current_user: models.User = Depends(require_admin),
 ):
     """
     Change le rôle d'un utilisateur (admin only).
@@ -123,12 +133,16 @@ def change_user_role(
     return crud.update_user_role(db, user_id, role_update.role, current_user)
 
 
-@router.put("/{user_id}/permissions", response_model=schemas.UserResponse, dependencies=[Depends(require_admin)])
+@router.put(
+    "/{user_id}/permissions",
+    response_model=schemas.UserResponse,
+    dependencies=[Depends(require_admin)],
+)
 def update_user_permissions(
     user_id: int,
     permissions_update: schemas.PermissionsUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(require_admin)
+    current_user: models.User = Depends(require_admin),
 ):
     """
     Met à jour les permissions custom d'un utilisateur (admin only).
@@ -147,14 +161,20 @@ def update_user_permissions(
     Raises:
         HTTPException 404: Si l'utilisateur n'existe pas
     """
-    return crud.update_user_permissions(db, user_id, permissions_update.permissions, current_user)
+    return crud.update_user_permissions(
+        db, user_id, permissions_update.permissions, current_user
+    )
 
 
-@router.delete("/{user_id}", response_model=schemas.UserResponse, dependencies=[Depends(require_admin)])
+@router.delete(
+    "/{user_id}",
+    response_model=schemas.UserResponse,
+    dependencies=[Depends(require_admin)],
+)
 def deactivate_user(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(require_admin)
+    current_user: models.User = Depends(require_admin),
 ):
     """
     Désactive un utilisateur (is_active = False) (admin only).

@@ -21,10 +21,8 @@ import { getEmplacements } from '../services/emplacementService'
 import { Download, FileText, AlertTriangle, Barcode, CheckSquare, Square, QrCode, Truck, Tag as TagIcon, MapPin } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
-import { usePermissions } from '../hooks/usePermissions'
 
 function Rapports() {
-  const { hasPermission } = usePermissions()
   const [exportLoading, setExportLoading] = useState(false)
   const [selectedArticles, setSelectedArticles] = useState([])
   const [showBarcodeSection, setShowBarcodeSection] = useState(false)
