@@ -8,7 +8,7 @@ articles et mouvements.
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, func
 from sqlalchemy.exc import IntegrityError
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Tuple
 from app import models, schemas
 from fastapi import HTTPException, status
 import logging

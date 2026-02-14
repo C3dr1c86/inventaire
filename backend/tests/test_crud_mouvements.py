@@ -19,8 +19,8 @@ class TestCreateMouvement:
                 "article_id": sample_article.id,
                 "type": "ENTREE",
                 "quantite": 20,
-                "motif": "Réception commande"
-            }
+                "motif": "Réception commande",
+            },
         )
         assert response.status_code == 201
         data = response.json()
@@ -41,8 +41,8 @@ class TestCreateMouvement:
                 "article_id": sample_article.id,
                 "type": "SORTIE",
                 "quantite": 5,
-                "motif": "Utilisation projet X"
-            }
+                "motif": "Utilisation projet X",
+            },
         )
         assert response.status_code == 201
         data = response.json()
@@ -51,7 +51,9 @@ class TestCreateMouvement:
         assert data["quantite_avant"] == quantite_avant
         assert data["quantite_apres"] == quantite_avant - 5
 
-    def test_create_mouvement_entree_gestionnaire(self, client, gestionnaire_token, sample_article):
+    def test_create_mouvement_entree_gestionnaire(
+        self, client, gestionnaire_token, sample_article
+    ):
         """Gestionnaire peut créer un mouvement ENTREE"""
         response = client.post(
             "/api/mouvements",
@@ -60,12 +62,14 @@ class TestCreateMouvement:
                 "article_id": sample_article.id,
                 "type": "ENTREE",
                 "quantite": 15,
-                "motif": "Test"
-            }
+                "motif": "Test",
+            },
         )
         assert response.status_code == 201
 
-    def test_create_mouvement_technicien(self, client, technicien_token, sample_article):
+    def test_create_mouvement_technicien(
+        self, client, technicien_token, sample_article
+    ):
         """Technicien peut créer un mouvement"""
         response = client.post(
             "/api/mouvements",
@@ -74,13 +78,15 @@ class TestCreateMouvement:
                 "article_id": sample_article.id,
                 "type": "SORTIE",
                 "quantite": 3,
-                "motif": "Utilisation atelier"
-            }
+                "motif": "Utilisation atelier",
+            },
         )
         # Technicien a mouvements:create dans ses permissions
         assert response.status_code == 201
 
-    def test_create_mouvement_consultation_forbidden(self, client, consultation_token, sample_article):
+    def test_create_mouvement_consultation_forbidden(
+        self, client, consultation_token, sample_article
+    ):
         """Utilisateur consultation ne peut pas créer de mouvement"""
         response = client.post(
             "/api/mouvements",
@@ -89,12 +95,14 @@ class TestCreateMouvement:
                 "article_id": sample_article.id,
                 "type": "ENTREE",
                 "quantite": 10,
-                "motif": "Test"
-            }
+                "motif": "Test",
+            },
         )
         assert response.status_code == 403
 
-    def test_create_mouvement_sortie_stock_insuffisant(self, client, admin_token, db, admin_user, sample_categorie):
+    def test_create_mouvement_sortie_stock_insuffisant(
+        self, client, admin_token, db, admin_user, sample_categorie
+    ):
         """Impossible de créer une SORTIE si stock insuffisant"""
         from app.models import Article
 
@@ -105,7 +113,7 @@ class TestCreateMouvement:
             quantite_min=2,
             prix_unitaire=10.0,
             categorie_id=sample_categorie.id,
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         db.add(article)
         db.commit()
@@ -119,13 +127,15 @@ class TestCreateMouvement:
                 "article_id": article.id,
                 "type": "SORTIE",
                 "quantite": 10,  # > 5 disponibles
-                "motif": "Test"
-            }
+                "motif": "Test",
+            },
         )
         assert response.status_code == 400
         assert "insuffisant" in response.json()["detail"].lower()
 
-    def test_create_mouvement_quantite_negative(self, client, admin_token, sample_article):
+    def test_create_mouvement_quantite_negative(
+        self, client, admin_token, sample_article
+    ):
         """Impossible de créer un mouvement avec quantité négative"""
         response = client.post(
             "/api/mouvements",
@@ -134,8 +144,8 @@ class TestCreateMouvement:
                 "article_id": sample_article.id,
                 "type": "ENTREE",
                 "quantite": -5,
-                "motif": "Test"
-            }
+                "motif": "Test",
+            },
         )
         assert response.status_code == 422  # Validation error
 
@@ -148,8 +158,8 @@ class TestCreateMouvement:
                 "article_id": sample_article.id,
                 "type": "ENTREE",
                 "quantite": 0,
-                "motif": "Test"
-            }
+                "motif": "Test",
+            },
         )
         assert response.status_code == 422  # Validation error
 
@@ -162,8 +172,8 @@ class TestCreateMouvement:
                 "article_id": 99999,
                 "type": "ENTREE",
                 "quantite": 10,
-                "motif": "Test"
-            }
+                "motif": "Test",
+            },
         )
         assert response.status_code == 404
 
@@ -182,7 +192,7 @@ class TestGetMouvements:
             quantite=10,
             quantite_avant=sample_article.quantite,
             quantite_apres=sample_article.quantite + 10,
-            motif="Test 1"
+            motif="Test 1",
         )
         mvt2 = Mouvement(
             article_id=sample_article.id,
@@ -190,14 +200,13 @@ class TestGetMouvements:
             quantite=5,
             quantite_avant=sample_article.quantite + 10,
             quantite_apres=sample_article.quantite + 5,
-            motif="Test 2"
+            motif="Test 2",
         )
         db.add_all([mvt1, mvt2])
         db.commit()
 
         response = client.get(
-            "/api/mouvements",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            "/api/mouvements", headers={"Authorization": f"Bearer {admin_token}"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -205,7 +214,9 @@ class TestGetMouvements:
         assert "total" in data
         assert data["total"] >= 2
 
-    def test_get_mouvements_by_article(self, client, admin_token, sample_article, db, admin_user, sample_categorie):
+    def test_get_mouvements_by_article(
+        self, client, admin_token, sample_article, db, admin_user, sample_categorie
+    ):
         """Filtre mouvements par article"""
         from app.models import Article, Mouvement
 
@@ -216,7 +227,7 @@ class TestGetMouvements:
             quantite_min=5,
             prix_unitaire=10.0,
             categorie_id=sample_categorie.id,
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         db.add(article2)
         db.commit()
@@ -229,7 +240,7 @@ class TestGetMouvements:
             quantite=10,
             quantite_avant=sample_article.quantite,
             quantite_apres=sample_article.quantite + 10,
-            motif="Test article 1"
+            motif="Test article 1",
         )
         db.add(mvt1)
         db.commit()
@@ -237,7 +248,7 @@ class TestGetMouvements:
         # Filtrer par article
         response = client.get(
             f"/api/mouvements?article_id={sample_article.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -256,7 +267,7 @@ class TestGetMouvements:
             quantite=10,
             quantite_avant=sample_article.quantite,
             quantite_apres=sample_article.quantite + 10,
-            motif="Test ENTREE"
+            motif="Test ENTREE",
         )
         db.add(mvt_entree)
         db.commit()
@@ -264,7 +275,7 @@ class TestGetMouvements:
         # Filtrer ENTREE
         response = client.get(
             "/api/mouvements?type=ENTREE",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -281,7 +292,7 @@ class TestGetMouvements:
             quantite=15,
             quantite_avant=sample_article.quantite,
             quantite_apres=sample_article.quantite + 15,
-            motif="Test GET by ID"
+            motif="Test GET by ID",
         )
         db.add(mvt)
         db.commit()
@@ -289,7 +300,7 @@ class TestGetMouvements:
 
         response = client.get(
             f"/api/mouvements/{mvt.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -300,8 +311,7 @@ class TestGetMouvements:
     def test_get_nonexistent_mouvement(self, client, admin_token):
         """Erreur 404 pour mouvement inexistant"""
         response = client.get(
-            "/api/mouvements/99999",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            "/api/mouvements/99999", headers={"Authorization": f"Bearer {admin_token}"}
         )
         assert response.status_code == 404
 
@@ -317,7 +327,7 @@ class TestGetMouvements:
                 quantite=1,
                 quantite_avant=sample_article.quantite,
                 quantite_apres=sample_article.quantite + 1,
-                motif=f"Mouvement {i}"
+                motif=f"Mouvement {i}",
             )
             db.add(mvt)
         db.commit()
@@ -325,7 +335,7 @@ class TestGetMouvements:
         # Première page
         response = client.get(
             "/api/mouvements?skip=0&limit=10",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -334,7 +344,7 @@ class TestGetMouvements:
         # Deuxième page
         response = client.get(
             "/api/mouvements?skip=10&limit=10",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -355,8 +365,8 @@ class TestMouvementsStockUpdate:
                 "article_id": sample_article.id,
                 "type": "ENTREE",
                 "quantite": 25,
-                "motif": "Test incrémentation"
-            }
+                "motif": "Test incrémentation",
+            },
         )
         assert response.status_code == 201
 
@@ -375,8 +385,8 @@ class TestMouvementsStockUpdate:
                 "article_id": sample_article.id,
                 "type": "SORTIE",
                 "quantite": 3,
-                "motif": "Test décrémentation"
-            }
+                "motif": "Test décrémentation",
+            },
         )
         assert response.status_code == 201
 
@@ -384,7 +394,9 @@ class TestMouvementsStockUpdate:
         db.refresh(sample_article)
         assert sample_article.quantite == quantite_initiale - 3
 
-    def test_multiple_mouvements_correct_stock(self, client, admin_token, sample_article, db):
+    def test_multiple_mouvements_correct_stock(
+        self, client, admin_token, sample_article, db
+    ):
         """Plusieurs mouvements successifs maintiennent le stock correct"""
         quantite_initiale = sample_article.quantite
 
@@ -396,8 +408,8 @@ class TestMouvementsStockUpdate:
                 "article_id": sample_article.id,
                 "type": "ENTREE",
                 "quantite": 20,
-                "motif": "Test 1"
-            }
+                "motif": "Test 1",
+            },
         )
 
         # SORTIE -5
@@ -408,8 +420,8 @@ class TestMouvementsStockUpdate:
                 "article_id": sample_article.id,
                 "type": "SORTIE",
                 "quantite": 5,
-                "motif": "Test 2"
-            }
+                "motif": "Test 2",
+            },
         )
 
         # ENTREE +10
@@ -420,8 +432,8 @@ class TestMouvementsStockUpdate:
                 "article_id": sample_article.id,
                 "type": "ENTREE",
                 "quantite": 10,
-                "motif": "Test 3"
-            }
+                "motif": "Test 3",
+            },
         )
 
         # Vérifier stock final = initial + 20 - 5 + 10 = initial + 25
@@ -432,7 +444,9 @@ class TestMouvementsStockUpdate:
 class TestMouvementsWithArticleDetails:
     """Tests pour les mouvements avec détails de l'article"""
 
-    def test_mouvement_includes_article_details(self, client, admin_token, sample_article, db):
+    def test_mouvement_includes_article_details(
+        self, client, admin_token, sample_article, db
+    ):
         """Le mouvement retourné inclut les détails de l'article"""
         from app.models import Mouvement
 
@@ -442,7 +456,7 @@ class TestMouvementsWithArticleDetails:
             quantite=10,
             quantite_avant=sample_article.quantite,
             quantite_apres=sample_article.quantite + 10,
-            motif="Test avec article"
+            motif="Test avec article",
         )
         db.add(mvt)
         db.commit()
@@ -450,7 +464,7 @@ class TestMouvementsWithArticleDetails:
 
         response = client.get(
             f"/api/mouvements/{mvt.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()

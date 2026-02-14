@@ -20,8 +20,8 @@ class TestCreateArticle:
                 "prix_unitaire": 29.99,
                 "sku": "NEW-001",
                 "categorie_id": sample_categorie.id,
-                "description": "Description test"
-            }
+                "description": "Description test",
+            },
         )
         assert response.status_code == 201  # Created
         data = response.json()
@@ -31,7 +31,9 @@ class TestCreateArticle:
         assert data["sku"] == "NEW-001"
         assert data["created_by"] == 1  # admin_user.id
 
-    def test_create_article_gestionnaire(self, client, gestionnaire_token, sample_categorie):
+    def test_create_article_gestionnaire(
+        self, client, gestionnaire_token, sample_categorie
+    ):
         """Gestionnaire peut créer un article"""
         response = client.post(
             "/api/articles",
@@ -41,12 +43,14 @@ class TestCreateArticle:
                 "quantite": 100,
                 "quantite_min": 20,
                 "prix_unitaire": 15.50,
-                "categorie_id": sample_categorie.id
-            }
+                "categorie_id": sample_categorie.id,
+            },
         )
         assert response.status_code == 201
 
-    def test_create_article_consultation_forbidden(self, client, consultation_token, sample_categorie):
+    def test_create_article_consultation_forbidden(
+        self, client, consultation_token, sample_categorie
+    ):
         """Utilisateur consultation ne peut pas créer d'article"""
         response = client.post(
             "/api/articles",
@@ -56,12 +60,14 @@ class TestCreateArticle:
                 "quantite": 10,
                 "quantite_min": 5,
                 "prix_unitaire": 10,
-                "categorie_id": sample_categorie.id
-            }
+                "categorie_id": sample_categorie.id,
+            },
         )
         assert response.status_code == 403
 
-    def test_create_article_negative_quantite(self, client, admin_token, sample_categorie):
+    def test_create_article_negative_quantite(
+        self, client, admin_token, sample_categorie
+    ):
         """Valide que quantité négative est refusée"""
         response = client.post(
             "/api/articles",
@@ -71,8 +77,8 @@ class TestCreateArticle:
                 "quantite": -5,
                 "quantite_min": 5,
                 "prix_unitaire": 10,
-                "categorie_id": sample_categorie.id
-            }
+                "categorie_id": sample_categorie.id,
+            },
         )
         assert response.status_code == 422  # Validation error
 
@@ -86,8 +92,8 @@ class TestCreateArticle:
                 "quantite": 10,
                 "quantite_min": 5,
                 "prix_unitaire": -10.5,
-                "categorie_id": sample_categorie.id
-            }
+                "categorie_id": sample_categorie.id,
+            },
         )
         assert response.status_code == 422
 
@@ -100,8 +106,8 @@ class TestCreateArticle:
                 "nom": "Article Sans Catégorie",
                 "quantite": 5,
                 "quantite_min": 2,
-                "prix_unitaire": 7.99
-            }
+                "prix_unitaire": 7.99,
+            },
         )
         assert response.status_code == 201
         data = response.json()
@@ -114,8 +120,7 @@ class TestGetArticles:
     def test_get_articles_list(self, client, admin_token, sample_article):
         """Récupère la liste des articles"""
         response = client.get(
-            "/api/articles",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            "/api/articles", headers={"Authorization": f"Bearer {admin_token}"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -128,25 +133,32 @@ class TestGetArticles:
         """Recherche d'articles par nom"""
         response = client.get(
             "/api/articles?search=Test",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
         assert data["total"] >= 1
         assert any(item["nom"] == "Test Article" for item in data["items"])
 
-    def test_get_articles_with_categorie_filter(self, client, admin_token, sample_article):
+    def test_get_articles_with_categorie_filter(
+        self, client, admin_token, sample_article
+    ):
         """Filtre articles par catégorie"""
         response = client.get(
             f"/api/articles?categorie_id={sample_article.categorie_id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
         assert data["total"] >= 1
-        assert all(item["categorie_id"] == sample_article.categorie_id for item in data["items"])
+        assert all(
+            item["categorie_id"] == sample_article.categorie_id
+            for item in data["items"]
+        )
 
-    def test_get_articles_with_stock_bas_filter(self, client, admin_token, db, admin_user, sample_categorie):
+    def test_get_articles_with_stock_bas_filter(
+        self, client, admin_token, db, admin_user, sample_categorie
+    ):
         """Filtre articles en stock bas"""
         from app.models import Article
 
@@ -157,21 +169,23 @@ class TestGetArticles:
             quantite_min=10,
             prix_unitaire=10,
             categorie_id=sample_categorie.id,
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         db.add(article_bas)
         db.commit()
 
         response = client.get(
             "/api/articles?stock_bas=true",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
         assert data["total"] >= 1
         assert any(item["nom"] == "Stock Bas" for item in data["items"])
 
-    def test_get_articles_pagination(self, client, admin_token, db, admin_user, sample_categorie):
+    def test_get_articles_pagination(
+        self, client, admin_token, db, admin_user, sample_categorie
+    ):
         """Pagination des articles"""
         from app.models import Article
 
@@ -183,7 +197,7 @@ class TestGetArticles:
                 quantite_min=5,
                 prix_unitaire=10.0,
                 categorie_id=sample_categorie.id,
-                created_by=admin_user.id
+                created_by=admin_user.id,
             )
             db.add(article)
         db.commit()
@@ -191,7 +205,7 @@ class TestGetArticles:
         # Première page
         response = client.get(
             "/api/articles?skip=0&limit=10",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -200,7 +214,7 @@ class TestGetArticles:
         # Deuxième page
         response = client.get(
             "/api/articles?skip=10&limit=10",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -214,7 +228,7 @@ class TestGetArticle:
         """Récupère un article par son ID"""
         response = client.get(
             f"/api/articles/{sample_article.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -225,8 +239,7 @@ class TestGetArticle:
     def test_get_nonexistent_article(self, client, admin_token):
         """Erreur 404 pour article inexistant"""
         response = client.get(
-            "/api/articles/99999",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            "/api/articles/99999", headers={"Authorization": f"Bearer {admin_token}"}
         )
         assert response.status_code == 404
 
@@ -239,7 +252,7 @@ class TestUpdateArticle:
         response = client.put(
             f"/api/articles/{sample_article.id}",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={"nom": "Article Modifié", "quantite": 20}
+            json={"nom": "Article Modifié", "quantite": 20},
         )
         assert response.status_code == 200
         data = response.json()
@@ -247,30 +260,36 @@ class TestUpdateArticle:
         assert data["quantite"] == 20
         assert data["updated_by"] == 1  # admin_user.id
 
-    def test_update_article_gestionnaire(self, client, gestionnaire_token, sample_article):
+    def test_update_article_gestionnaire(
+        self, client, gestionnaire_token, sample_article
+    ):
         """Gestionnaire peut modifier un article"""
         response = client.put(
             f"/api/articles/{sample_article.id}",
             headers={"Authorization": f"Bearer {gestionnaire_token}"},
-            json={"nom": "Modification Gestionnaire"}
+            json={"nom": "Modification Gestionnaire"},
         )
         assert response.status_code == 200
 
-    def test_update_article_technicien_forbidden(self, client, technicien_token, sample_article):
+    def test_update_article_technicien_forbidden(
+        self, client, technicien_token, sample_article
+    ):
         """Technicien ne peut pas modifier un article"""
         response = client.put(
             f"/api/articles/{sample_article.id}",
             headers={"Authorization": f"Bearer {technicien_token}"},
-            json={"nom": "Test"}
+            json={"nom": "Test"},
         )
         assert response.status_code == 403
 
-    def test_update_article_consultation_forbidden(self, client, consultation_token, sample_article):
+    def test_update_article_consultation_forbidden(
+        self, client, consultation_token, sample_article
+    ):
         """Utilisateur consultation ne peut pas modifier"""
         response = client.put(
             f"/api/articles/{sample_article.id}",
             headers={"Authorization": f"Bearer {consultation_token}"},
-            json={"nom": "Test"}
+            json={"nom": "Test"},
         )
         assert response.status_code == 403
 
@@ -281,7 +300,7 @@ class TestUpdateArticle:
         response = client.put(
             f"/api/articles/{sample_article.id}",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={"quantite": 100}  # Ne modifier que la quantité
+            json={"quantite": 100},  # Ne modifier que la quantité
         )
         assert response.status_code == 200
         data = response.json()
@@ -299,18 +318,20 @@ class TestDeleteArticle:
 
         response = client.delete(
             f"/api/articles/{article_id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
 
         # Vérifier que l'article n'existe plus
         response = client.get(
             f"/api/articles/{article_id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 404
 
-    def test_delete_article_gestionnaire(self, client, gestionnaire_token, db, admin_user, sample_categorie):
+    def test_delete_article_gestionnaire(
+        self, client, gestionnaire_token, db, admin_user, sample_categorie
+    ):
         """Gestionnaire peut supprimer un article"""
         from app.models import Article
 
@@ -321,7 +342,7 @@ class TestDeleteArticle:
             quantite_min=2,
             prix_unitaire=10,
             categorie_id=sample_categorie.id,
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         db.add(article)
         db.commit()
@@ -329,23 +350,24 @@ class TestDeleteArticle:
 
         response = client.delete(
             f"/api/articles/{article.id}",
-            headers={"Authorization": f"Bearer {gestionnaire_token}"}
+            headers={"Authorization": f"Bearer {gestionnaire_token}"},
         )
         assert response.status_code == 200
 
-    def test_delete_article_consultation_forbidden(self, client, consultation_token, sample_article):
+    def test_delete_article_consultation_forbidden(
+        self, client, consultation_token, sample_article
+    ):
         """Utilisateur consultation ne peut pas supprimer"""
         response = client.delete(
             f"/api/articles/{sample_article.id}",
-            headers={"Authorization": f"Bearer {consultation_token}"}
+            headers={"Authorization": f"Bearer {consultation_token}"},
         )
         assert response.status_code == 403
 
     def test_delete_nonexistent_article(self, client, admin_token):
         """Erreur 404 lors de la suppression d'un article inexistant"""
         response = client.delete(
-            "/api/articles/99999",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            "/api/articles/99999", headers={"Authorization": f"Bearer {admin_token}"}
         )
         assert response.status_code == 404
 
@@ -353,7 +375,9 @@ class TestDeleteArticle:
 class TestArticlesWithTags:
     """Tests pour les articles avec tags"""
 
-    def test_create_article_with_tags(self, client, admin_token, sample_categorie, db, admin_user):
+    def test_create_article_with_tags(
+        self, client, admin_token, sample_categorie, db, admin_user
+    ):
         """Créer un article avec tags"""
         from app.models import Tag
 
@@ -372,14 +396,16 @@ class TestArticlesWithTags:
                 "quantite_min": 5,
                 "prix_unitaire": 25.0,
                 "categorie_id": sample_categorie.id,
-                "tag_ids": [tag1.id, tag2.id]
-            }
+                "tag_ids": [tag1.id, tag2.id],
+            },
         )
         assert response.status_code == 201
         data = response.json()
         assert len(data["tags"]) == 2
 
-    def test_update_article_tags(self, client, admin_token, sample_article, db, admin_user):
+    def test_update_article_tags(
+        self, client, admin_token, sample_article, db, admin_user
+    ):
         """Modifier les tags d'un article"""
         from app.models import Tag
 
@@ -391,7 +417,7 @@ class TestArticlesWithTags:
         response = client.put(
             f"/api/articles/{sample_article.id}",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={"tag_ids": [tag.id]}
+            json={"tag_ids": [tag.id]},
         )
         assert response.status_code == 200
         data = response.json()
@@ -402,7 +428,9 @@ class TestArticlesWithTags:
 class TestArticlesWithFournisseurs:
     """Tests pour les articles avec fournisseurs"""
 
-    def test_create_article_with_fournisseur(self, client, admin_token, sample_categorie, sample_fournisseur):
+    def test_create_article_with_fournisseur(
+        self, client, admin_token, sample_categorie, sample_fournisseur
+    ):
         """Créer un article avec fournisseur"""
         response = client.post(
             "/api/articles",
@@ -416,8 +444,8 @@ class TestArticlesWithFournisseurs:
                 "fournisseur_ids": [sample_fournisseur.id],
                 "prix_fournisseur": 15.0,
                 "ref_fournisseur": "REF-123",
-                "delai_livraison": 7
-            }
+                "delai_livraison": 7,
+            },
         )
         assert response.status_code == 201
         data = response.json()

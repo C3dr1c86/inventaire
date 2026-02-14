@@ -5,6 +5,7 @@ Configuration et fixtures globales pour les tests pytest
 import os
 import pytest
 
+
 # Hook pytest pour configurer l'environnement AVANT toute importation
 def pytest_configure(config):
     """Configure l'environnement de test avant l'exécution des tests"""
@@ -15,11 +16,19 @@ def pytest_configure(config):
 from fastapi.testclient import TestClient
 from app.main import app
 from app.database import Base, get_db, engine, SessionLocal
-from app.models import User, RoleEnum, Categorie, Article, Fournisseur, Commande, LigneCommande
+from app.models import (
+    User,
+    RoleEnum,
+    Categorie,
+    Article,
+    Fournisseur,
+    Commande,
+    LigneCommande,
+)
 from app.auth import create_access_token, get_password_hash
 from faker import Faker
 
-fake = Faker('fr_FR')
+fake = Faker("fr_FR")
 
 
 @pytest.fixture(scope="function")
@@ -47,6 +56,7 @@ def client(db):
     Client de test FastAPI.
     Surcharge get_db pour utiliser la database de test.
     """
+
     def override_get_db():
         try:
             yield db
@@ -67,7 +77,7 @@ def admin_user(db):
         email="admin@test.com",
         hashed_password=get_password_hash("admin123"),
         role=RoleEnum.ADMIN,
-        is_active=True
+        is_active=True,
     )
     db.add(user)
     db.commit()
@@ -78,10 +88,7 @@ def admin_user(db):
 @pytest.fixture
 def admin_token(admin_user):
     """Token JWT pour admin"""
-    return create_access_token(
-        data={"sub": admin_user.username},
-        user=admin_user
-    )
+    return create_access_token(data={"sub": admin_user.username}, user=admin_user)
 
 
 @pytest.fixture
@@ -92,7 +99,7 @@ def gestionnaire_user(db):
         email="gestionnaire@test.com",
         hashed_password=get_password_hash("gest123"),
         role=RoleEnum.GESTIONNAIRE,
-        is_active=True
+        is_active=True,
     )
     db.add(user)
     db.commit()
@@ -104,8 +111,7 @@ def gestionnaire_user(db):
 def gestionnaire_token(gestionnaire_user):
     """Token JWT pour gestionnaire"""
     return create_access_token(
-        data={"sub": gestionnaire_user.username},
-        user=gestionnaire_user
+        data={"sub": gestionnaire_user.username}, user=gestionnaire_user
     )
 
 
@@ -117,7 +123,7 @@ def technicien_user(db):
         email="technicien@test.com",
         hashed_password=get_password_hash("tech123"),
         role=RoleEnum.TECHNICIEN,
-        is_active=True
+        is_active=True,
     )
     db.add(user)
     db.commit()
@@ -129,8 +135,7 @@ def technicien_user(db):
 def technicien_token(technicien_user):
     """Token JWT pour technicien"""
     return create_access_token(
-        data={"sub": technicien_user.username},
-        user=technicien_user
+        data={"sub": technicien_user.username}, user=technicien_user
     )
 
 
@@ -142,7 +147,7 @@ def consultation_user(db):
         email="consultation@test.com",
         hashed_password=get_password_hash("consult123"),
         role=RoleEnum.CONSULTATION,
-        is_active=True
+        is_active=True,
     )
     db.add(user)
     db.commit()
@@ -154,8 +159,7 @@ def consultation_user(db):
 def consultation_token(consultation_user):
     """Token JWT pour consultation"""
     return create_access_token(
-        data={"sub": consultation_user.username},
-        user=consultation_user
+        data={"sub": consultation_user.username}, user=consultation_user
     )
 
 
@@ -163,9 +167,7 @@ def consultation_token(consultation_user):
 def sample_categorie(db, admin_user):
     """Catégorie de test"""
     categorie = Categorie(
-        nom="Test Catégorie",
-        description="Description test",
-        created_by=admin_user.id
+        nom="Test Catégorie", description="Description test", created_by=admin_user.id
     )
     db.add(categorie)
     db.commit()
@@ -183,7 +185,7 @@ def sample_article(db, admin_user, sample_categorie):
         prix_unitaire=19.99,
         sku="TEST-001",
         categorie_id=sample_categorie.id,
-        created_by=admin_user.id
+        created_by=admin_user.id,
     )
     db.add(article)
     db.commit()
@@ -198,7 +200,7 @@ def sample_fournisseur(db, admin_user):
         nom="Test Fournisseur",
         email="fournisseur@test.com",
         telephone="0123456789",
-        created_by=admin_user.id
+        created_by=admin_user.id,
     )
     db.add(fournisseur)
     db.commit()
@@ -210,23 +212,17 @@ def sample_fournisseur(db, admin_user):
 def sample_categorie_with_children(db, admin_user):
     """Catégorie parente avec sous-catégories"""
     parent = Categorie(
-        nom="Catégorie Parente",
-        description="Parent test",
-        created_by=admin_user.id
+        nom="Catégorie Parente", description="Parent test", created_by=admin_user.id
     )
     db.add(parent)
     db.commit()
     db.refresh(parent)
 
     child1 = Categorie(
-        nom="Sous-catégorie 1",
-        parent_id=parent.id,
-        created_by=admin_user.id
+        nom="Sous-catégorie 1", parent_id=parent.id, created_by=admin_user.id
     )
     child2 = Categorie(
-        nom="Sous-catégorie 2",
-        parent_id=parent.id,
-        created_by=admin_user.id
+        nom="Sous-catégorie 2", parent_id=parent.id, created_by=admin_user.id
     )
     db.add_all([child1, child2])
     db.commit()
@@ -244,7 +240,7 @@ def sample_commande(db, admin_user, sample_fournisseur, sample_article):
         statut="BROUILLON",
         montant_total=199.90,
         notes="Commande de test",
-        created_by=admin_user.id
+        created_by=admin_user.id,
     )
     db.add(commande)
     db.commit()
@@ -257,7 +253,7 @@ def sample_commande(db, admin_user, sample_fournisseur, sample_article):
         quantite_commandee=10,
         quantite_recue=0,
         prix_unitaire=19.99,
-        created_by=admin_user.id
+        created_by=admin_user.id,
     )
     db.add(ligne)
     db.commit()

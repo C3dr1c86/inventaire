@@ -8,7 +8,9 @@ import pytest
 class TestStatistiques:
     """Tests pour les statistiques globales"""
 
-    def test_get_statistiques(self, client, admin_token, sample_article, db, admin_user):
+    def test_get_statistiques(
+        self, client, admin_token, sample_article, db, admin_user
+    ):
         """Récupère les statistiques globales"""
         from app.models import Article, Categorie
 
@@ -18,21 +20,21 @@ class TestStatistiques:
             quantite=5,
             quantite_min=2,
             prix_unitaire=10.0,
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         article3 = Article(
             nom="Article Stat 3",
             quantite=0,  # Stock bas (< quantite_min)
             quantite_min=5,
             prix_unitaire=15.0,
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         db.add_all([article2, article3])
         db.commit()
 
         response = client.get(
             "/api/rapports/statistiques",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -45,13 +47,15 @@ class TestStatistiques:
 
         # Vérifier les valeurs
         assert data["nombre_articles"] >= 3  # Au moins sample_article + 2 créés
-        assert data["nombre_articles_stock_bas"] >= 1  # article3 a quantite < quantite_min
+        assert (
+            data["nombre_articles_stock_bas"] >= 1
+        )  # article3 a quantite < quantite_min
 
     def test_get_statistiques_consultation(self, client, consultation_token):
         """Utilisateur consultation peut lire les statistiques"""
         response = client.get(
             "/api/rapports/statistiques",
-            headers={"Authorization": f"Bearer {consultation_token}"}
+            headers={"Authorization": f"Bearer {consultation_token}"},
         )
         assert response.status_code == 200
 
@@ -70,14 +74,14 @@ class TestStockBas:
             quantite_min=10,  # quantite < quantite_min
             prix_unitaire=10.0,
             categorie_id=sample_categorie.id,
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         db.add(article_bas)
         db.commit()
 
         response = client.get(
             "/api/rapports/stock-bas",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -92,7 +96,9 @@ class TestStockBas:
         for article in articles_bas:
             assert article["quantite"] < article["quantite_min"]
 
-    def test_get_stock_bas_empty(self, client, admin_token, db, admin_user, sample_categorie):
+    def test_get_stock_bas_empty(
+        self, client, admin_token, db, admin_user, sample_categorie
+    ):
         """Stock bas retourne liste vide si tous les stocks sont OK"""
         from app.models import Article
 
@@ -103,7 +109,7 @@ class TestStockBas:
             quantite_min=10,
             prix_unitaire=10.0,
             categorie_id=sample_categorie.id,
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         article2 = Article(
             nom="Article Stock OK 2",
@@ -111,7 +117,7 @@ class TestStockBas:
             quantite_min=5,
             prix_unitaire=15.0,
             categorie_id=sample_categorie.id,
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         db.add_all([article1, article2])
         db.commit()
@@ -120,7 +126,7 @@ class TestStockBas:
         # On vérifie juste que l'endpoint fonctionne
         response = client.get(
             "/api/rapports/stock-bas",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -135,7 +141,7 @@ class TestValeurTotale:
         """Récupère la valeur totale du stock"""
         response = client.get(
             "/api/rapports/valeur-totale",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -157,7 +163,7 @@ class TestExportCSV:
         """Export CSV des articles"""
         response = client.get(
             "/api/rapports/export/csv?type=articles",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         assert response.headers["content-type"] == "text/csv; charset=utf-8"
@@ -167,7 +173,9 @@ class TestExportCSV:
         content = response.content.decode("utf-8")
         assert "nom" in content.lower() or "id" in content.lower()
 
-    def test_export_csv_mouvements(self, client, admin_token, db, admin_user, sample_article):
+    def test_export_csv_mouvements(
+        self, client, admin_token, db, admin_user, sample_article
+    ):
         """Export CSV des mouvements"""
         from app.models import Mouvement
 
@@ -178,19 +186,21 @@ class TestExportCSV:
             quantite=10,
             quantite_avant=sample_article.quantite,
             quantite_apres=sample_article.quantite + 10,
-            motif="Test export CSV"
+            motif="Test export CSV",
         )
         db.add(mouvement)
         db.commit()
 
         response = client.get(
             "/api/rapports/export/csv?type=mouvements",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         assert response.headers["content-type"] == "text/csv; charset=utf-8"
 
-    def test_export_csv_stock_bas(self, client, admin_token, db, admin_user, sample_categorie):
+    def test_export_csv_stock_bas(
+        self, client, admin_token, db, admin_user, sample_categorie
+    ):
         """Export CSV des articles en stock bas"""
         from app.models import Article
 
@@ -201,18 +211,17 @@ class TestExportCSV:
             quantite_min=10,
             prix_unitaire=10.0,
             categorie_id=sample_categorie.id,
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         db.add(article_bas)
         db.commit()
 
         response = client.get(
             "/api/rapports/export/csv?type=stock-bas",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         assert response.headers["content-type"] == "text/csv; charset=utf-8"
-
 
 
 class TestExportPDF:
@@ -222,7 +231,7 @@ class TestExportPDF:
         """Export PDF de l'inventaire complet"""
         response = client.get(
             "/api/rapports/export/pdf?type=inventaire",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         assert response.headers["content-type"] == "application/pdf"
@@ -230,9 +239,11 @@ class TestExportPDF:
 
         # Vérifier que le contenu est un PDF (commence par %PDF)
         content = response.content
-        assert content[:4] == b'%PDF'
+        assert content[:4] == b"%PDF"
 
-    def test_export_pdf_stock_bas(self, client, admin_token, db, admin_user, sample_categorie):
+    def test_export_pdf_stock_bas(
+        self, client, admin_token, db, admin_user, sample_categorie
+    ):
         """Export PDF des articles en stock bas"""
         from app.models import Article
 
@@ -243,28 +254,29 @@ class TestExportPDF:
             quantite_min=10,
             prix_unitaire=10.0,
             categorie_id=sample_categorie.id,
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         db.add(article_bas)
         db.commit()
 
         response = client.get(
             "/api/rapports/export/pdf?type=stock-bas",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         assert response.headers["content-type"] == "application/pdf"
 
         # Vérifier que c'est un PDF
         content = response.content
-        assert content[:4] == b'%PDF'
-
+        assert content[:4] == b"%PDF"
 
 
 class TestExportBarcodesPDF:
     """Tests pour l'export PDF de codes-barres personnalisé"""
 
-    def test_export_barcodes_pdf(self, client, admin_token, sample_article, db, admin_user, sample_categorie):
+    def test_export_barcodes_pdf(
+        self, client, admin_token, sample_article, db, admin_user, sample_categorie
+    ):
         """Export PDF de codes-barres pour articles sélectionnés"""
         from app.models import Article
 
@@ -275,7 +287,7 @@ class TestExportBarcodesPDF:
             quantite_min=5,
             prix_unitaire=15.0,
             categorie_id=sample_categorie.id,
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         db.add(article2)
         db.commit()
@@ -284,25 +296,21 @@ class TestExportBarcodesPDF:
         response = client.post(
             "/api/rapports/export/barcodes-pdf",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={
-                "article_ids": [sample_article.id, article2.id]
-            }
+            json={"article_ids": [sample_article.id, article2.id]},
         )
         assert response.status_code == 200
         assert response.headers["content-type"] == "application/pdf"
 
         # Vérifier que c'est un PDF
         content = response.content
-        assert content[:4] == b'%PDF'
+        assert content[:4] == b"%PDF"
 
     def test_export_barcodes_pdf_article_inexistant(self, client, admin_token):
         """Erreur si article inexistant dans la liste"""
         response = client.post(
             "/api/rapports/export/barcodes-pdf",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={
-                "article_ids": [99999]
-            }
+            json={"article_ids": [99999]},
         )
         assert response.status_code == 404
 
@@ -311,8 +319,6 @@ class TestExportBarcodesPDF:
         response = client.post(
             "/api/rapports/export/barcodes-pdf",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={
-                "article_ids": []
-            }
+            json={"article_ids": []},
         )
         assert response.status_code == 400

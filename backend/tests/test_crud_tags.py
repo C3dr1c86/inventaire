@@ -16,8 +16,8 @@ class TestCreateTag:
             json={
                 "nom": "Tag Test",
                 "couleur": "#FF5733",
-                "description": "Tag de test"
-            }
+                "description": "Tag de test",
+            },
         )
         assert response.status_code == 201
         data = response.json()
@@ -30,10 +30,7 @@ class TestCreateTag:
         response = client.post(
             "/api/tags",
             headers={"Authorization": f"Bearer {gestionnaire_token}"},
-            json={
-                "nom": "Tag Gest",
-                "couleur": "#3498DB"
-            }
+            json={"nom": "Tag Gest", "couleur": "#3498DB"},
         )
         assert response.status_code == 201
 
@@ -42,10 +39,7 @@ class TestCreateTag:
         response = client.post(
             "/api/tags",
             headers={"Authorization": f"Bearer {technicien_token}"},
-            json={
-                "nom": "Tag Tech",
-                "couleur": "#2ECC71"
-            }
+            json={"nom": "Tag Tech", "couleur": "#2ECC71"},
         )
         assert response.status_code == 201
 
@@ -54,10 +48,7 @@ class TestCreateTag:
         response = client.post(
             "/api/tags",
             headers={"Authorization": f"Bearer {consultation_token}"},
-            json={
-                "nom": "Tag Consult",
-                "couleur": "#9B59B6"
-            }
+            json={"nom": "Tag Consult", "couleur": "#9B59B6"},
         )
         assert response.status_code == 201
 
@@ -67,10 +58,7 @@ class TestCreateTag:
         response = client.post(
             "/api/tags",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={
-                "nom": "Tag Invalid Color",
-                "couleur": "FF5733"  # Manque le #
-            }
+            json={"nom": "Tag Invalid Color", "couleur": "FF5733"},  # Manque le #
         )
         assert response.status_code == 422  # Pydantic validation error
 
@@ -79,11 +67,7 @@ class TestCreateTag:
         from app.models import Tag
 
         # Créer un tag
-        tag = Tag(
-            nom="Tag Unique",
-            couleur="#FF5733",
-            created_by=admin_user.id
-        )
+        tag = Tag(nom="Tag Unique", couleur="#FF5733", created_by=admin_user.id)
         db.add(tag)
         db.commit()
 
@@ -91,10 +75,7 @@ class TestCreateTag:
         response = client.post(
             "/api/tags",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={
-                "nom": "Tag Unique",  # Déjà existant
-                "couleur": "#3498DB"
-            }
+            json={"nom": "Tag Unique", "couleur": "#3498DB"},  # Déjà existant
         )
         assert response.status_code == 400
 
@@ -113,8 +94,7 @@ class TestGetTags:
         db.commit()
 
         response = client.get(
-            "/api/tags",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            "/api/tags", headers={"Authorization": f"Bearer {admin_token}"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -136,8 +116,7 @@ class TestGetTags:
         db.refresh(tag)
 
         response = client.get(
-            f"/api/tags/{tag.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            f"/api/tags/{tag.id}", headers={"Authorization": f"Bearer {admin_token}"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -148,8 +127,7 @@ class TestGetTags:
     def test_get_nonexistent_tag(self, client, admin_token):
         """Erreur 404 pour tag inexistant"""
         response = client.get(
-            "/api/tags/99999",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            "/api/tags/99999", headers={"Authorization": f"Bearer {admin_token}"}
         )
         assert response.status_code == 404
 
@@ -162,8 +140,7 @@ class TestGetTags:
         db.commit()
 
         response = client.get(
-            "/api/tags",
-            headers={"Authorization": f"Bearer {consultation_token}"}
+            "/api/tags", headers={"Authorization": f"Bearer {consultation_token}"}
         )
         assert response.status_code == 200
 
@@ -183,10 +160,7 @@ class TestUpdateTag:
         response = client.put(
             f"/api/tags/{tag.id}",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={
-                "nom": "Tag Modifié",
-                "couleur": "#3498DB"
-            }
+            json={"nom": "Tag Modifié", "couleur": "#3498DB"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -205,7 +179,7 @@ class TestUpdateTag:
         response = client.put(
             f"/api/tags/{tag.id}",
             headers={"Authorization": f"Bearer {gestionnaire_token}"},
-            json={"nom": "Tag Gest Modif"}
+            json={"nom": "Tag Gest Modif"},
         )
         assert response.status_code == 200
 
@@ -221,7 +195,7 @@ class TestUpdateTag:
         response = client.put(
             f"/api/tags/{tag.id}",
             headers={"Authorization": f"Bearer {technicien_token}"},
-            json={"description": "Modifié par technicien"}
+            json={"description": "Modifié par technicien"},
         )
         assert response.status_code == 200
 
@@ -230,7 +204,7 @@ class TestUpdateTag:
         response = client.put(
             "/api/tags/99999",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={"nom": "Inexistant"}
+            json={"nom": "Inexistant"},
         )
         assert response.status_code == 404
 
@@ -248,15 +222,13 @@ class TestDeleteTag:
         db.refresh(tag)
 
         response = client.delete(
-            f"/api/tags/{tag.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            f"/api/tags/{tag.id}", headers={"Authorization": f"Bearer {admin_token}"}
         )
         assert response.status_code == 200
 
         # Vérifier que le tag est supprimé
         response = client.get(
-            f"/api/tags/{tag.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            f"/api/tags/{tag.id}", headers={"Authorization": f"Bearer {admin_token}"}
         )
         assert response.status_code == 404
 
@@ -271,7 +243,7 @@ class TestDeleteTag:
 
         response = client.delete(
             f"/api/tags/{tag.id}",
-            headers={"Authorization": f"Bearer {gestionnaire_token}"}
+            headers={"Authorization": f"Bearer {gestionnaire_token}"},
         )
         assert response.status_code == 200
 
@@ -286,15 +258,14 @@ class TestDeleteTag:
 
         response = client.delete(
             f"/api/tags/{tag.id}",
-            headers={"Authorization": f"Bearer {technicien_token}"}
+            headers={"Authorization": f"Bearer {technicien_token}"},
         )
         assert response.status_code == 200
 
     def test_delete_nonexistent_tag(self, client, admin_token):
         """Erreur 404 pour suppression tag inexistant"""
         response = client.delete(
-            "/api/tags/99999",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            "/api/tags/99999", headers={"Authorization": f"Bearer {admin_token}"}
         )
         assert response.status_code == 404
 
@@ -302,7 +273,9 @@ class TestDeleteTag:
 class TestTagArticleAssociation:
     """Tests pour l'association tags-articles"""
 
-    def test_associer_tag_article_admin(self, client, admin_token, sample_article, db, admin_user):
+    def test_associer_tag_article_admin(
+        self, client, admin_token, sample_article, db, admin_user
+    ):
         """Admin peut associer un tag à un article"""
         from app.models import Tag
 
@@ -313,7 +286,7 @@ class TestTagArticleAssociation:
 
         response = client.post(
             f"/api/tags/{tag.id}/articles/{sample_article.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -324,7 +297,9 @@ class TestTagArticleAssociation:
         tag_ids = [t["id"] for t in data["tags"]]
         assert tag.id in tag_ids
 
-    def test_associer_tag_article_gestionnaire(self, client, gestionnaire_token, sample_article, db, admin_user):
+    def test_associer_tag_article_gestionnaire(
+        self, client, gestionnaire_token, sample_article, db, admin_user
+    ):
         """Gestionnaire peut associer un tag à un article"""
         from app.models import Tag
 
@@ -335,11 +310,13 @@ class TestTagArticleAssociation:
 
         response = client.post(
             f"/api/tags/{tag.id}/articles/{sample_article.id}",
-            headers={"Authorization": f"Bearer {gestionnaire_token}"}
+            headers={"Authorization": f"Bearer {gestionnaire_token}"},
         )
         assert response.status_code == 200
 
-    def test_retirer_tag_article_admin(self, client, admin_token, sample_article, db, admin_user):
+    def test_retirer_tag_article_admin(
+        self, client, admin_token, sample_article, db, admin_user
+    ):
         """Admin peut retirer un tag d'un article"""
         from app.models import Tag
 
@@ -355,14 +332,16 @@ class TestTagArticleAssociation:
         # Puis retirer
         response = client.delete(
             f"/api/tags/{tag.id}/articles/{sample_article.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
         # Retourne l'article complet
         assert data["id"] == sample_article.id
 
-    def test_retirer_tag_article_technicien(self, client, technicien_token, sample_article, db, admin_user):
+    def test_retirer_tag_article_technicien(
+        self, client, technicien_token, sample_article, db, admin_user
+    ):
         """Technicien peut retirer un tag d'un article (pas de permissions sur ce module)"""
         from app.models import Tag
 
@@ -377,7 +356,7 @@ class TestTagArticleAssociation:
 
         response = client.delete(
             f"/api/tags/{tag.id}/articles/{sample_article.id}",
-            headers={"Authorization": f"Bearer {technicien_token}"}
+            headers={"Authorization": f"Bearer {technicien_token}"},
         )
         assert response.status_code == 200
 
@@ -385,7 +364,7 @@ class TestTagArticleAssociation:
         """Erreur 404 pour association avec tag inexistant"""
         response = client.post(
             f"/api/tags/99999/articles/{sample_article.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 404
 
@@ -393,13 +372,15 @@ class TestTagArticleAssociation:
         """Erreur 404 pour association avec article inexistant"""
         from app.models import Tag
 
-        tag = Tag(nom="Tag Article Inexistant", couleur="#FF5733", created_by=admin_user.id)
+        tag = Tag(
+            nom="Tag Article Inexistant", couleur="#FF5733", created_by=admin_user.id
+        )
         db.add(tag)
         db.commit()
         db.refresh(tag)
 
         response = client.post(
             f"/api/tags/{tag.id}/articles/99999",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 404

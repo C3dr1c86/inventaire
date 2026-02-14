@@ -46,7 +46,9 @@ class TestDefaultPermissions:
         perms = DEFAULT_PERMISSIONS[RoleEnum.CONSULTATION]
         # Toutes les permissions doivent être :read
         for perm in perms:
-            assert perm.endswith(":read"), f"Permission {perm} n'est pas en lecture seule"
+            assert perm.endswith(
+                ":read"
+            ), f"Permission {perm} n'est pas en lecture seule"
 
     def test_consultation_cannot_modify(self):
         """Consultation ne peut rien modifier"""
@@ -54,7 +56,9 @@ class TestDefaultPermissions:
         forbidden_actions = [":create", ":update", ":delete", ":*"]
         for perm in perms:
             for action in forbidden_actions:
-                assert not perm.endswith(action), f"Permission {perm} permet des modifications"
+                assert not perm.endswith(
+                    action
+                ), f"Permission {perm} permet des modifications"
 
 
 class TestHasPermissionFunction:
@@ -66,7 +70,7 @@ class TestHasPermissionFunction:
             username="admin_test",
             email="admin@test.com",
             hashed_password="hash",
-            role=RoleEnum.ADMIN
+            role=RoleEnum.ADMIN,
         )
         db.add(admin)
         db.commit()
@@ -85,7 +89,7 @@ class TestHasPermissionFunction:
             username="gest",
             email="gest@test.com",
             hashed_password="hash",
-            role=RoleEnum.GESTIONNAIRE
+            role=RoleEnum.GESTIONNAIRE,
         )
         db.add(gestionnaire)
         db.commit()
@@ -101,7 +105,7 @@ class TestHasPermissionFunction:
             username="gest",
             email="gest@test.com",
             hashed_password="hash",
-            role=RoleEnum.GESTIONNAIRE
+            role=RoleEnum.GESTIONNAIRE,
         )
         db.add(gestionnaire)
         db.commit()
@@ -117,7 +121,7 @@ class TestHasPermissionFunction:
             username="tech",
             email="tech@test.com",
             hashed_password="hash",
-            role=RoleEnum.TECHNICIEN
+            role=RoleEnum.TECHNICIEN,
         )
         db.add(technicien)
         db.commit()
@@ -137,7 +141,7 @@ class TestHasPermissionFunction:
             username="tech",
             email="tech@test.com",
             hashed_password="hash",
-            role=RoleEnum.TECHNICIEN
+            role=RoleEnum.TECHNICIEN,
         )
         db.add(technicien)
         db.commit()
@@ -151,7 +155,7 @@ class TestHasPermissionFunction:
             username="consult",
             email="consult@test.com",
             hashed_password="hash",
-            role=RoleEnum.CONSULTATION
+            role=RoleEnum.CONSULTATION,
         )
         db.add(consultation)
         db.commit()
@@ -167,7 +171,7 @@ class TestHasPermissionFunction:
             username="consult",
             email="consult@test.com",
             hashed_password="hash",
-            role=RoleEnum.CONSULTATION
+            role=RoleEnum.CONSULTATION,
         )
         db.add(consultation)
         db.commit()
@@ -189,7 +193,7 @@ class TestCustomPermissions:
             email="tech@test.com",
             hashed_password="hash",
             role=RoleEnum.TECHNICIEN,
-            permissions=["articles:create"]  # Override custom
+            permissions=["articles:create"],  # Override custom
         )
         db.add(technicien)
         db.commit()
@@ -208,7 +212,7 @@ class TestCustomPermissions:
             email="consult@test.com",
             hashed_password="hash",
             role=RoleEnum.CONSULTATION,
-            permissions=["articles:*"]
+            permissions=["articles:*"],
         )
         db.add(consultation)
         db.commit()
@@ -229,7 +233,7 @@ class TestCustomPermissions:
             email="gest@test.com",
             hashed_password="hash",
             role=RoleEnum.GESTIONNAIRE,
-            permissions=["*:*"]
+            permissions=["*:*"],
         )
         db.add(gestionnaire)
         db.commit()
@@ -246,7 +250,7 @@ class TestCustomPermissions:
             email="tech@test.com",
             hashed_password="hash",
             role=RoleEnum.TECHNICIEN,
-            permissions=["articles:create", "articles:update", "categories:create"]
+            permissions=["articles:create", "articles:update", "categories:create"],
         )
         db.add(technicien)
         db.commit()
@@ -273,27 +277,31 @@ class TestRequirePermissionEndpoints:
                 "nom": "Test",
                 "quantite": 10,
                 "quantite_min": 5,
-                "prix_unitaire": 10.0
-            }
+                "prix_unitaire": 10.0,
+            },
         )
         # Technicien n'a pas articles:create → 403 Forbidden
         assert response.status_code == 403
 
-    def test_update_article_requires_permission(self, client, technicien_token, sample_article):
+    def test_update_article_requires_permission(
+        self, client, technicien_token, sample_article
+    ):
         """PUT /api/articles/{id} nécessite permission articles:update"""
         response = client.put(
             f"/api/articles/{sample_article.id}",
             headers={"Authorization": f"Bearer {technicien_token}"},
-            json={"nom": "Modifié"}
+            json={"nom": "Modifié"},
         )
         # Technicien n'a pas articles:update → 403 Forbidden
         assert response.status_code == 403
 
-    def test_delete_article_requires_permission(self, client, consultation_token, sample_article):
+    def test_delete_article_requires_permission(
+        self, client, consultation_token, sample_article
+    ):
         """DELETE /api/articles/{id} nécessite permission articles:delete"""
         response = client.delete(
             f"/api/articles/{sample_article.id}",
-            headers={"Authorization": f"Bearer {consultation_token}"}
+            headers={"Authorization": f"Bearer {consultation_token}"},
         )
         # Consultation n'a pas articles:delete → 403 Forbidden
         assert response.status_code == 403
@@ -303,7 +311,7 @@ class TestRequirePermissionEndpoints:
         response = client.post(
             "/api/categories",
             headers={"Authorization": f"Bearer {technicien_token}"},
-            json={"nom": "Test", "description": "Test"}
+            json={"nom": "Test", "description": "Test"},
         )
         # Technicien n'a pas categories:create → 403 Forbidden
         assert response.status_code == 403
@@ -318,8 +326,8 @@ class TestRequirePermissionEndpoints:
                 "nom": "Test Admin",
                 "quantite": 10,
                 "quantite_min": 5,
-                "prix_unitaire": 10.0
-            }
+                "prix_unitaire": 10.0,
+            },
         )
         assert response.status_code == 201  # Success
 
@@ -327,11 +335,13 @@ class TestRequirePermissionEndpoints:
         response = client.post(
             "/api/categories",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={"nom": "Test Catégorie"}
+            json={"nom": "Test Catégorie"},
         )
         assert response.status_code == 201  # Success
 
-    def test_gestionnaire_can_access_allowed_endpoints(self, client, gestionnaire_token):
+    def test_gestionnaire_can_access_allowed_endpoints(
+        self, client, gestionnaire_token
+    ):
         """Gestionnaire peut accéder aux endpoints autorisés"""
         # Peut créer un article (a articles:*)
         response = client.post(
@@ -341,8 +351,8 @@ class TestRequirePermissionEndpoints:
                 "nom": "Test Gestionnaire",
                 "quantite": 10,
                 "quantite_min": 5,
-                "prix_unitaire": 10.0
-            }
+                "prix_unitaire": 10.0,
+            },
         )
         assert response.status_code == 201  # Success
 
@@ -350,7 +360,7 @@ class TestRequirePermissionEndpoints:
         response = client.post(
             "/api/categories",
             headers={"Authorization": f"Bearer {gestionnaire_token}"},
-            json={"nom": "Test Catégorie Gest"}
+            json={"nom": "Test Catégorie Gest"},
         )
         assert response.status_code == 201  # Success
 
@@ -367,11 +377,14 @@ class TestPermissionErrorMessages:
                 "nom": "Test",
                 "quantite": 10,
                 "quantite_min": 5,
-                "prix_unitaire": 10.0
-            }
+                "prix_unitaire": 10.0,
+            },
         )
         assert response.status_code == 403
         data = response.json()
         assert "detail" in data
         # Le message devrait mentionner la permission manquante
-        assert "permission" in data["detail"].lower() or "refusée" in data["detail"].lower()
+        assert (
+            "permission" in data["detail"].lower()
+            or "refusée" in data["detail"].lower()
+        )

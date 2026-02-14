@@ -17,8 +17,8 @@ class TestCreateFournisseur:
                 "nom": "Fournisseur Test",
                 "email": "contact@fournisseur-test.fr",
                 "telephone": "0123456789",
-                "adresse": "123 Rue de Test, 75001 Paris"
-            }
+                "adresse": "123 Rue de Test, 75001 Paris",
+            },
         )
         assert response.status_code == 201
         data = response.json()
@@ -32,10 +32,7 @@ class TestCreateFournisseur:
         response = client.post(
             "/api/fournisseurs",
             headers={"Authorization": f"Bearer {gestionnaire_token}"},
-            json={
-                "nom": "Fournisseur Gest",
-                "email": "gest@fournisseur.fr"
-            }
+            json={"nom": "Fournisseur Gest", "email": "gest@fournisseur.fr"},
         )
         assert response.status_code == 201
 
@@ -44,10 +41,7 @@ class TestCreateFournisseur:
         response = client.post(
             "/api/fournisseurs",
             headers={"Authorization": f"Bearer {technicien_token}"},
-            json={
-                "nom": "Fournisseur Tech",
-                "email": "tech@fournisseur.fr"
-            }
+            json={"nom": "Fournisseur Tech", "email": "tech@fournisseur.fr"},
         )
         assert response.status_code == 201
 
@@ -56,10 +50,7 @@ class TestCreateFournisseur:
         response = client.post(
             "/api/fournisseurs",
             headers={"Authorization": f"Bearer {consultation_token}"},
-            json={
-                "nom": "Fournisseur Consult",
-                "email": "consult@fournisseur.fr"
-            }
+            json={"nom": "Fournisseur Consult", "email": "consult@fournisseur.fr"},
         )
         assert response.status_code == 201
 
@@ -68,10 +59,7 @@ class TestCreateFournisseur:
         response = client.post(
             "/api/fournisseurs",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={
-                "nom": "Fournisseur Invalid",
-                "email": "invalid-email"
-            }
+            json={"nom": "Fournisseur Invalid", "email": "invalid-email"},
         )
         assert response.status_code == 422  # Pydantic validation error
 
@@ -82,8 +70,7 @@ class TestGetFournisseurs:
     def test_get_fournisseurs_list(self, client, admin_token, sample_fournisseur):
         """Récupère la liste des fournisseurs"""
         response = client.get(
-            "/api/fournisseurs",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            "/api/fournisseurs", headers={"Authorization": f"Bearer {admin_token}"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -98,7 +85,7 @@ class TestGetFournisseurs:
         """Récupère un fournisseur par son ID"""
         response = client.get(
             f"/api/fournisseurs/{sample_fournisseur.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -110,15 +97,17 @@ class TestGetFournisseurs:
         """Erreur 404 pour fournisseur inexistant"""
         response = client.get(
             "/api/fournisseurs/99999",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 404
 
-    def test_get_fournisseurs_consultation(self, client, consultation_token, sample_fournisseur):
+    def test_get_fournisseurs_consultation(
+        self, client, consultation_token, sample_fournisseur
+    ):
         """Utilisateur consultation peut lire les fournisseurs"""
         response = client.get(
             "/api/fournisseurs",
-            headers={"Authorization": f"Bearer {consultation_token}"}
+            headers={"Authorization": f"Bearer {consultation_token}"},
         )
         assert response.status_code == 200
 
@@ -131,31 +120,32 @@ class TestUpdateFournisseur:
         response = client.put(
             f"/api/fournisseurs/{sample_fournisseur.id}",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={
-                "nom": "Fournisseur Modifié",
-                "telephone": "9876543210"
-            }
+            json={"nom": "Fournisseur Modifié", "telephone": "9876543210"},
         )
         assert response.status_code == 200
         data = response.json()
         assert data["nom"] == "Fournisseur Modifié"
         assert data["telephone"] == "9876543210"
 
-    def test_update_fournisseur_gestionnaire(self, client, gestionnaire_token, sample_fournisseur):
+    def test_update_fournisseur_gestionnaire(
+        self, client, gestionnaire_token, sample_fournisseur
+    ):
         """Gestionnaire peut modifier un fournisseur"""
         response = client.put(
             f"/api/fournisseurs/{sample_fournisseur.id}",
             headers={"Authorization": f"Bearer {gestionnaire_token}"},
-            json={"nom": "Fournisseur Gest Modif"}
+            json={"nom": "Fournisseur Gest Modif"},
         )
         assert response.status_code == 200
 
-    def test_update_fournisseur_technicien(self, client, technicien_token, sample_fournisseur):
+    def test_update_fournisseur_technicien(
+        self, client, technicien_token, sample_fournisseur
+    ):
         """Technicien peut modifier un fournisseur (pas de permissions sur ce module)"""
         response = client.put(
             f"/api/fournisseurs/{sample_fournisseur.id}",
             headers={"Authorization": f"Bearer {technicien_token}"},
-            json={"nom": "Fournisseur Tech Modif"}
+            json={"nom": "Fournisseur Tech Modif"},
         )
         assert response.status_code == 200
 
@@ -164,7 +154,7 @@ class TestUpdateFournisseur:
         response = client.put(
             "/api/fournisseurs/99999",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={"nom": "Inexistant"}
+            json={"nom": "Inexistant"},
         )
         assert response.status_code == 404
 
@@ -180,7 +170,7 @@ class TestDeleteFournisseur:
         fournisseur = Fournisseur(
             nom="Fournisseur à Supprimer",
             email="delete@test.com",
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         db.add(fournisseur)
         db.commit()
@@ -188,25 +178,27 @@ class TestDeleteFournisseur:
 
         response = client.delete(
             f"/api/fournisseurs/{fournisseur.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
 
         # Vérifier que le fournisseur est supprimé
         response = client.get(
             f"/api/fournisseurs/{fournisseur.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 404
 
-    def test_delete_fournisseur_gestionnaire(self, client, gestionnaire_token, db, admin_user):
+    def test_delete_fournisseur_gestionnaire(
+        self, client, gestionnaire_token, db, admin_user
+    ):
         """Gestionnaire peut supprimer un fournisseur"""
         from app.models import Fournisseur
 
         fournisseur = Fournisseur(
             nom="Fournisseur Gest Delete",
             email="gest-delete@test.com",
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         db.add(fournisseur)
         db.commit()
@@ -214,18 +206,20 @@ class TestDeleteFournisseur:
 
         response = client.delete(
             f"/api/fournisseurs/{fournisseur.id}",
-            headers={"Authorization": f"Bearer {gestionnaire_token}"}
+            headers={"Authorization": f"Bearer {gestionnaire_token}"},
         )
         assert response.status_code == 200
 
-    def test_delete_fournisseur_technicien(self, client, technicien_token, db, admin_user):
+    def test_delete_fournisseur_technicien(
+        self, client, technicien_token, db, admin_user
+    ):
         """Technicien peut supprimer un fournisseur (pas de permissions sur ce module)"""
         from app.models import Fournisseur
 
         fournisseur = Fournisseur(
             nom="Fournisseur Tech Delete",
             email="tech-delete@test.com",
-            created_by=admin_user.id
+            created_by=admin_user.id,
         )
         db.add(fournisseur)
         db.commit()
@@ -233,7 +227,7 @@ class TestDeleteFournisseur:
 
         response = client.delete(
             f"/api/fournisseurs/{fournisseur.id}",
-            headers={"Authorization": f"Bearer {technicien_token}"}
+            headers={"Authorization": f"Bearer {technicien_token}"},
         )
         assert response.status_code == 200
 
@@ -241,7 +235,7 @@ class TestDeleteFournisseur:
         """Erreur 404 pour suppression fournisseur inexistant"""
         response = client.delete(
             "/api/fournisseurs/99999",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 404
 
@@ -249,11 +243,13 @@ class TestDeleteFournisseur:
 class TestFournisseurArticleAssociation:
     """Tests pour l'association fournisseurs-articles"""
 
-    def test_associer_fournisseur_article_admin(self, client, admin_token, sample_fournisseur, sample_article):
+    def test_associer_fournisseur_article_admin(
+        self, client, admin_token, sample_fournisseur, sample_article
+    ):
         """Admin peut associer un fournisseur à un article"""
         response = client.post(
             f"/api/fournisseurs/{sample_fournisseur.id}/articles/{sample_article.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -261,15 +257,19 @@ class TestFournisseurArticleAssociation:
         assert data["id"] == sample_article.id
         assert "fournisseurs" in data
 
-    def test_associer_fournisseur_article_gestionnaire(self, client, gestionnaire_token, sample_fournisseur, sample_article):
+    def test_associer_fournisseur_article_gestionnaire(
+        self, client, gestionnaire_token, sample_fournisseur, sample_article
+    ):
         """Gestionnaire peut associer un fournisseur à un article"""
         response = client.post(
             f"/api/fournisseurs/{sample_fournisseur.id}/articles/{sample_article.id}",
-            headers={"Authorization": f"Bearer {gestionnaire_token}"}
+            headers={"Authorization": f"Bearer {gestionnaire_token}"},
         )
         assert response.status_code == 200
 
-    def test_retirer_fournisseur_article_admin(self, client, admin_token, sample_fournisseur, sample_article, db):
+    def test_retirer_fournisseur_article_admin(
+        self, client, admin_token, sample_fournisseur, sample_article, db
+    ):
         """Admin peut retirer un fournisseur d'un article"""
         # D'abord associer via ORM
         sample_article.fournisseurs.append(sample_fournisseur)
@@ -278,14 +278,16 @@ class TestFournisseurArticleAssociation:
         # Puis retirer
         response = client.delete(
             f"/api/fournisseurs/{sample_fournisseur.id}/articles/{sample_article.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
         # Retourne l'article complet
         assert data["id"] == sample_article.id
 
-    def test_retirer_fournisseur_article_technicien(self, client, technicien_token, sample_fournisseur, sample_article, db):
+    def test_retirer_fournisseur_article_technicien(
+        self, client, technicien_token, sample_fournisseur, sample_article, db
+    ):
         """Technicien peut retirer un fournisseur d'un article (pas de permissions sur ce module)"""
         # D'abord associer via ORM
         sample_article.fournisseurs.append(sample_fournisseur)
@@ -293,11 +295,13 @@ class TestFournisseurArticleAssociation:
 
         response = client.delete(
             f"/api/fournisseurs/{sample_fournisseur.id}/articles/{sample_article.id}",
-            headers={"Authorization": f"Bearer {technicien_token}"}
+            headers={"Authorization": f"Bearer {technicien_token}"},
         )
         assert response.status_code == 200
 
-    def test_liste_articles_fournisseur(self, client, admin_token, sample_fournisseur, sample_article, db):
+    def test_liste_articles_fournisseur(
+        self, client, admin_token, sample_fournisseur, sample_article, db
+    ):
         """Récupère la liste des articles d'un fournisseur"""
         # Associer l'article au fournisseur via ORM
         sample_article.fournisseurs.append(sample_fournisseur)
@@ -305,7 +309,7 @@ class TestFournisseurArticleAssociation:
 
         response = client.get(
             f"/api/fournisseurs/{sample_fournisseur.id}/articles",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -319,7 +323,7 @@ class TestFournisseurArticleAssociation:
         """Erreur 404 pour association avec fournisseur inexistant"""
         response = client.post(
             f"/api/fournisseurs/99999/articles/{sample_article.id}",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 404
 
@@ -327,6 +331,6 @@ class TestFournisseurArticleAssociation:
         """Erreur 404 pour association avec article inexistant"""
         response = client.post(
             f"/api/fournisseurs/{sample_fournisseur.id}/articles/99999",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 404

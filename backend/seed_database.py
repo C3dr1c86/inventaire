@@ -26,6 +26,7 @@ from app.database import SessionLocal, init_db
 from app import models
 from app.auth import get_password_hash
 
+
 def clear_database(db):
     """Supprime toutes les données existantes."""
     print("🗑️  Nettoyage de la base de données...")
@@ -54,12 +55,14 @@ def seed_user(db):
         email="admin@example.com",
         hashed_password=get_password_hash("admin"),
         is_active=True,
-        role=models.RoleEnum.ADMIN
+        role=models.RoleEnum.ADMIN,
     )
     db.add(user)
     db.commit()
     db.refresh(user)
-    print(f"✅ Utilisateur créé: {user.username} (rôle: {user.role}) (mot de passe: admin)\n")
+    print(
+        f"✅ Utilisateur créé: {user.username} (rôle: {user.role}) (mot de passe: admin)\n"
+    )
     return user
 
 
@@ -68,9 +71,15 @@ def seed_categories(db, user):
     print("📁 Création des catégories...")
 
     # Catégories racines
-    materiaux = models.Categorie(nom="Matériaux", description="Matériaux de construction", created_by=user.id)
-    consommables = models.Categorie(nom="Consommables", description="Produits consommables", created_by=user.id)
-    outillage = models.Categorie(nom="Outillage", description="Outils et équipements", created_by=user.id)
+    materiaux = models.Categorie(
+        nom="Matériaux", description="Matériaux de construction", created_by=user.id
+    )
+    consommables = models.Categorie(
+        nom="Consommables", description="Produits consommables", created_by=user.id
+    )
+    outillage = models.Categorie(
+        nom="Outillage", description="Outils et équipements", created_by=user.id
+    )
 
     db.add_all([materiaux, consommables, outillage])
     db.commit()
@@ -80,11 +89,36 @@ def seed_categories(db, user):
 
     # Sous-catégories
     sous_cats = [
-        models.Categorie(nom="Bois", description="Bois et dérivés", parent_id=materiaux.id, created_by=user.id),
-        models.Categorie(nom="Métal", description="Métaux divers", parent_id=materiaux.id, created_by=user.id),
-        models.Categorie(nom="Quincaillerie", description="Vis, clous, etc.", parent_id=consommables.id, created_by=user.id),
-        models.Categorie(nom="Colles & Mastics", description="Produits de collage", parent_id=consommables.id, created_by=user.id),
-        models.Categorie(nom="Électroportatif", description="Outils électriques", parent_id=outillage.id, created_by=user.id),
+        models.Categorie(
+            nom="Bois",
+            description="Bois et dérivés",
+            parent_id=materiaux.id,
+            created_by=user.id,
+        ),
+        models.Categorie(
+            nom="Métal",
+            description="Métaux divers",
+            parent_id=materiaux.id,
+            created_by=user.id,
+        ),
+        models.Categorie(
+            nom="Quincaillerie",
+            description="Vis, clous, etc.",
+            parent_id=consommables.id,
+            created_by=user.id,
+        ),
+        models.Categorie(
+            nom="Colles & Mastics",
+            description="Produits de collage",
+            parent_id=consommables.id,
+            created_by=user.id,
+        ),
+        models.Categorie(
+            nom="Électroportatif",
+            description="Outils électriques",
+            parent_id=outillage.id,
+            created_by=user.id,
+        ),
     ]
 
     db.add_all(sous_cats)
@@ -92,14 +126,14 @@ def seed_categories(db, user):
     print(f"✅ {len(sous_cats) + 3} catégories créées\n")
 
     return {
-        'materiaux': materiaux,
-        'consommables': consommables,
-        'outillage': outillage,
-        'bois': sous_cats[0],
-        'metal': sous_cats[1],
-        'quincaillerie': sous_cats[2],
-        'colles': sous_cats[3],
-        'electroportatif': sous_cats[4]
+        "materiaux": materiaux,
+        "consommables": consommables,
+        "outillage": outillage,
+        "bois": sous_cats[0],
+        "metal": sous_cats[1],
+        "quincaillerie": sous_cats[2],
+        "colles": sous_cats[3],
+        "electroportatif": sous_cats[4],
     }
 
 
@@ -107,11 +141,36 @@ def seed_tags(db, user):
     """Crée des tags."""
     print("🏷️  Création des tags...")
     tags = [
-        models.Tag(nom="Prioritaire", couleur="#dc3545", description="Article prioritaire", created_by=user.id),
-        models.Tag(nom="Fragile", couleur="#ffc107", description="Article fragile", created_by=user.id),
-        models.Tag(nom="Nouveau", couleur="#28a745", description="Nouvel article", created_by=user.id),
-        models.Tag(nom="Promotion", couleur="#007bff", description="En promotion", created_by=user.id),
-        models.Tag(nom="Stock limité", couleur="#fd7e14", description="Stock faible", created_by=user.id),
+        models.Tag(
+            nom="Prioritaire",
+            couleur="#dc3545",
+            description="Article prioritaire",
+            created_by=user.id,
+        ),
+        models.Tag(
+            nom="Fragile",
+            couleur="#ffc107",
+            description="Article fragile",
+            created_by=user.id,
+        ),
+        models.Tag(
+            nom="Nouveau",
+            couleur="#28a745",
+            description="Nouvel article",
+            created_by=user.id,
+        ),
+        models.Tag(
+            nom="Promotion",
+            couleur="#007bff",
+            description="En promotion",
+            created_by=user.id,
+        ),
+        models.Tag(
+            nom="Stock limité",
+            couleur="#fd7e14",
+            description="Stock faible",
+            created_by=user.id,
+        ),
     ]
 
     db.add_all(tags)
@@ -134,7 +193,7 @@ def seed_fournisseurs(db, user):
             telephone="01 23 45 67 89",
             adresse="12 rue du Commerce, 75001 Paris",
             site_web="https://www.bricomax.fr",
-            created_by=user.id
+            created_by=user.id,
         ),
         models.Fournisseur(
             nom="Outillage Pro",
@@ -142,7 +201,7 @@ def seed_fournisseurs(db, user):
             email="commandes@outillagepro.fr",
             telephone="02 34 56 78 90",
             adresse="45 avenue de l'Industrie, 69000 Lyon",
-            created_by=user.id
+            created_by=user.id,
         ),
         models.Fournisseur(
             nom="Bois & Matériaux",
@@ -151,7 +210,7 @@ def seed_fournisseurs(db, user):
             telephone="03 45 67 89 01",
             adresse="78 route de la Forêt, 33000 Bordeaux",
             site_web="https://www.boisetmateriaux.fr",
-            created_by=user.id
+            created_by=user.id,
         ),
     ]
 
@@ -169,8 +228,18 @@ def seed_emplacements(db, user):
     print("📍 Création des emplacements...")
 
     # Zones
-    atelier = models.Emplacement(code="ATELIER-A", description="Atelier principal", capacite_max=1000, created_by=user.id)
-    stockage = models.Emplacement(code="STOCK-B", description="Zone de stockage", capacite_max=2000, created_by=user.id)
+    atelier = models.Emplacement(
+        code="ATELIER-A",
+        description="Atelier principal",
+        capacite_max=1000,
+        created_by=user.id,
+    )
+    stockage = models.Emplacement(
+        code="STOCK-B",
+        description="Zone de stockage",
+        capacite_max=2000,
+        created_by=user.id,
+    )
 
     db.add_all([atelier, stockage])
     db.commit()
@@ -178,9 +247,27 @@ def seed_emplacements(db, user):
     db.refresh(stockage)
 
     # Étagères
-    etagere_a1 = models.Emplacement(code="ETAGERE-A1", description="Étagère haute", capacite_max=200, parent_id=atelier.id, created_by=user.id)
-    etagere_a2 = models.Emplacement(code="ETAGERE-A2", description="Étagère basse", capacite_max=300, parent_id=atelier.id, created_by=user.id)
-    etagere_b1 = models.Emplacement(code="ETAGERE-B1", description="Étagère stock", capacite_max=500, parent_id=stockage.id, created_by=user.id)
+    etagere_a1 = models.Emplacement(
+        code="ETAGERE-A1",
+        description="Étagère haute",
+        capacite_max=200,
+        parent_id=atelier.id,
+        created_by=user.id,
+    )
+    etagere_a2 = models.Emplacement(
+        code="ETAGERE-A2",
+        description="Étagère basse",
+        capacite_max=300,
+        parent_id=atelier.id,
+        created_by=user.id,
+    )
+    etagere_b1 = models.Emplacement(
+        code="ETAGERE-B1",
+        description="Étagère stock",
+        capacite_max=500,
+        parent_id=stockage.id,
+        created_by=user.id,
+    )
 
     db.add_all([etagere_a1, etagere_a2, etagere_b1])
     db.commit()
@@ -190,11 +277,41 @@ def seed_emplacements(db, user):
 
     # Boîtes
     boites = [
-        models.Emplacement(code="BOITE-1", description="Petite visserie", capacite_max=50, parent_id=etagere_a1.id, created_by=user.id),
-        models.Emplacement(code="BOITE-2", description="Clous et agrafes", capacite_max=50, parent_id=etagere_a1.id, created_by=user.id),
-        models.Emplacement(code="BOITE-3", description="Consommables divers", capacite_max=100, parent_id=etagere_a2.id, created_by=user.id),
-        models.Emplacement(code="BOITE-4", description="Outils électriques", capacite_max=20, parent_id=etagere_b1.id, created_by=user.id),
-        models.Emplacement(code="BOITE-5", description="Matériaux en stock", capacite_max=200, parent_id=etagere_b1.id, created_by=user.id),
+        models.Emplacement(
+            code="BOITE-1",
+            description="Petite visserie",
+            capacite_max=50,
+            parent_id=etagere_a1.id,
+            created_by=user.id,
+        ),
+        models.Emplacement(
+            code="BOITE-2",
+            description="Clous et agrafes",
+            capacite_max=50,
+            parent_id=etagere_a1.id,
+            created_by=user.id,
+        ),
+        models.Emplacement(
+            code="BOITE-3",
+            description="Consommables divers",
+            capacite_max=100,
+            parent_id=etagere_a2.id,
+            created_by=user.id,
+        ),
+        models.Emplacement(
+            code="BOITE-4",
+            description="Outils électriques",
+            capacite_max=20,
+            parent_id=etagere_b1.id,
+            created_by=user.id,
+        ),
+        models.Emplacement(
+            code="BOITE-5",
+            description="Matériaux en stock",
+            capacite_max=200,
+            parent_id=etagere_b1.id,
+            created_by=user.id,
+        ),
     ]
 
     db.add_all(boites)
@@ -203,12 +320,12 @@ def seed_emplacements(db, user):
     print(f"✅ {2 + 3 + len(boites)} emplacements créés\n")
 
     return {
-        'atelier': atelier,
-        'stockage': stockage,
-        'etagere_a1': etagere_a1,
-        'etagere_a2': etagere_a2,
-        'etagere_b1': etagere_b1,
-        'boites': boites
+        "atelier": atelier,
+        "stockage": stockage,
+        "etagere_a1": etagere_a1,
+        "etagere_a2": etagere_a2,
+        "etagere_b1": etagere_b1,
+        "boites": boites,
     }
 
 
@@ -222,134 +339,134 @@ def seed_articles(db, user, categories, tags, fournisseurs, emplacements):
             quantite=15,
             quantite_min=5,
             prix_unitaire=45.50,
-            categorie_id=categories['bois'].id,
-            emplacement_id=emplacements['boites'][4].id,
+            categorie_id=categories["bois"].id,
+            emplacement_id=emplacements["boites"][4].id,
             description="Planche de chêne massif",
             sku="BOIS-CHE-200",
             prix_fournisseur=35.00,
             ref_fournisseur="CHE200",
             delai_livraison=7,
-            created_by=user.id
+            created_by=user.id,
         ),
         models.Article(
             nom="Vis acier inox 4x40mm (boîte de 100)",
             quantite=50,
             quantite_min=20,
             prix_unitaire=8.90,
-            categorie_id=categories['quincaillerie'].id,
-            emplacement_id=emplacements['boites'][0].id,
+            categorie_id=categories["quincaillerie"].id,
+            emplacement_id=emplacements["boites"][0].id,
             description="Vis à bois inox",
             sku="VIS-INOX-4X40",
             prix_fournisseur=6.50,
             ref_fournisseur="VIS440",
             delai_livraison=2,
-            created_by=user.id
+            created_by=user.id,
         ),
         models.Article(
             nom="Perceuse sans fil 18V",
             quantite=3,
             quantite_min=2,
             prix_unitaire=129.99,
-            categorie_id=categories['electroportatif'].id,
-            emplacement_id=emplacements['boites'][3].id,
+            categorie_id=categories["electroportatif"].id,
+            emplacement_id=emplacements["boites"][3].id,
             description="Perceuse-visseuse 18V avec 2 batteries",
             sku="OUT-PER-18V",
             prix_fournisseur=95.00,
             ref_fournisseur="PER18V2",
             delai_livraison=5,
-            created_by=user.id
+            created_by=user.id,
         ),
         models.Article(
             nom="Colle à bois D3 1L",
             quantite=8,
             quantite_min=3,
             prix_unitaire=12.50,
-            categorie_id=categories['colles'].id,
-            emplacement_id=emplacements['boites'][2].id,
+            categorie_id=categories["colles"].id,
+            emplacement_id=emplacements["boites"][2].id,
             description="Colle vinylique D3 résistante à l'eau",
             sku="COL-BOIS-1L",
             prix_fournisseur=8.90,
             ref_fournisseur="COLD3-1L",
             delai_livraison=3,
-            created_by=user.id
+            created_by=user.id,
         ),
         models.Article(
             nom="Tube acier 40mm x 2m",
             quantite=12,
             quantite_min=5,
             prix_unitaire=18.75,
-            categorie_id=categories['metal'].id,
-            emplacement_id=emplacements['stockage'].id,
+            categorie_id=categories["metal"].id,
+            emplacement_id=emplacements["stockage"].id,
             description="Tube acier rond 40mm",
             sku="MET-TUB-40",
             prix_fournisseur=14.00,
             delai_livraison=10,
-            created_by=user.id
+            created_by=user.id,
         ),
         models.Article(
             nom="Clous 60mm (1kg)",
             quantite=25,
             quantite_min=10,
             prix_unitaire=6.20,
-            categorie_id=categories['quincaillerie'].id,
-            emplacement_id=emplacements['boites'][1].id,
+            categorie_id=categories["quincaillerie"].id,
+            emplacement_id=emplacements["boites"][1].id,
             description="Clous acier 60mm",
             sku="QUI-CLO-60",
             prix_fournisseur=4.50,
             delai_livraison=2,
-            created_by=user.id
+            created_by=user.id,
         ),
         models.Article(
             nom="Ponceuse orbitale",
             quantite=2,
             quantite_min=1,
             prix_unitaire=89.90,
-            categorie_id=categories['electroportatif'].id,
-            emplacement_id=emplacements['boites'][3].id,
+            categorie_id=categories["electroportatif"].id,
+            emplacement_id=emplacements["boites"][3].id,
             description="Ponceuse orbitale 250W",
             sku="OUT-PON-250",
             prix_fournisseur=65.00,
             delai_livraison=5,
-            created_by=user.id
+            created_by=user.id,
         ),
         models.Article(
             nom="Mastic silicone transparent",
             quantite=30,
             quantite_min=15,
             prix_unitaire=5.90,
-            categorie_id=categories['colles'].id,
-            emplacement_id=emplacements['boites'][2].id,
+            categorie_id=categories["colles"].id,
+            emplacement_id=emplacements["boites"][2].id,
             description="Cartouche de mastic silicone 310ml",
             sku="MAS-SIL-TR",
             prix_fournisseur=4.20,
             delai_livraison=3,
-            created_by=user.id
+            created_by=user.id,
         ),
         models.Article(
             nom="Contreplaqué 15mm 250x125cm",
             quantite=6,
             quantite_min=3,
             prix_unitaire=28.50,
-            categorie_id=categories['bois'].id,
-            emplacement_id=emplacements['boites'][4].id,
+            categorie_id=categories["bois"].id,
+            emplacement_id=emplacements["boites"][4].id,
             description="Panneau contreplaqué peuplier",
             sku="BOIS-CPL-15",
             prix_fournisseur=22.00,
             delai_livraison=7,
-            created_by=user.id
+            created_by=user.id,
         ),
         models.Article(
             nom="Boulons M8x50mm (boîte de 50)",
             quantite=18,
             quantite_min=8,
             prix_unitaire=11.40,
-            categorie_id=categories['quincaillerie'].id,
-            emplacement_id=emplacements['boites'][0].id,
+            categorie_id=categories["quincaillerie"].id,
+            emplacement_id=emplacements["boites"][0].id,
             description="Boulons acier zingué avec écrous",
             sku="QUI-BOU-M8",
             prix_fournisseur=8.50,
             delai_livraison=2,
-            created_by=user.id
+            created_by=user.id,
         ),
     ]
 
@@ -394,8 +511,8 @@ def seed_mouvements(db, user, articles):
             quantite_avant=article.quantite - 10,
             quantite_apres=article.quantite,
             motif=f"Réception commande fournisseur",
-            created_at=datetime.now() - timedelta(days=10-i),
-            created_by=user.id
+            created_at=datetime.now() - timedelta(days=10 - i),
+            created_by=user.id,
         )
         mouvements.append(mouvement_entree)
 
@@ -407,8 +524,8 @@ def seed_mouvements(db, user, articles):
             quantite_avant=article.quantite,
             quantite_apres=article.quantite,  # La quantité n'a pas changé dans l'article
             motif=f"Utilisation atelier",
-            created_at=datetime.now() - timedelta(days=5-i),
-            created_by=user.id
+            created_at=datetime.now() - timedelta(days=5 - i),
+            created_by=user.id,
         )
         mouvements.append(mouvement_sortie)
 
@@ -421,9 +538,9 @@ def seed_mouvements(db, user, articles):
 
 def main():
     """Fonction principale."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🌱 PEUPLEMENT DE LA BASE DE DONNÉES")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     # Initialiser la base de données
     init_db()
@@ -444,9 +561,9 @@ def main():
         articles = seed_articles(db, user, categories, tags, fournisseurs, emplacements)
         mouvements = seed_mouvements(db, user, articles)
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("✅ PEUPLEMENT TERMINÉ AVEC SUCCÈS !")
-        print("="*60)
+        print("=" * 60)
         print("\n📊 Résumé :")
         print(f"  - 1 utilisateur (admin/admin)")
         print(f"  - {len(categories)} catégories")
