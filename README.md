@@ -1,5 +1,14 @@
 # Application d'Inventaire Multi-plateforme
 
+[![CI Status](https://github.com/VOTRE-USER/inventaire/actions/workflows/ci.yml/badge.svg)](https://github.com/VOTRE-USER/inventaire/actions/workflows/ci.yml)
+[![Docker Build](https://github.com/VOTRE-USER/inventaire/actions/workflows/docker-build.yml/badge.svg)](https://github.com/VOTRE-USER/inventaire/actions/workflows/docker-build.yml)
+[![Backend Coverage](https://img.shields.io/badge/coverage-backend_64%25-green.svg)](backend/htmlcov/index.html)
+[![Frontend Coverage](https://img.shields.io/badge/coverage-frontend_18.83%25-yellow.svg)](frontend/coverage/index.html)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-v1.9.0-blue.svg)](https://github.com/VOTRE-USER/inventaire/releases)
+[![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
+[![React](https://img.shields.io/badge/react-18-blue.svg)](https://reactjs.org/)
+
 Application complète de gestion d'inventaire avec backend FastAPI et frontend React.
 
 ## Fonctionnalités
