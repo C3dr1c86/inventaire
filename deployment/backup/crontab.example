@@ -1,0 +1,84 @@
+# Exemple de configuration crontab pour backups automatisés
+# Installer avec: crontab -e
+# Vérifier avec: crontab -l
+
+# Variables d'environnement (adapter selon votre installation)
+BACKUP_DIR=/app/backups
+DATABASE_PATH=/app/data/database/inventaire.db
+UPLOADS_PATH=/app/data/uploads
+EXPORTS_PATH=/app/data/exports
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# ==============================================================================
+# BACKUPS AUTOMATISÉS
+# ==============================================================================
+
+# Backup quotidien à 2h00 du matin (tous les jours)
+0 2 * * * /app/deployment/backup/backup.sh >> /app/backups/backup.log 2>&1
+
+# Test de restauration mensuel (le 1er de chaque mois à 3h00)
+# Vérifie qu'un backup récent peut être restauré
+0 3 1 * * /app/deployment/backup/test-backup.sh >> /app/backups/test.log 2>&1
+
+# ==============================================================================
+# MAINTENANCE
+# ==============================================================================
+
+# Nettoyage logs anciens (garder 30 jours)
+0 4 * * 0 find /app/logs -name "*.log" -type f -mtime +30 -delete
+
+# Nettoyage exports temporaires (garder 7 jours)
+0 4 * * * find /app/data/exports -name "*.csv" -type f -mtime +7 -delete
+0 4 * * * find /app/data/exports -name "*.pdf" -type f -mtime +7 -delete
+
+# Rotation logs applicatifs (facultatif si logrotate configuré)
+0 5 * * 0 /usr/sbin/logrotate /etc/logrotate.d/inventaire
+
+# ==============================================================================
+# SYNCHRONISATION CLOUD (optionnel, nécessite rclone configuré)
+# ==============================================================================
+
+# Sync vers cloud toutes les 6 heures
+# Décommenter si RCLONE_REMOTE est configuré
+# 0 */6 * * * rclone sync /app/backups remote:inventaire-backups/ --log-file=/app/backups/rclone.log
+
+# ==============================================================================
+# MONITORING & ALERTES
+# ==============================================================================
+
+# Vérifier l'espace disque disponible (alerte si < 10%)
+0 6 * * * /app/deployment/backup/check-disk-space.sh
+
+# Email de rapport hebdomadaire (dimanche à 8h00)
+# Nécessite mailutils configuré
+# 0 8 * * 0 /app/deployment/backup/weekly-report.sh | mail -s "Inventaire - Rapport Hebdomadaire" admin@example.com
+
+# ==============================================================================
+# NOTES
+# ==============================================================================
+
+# Format crontab: minute heure jour_mois mois jour_semaine commande
+# minute: 0-59
+# heure: 0-23
+# jour_mois: 1-31
+# mois: 1-12
+# jour_semaine: 0-7 (0 et 7 = dimanche)
+
+# Exemples:
+# 0 2 * * * = Tous les jours à 2h00
+# 0 */6 * * * = Toutes les 6 heures
+# 0 0 * * 0 = Tous les dimanches à minuit
+# 0 0 1 * * = Le 1er de chaque mois à minuit
+# */15 * * * * = Toutes les 15 minutes
+
+# Redirection sortie:
+# >> fichier.log 2>&1 = Ajoute stdout et stderr à fichier.log
+# > /dev/null 2>&1 = Ignore toute sortie
+
+# Variables d'environnement:
+# Les crontabs ont un PATH limité, toujours spécifier les chemins complets
+# ou définir PATH en haut du fichier
+
+# Test manuel:
+# Exécuter un script en tant que cron: sudo -u www-data /chemin/script.sh

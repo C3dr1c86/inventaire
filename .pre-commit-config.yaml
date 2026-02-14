@@ -1,0 +1,75 @@
+# Pre-commit hooks configuration
+# Installation: pip install pre-commit
+# Activer: pre-commit install
+# Exécuter manuellement: pre-commit run --all-files
+
+repos:
+  # Secrets detection
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: |
+          (?x)^(
+            frontend/node_modules/.*|
+            frontend/dist/.*|
+            frontend/coverage/.*|
+            backend/venv/.*|
+            backend/__pycache__/.*|
+            .*\.min\.js$|
+            .*\.lock$|
+            .*\.log$
+          )$
+
+  # Python formatage & linting
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3.11
+        files: '^backend/.*\.py$'
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        files: '^backend/.*\.py$'
+        args: ['--max-line-length=120', '--extend-ignore=E203,W503']
+
+  # JavaScript/React formatage & linting
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.56.0
+    hooks:
+      - id: eslint
+        files: '^frontend/src/.*\.[jt]sx?$'
+        types: [file]
+        additional_dependencies:
+          - 'eslint@8.56.0'
+          - 'eslint-plugin-react@7.33.2'
+          - 'eslint-plugin-react-hooks@4.6.0'
+
+  # Trailing whitespace & end of file
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '^(.*\.md|.*\.txt)$'
+      - id: end-of-file-fixer
+        exclude: '^(.*\.min\.js|.*\.lock)$'
+      - id: check-yaml
+        files: '\.(yaml|yml)$'
+      - id: check-json
+        files: '\.json$'
+      - id: check-added-large-files
+        args: ['--maxkb=5000']  # Max 5MB
+      - id: check-merge-conflict
+      - id: check-case-conflict
+
+  # Markdown linting
+  - repo: https://github.com/markdownlint/markdownlint
+    rev: v0.12.0
+    hooks:
+      - id: markdownlint
+        args: ['--fix']
+        files: '\.md$'
