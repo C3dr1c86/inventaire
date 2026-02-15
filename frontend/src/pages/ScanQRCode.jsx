@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom'
 import QRScanner from '../components/common/QRScanner'
 import { getEmplacement, getArticlesByEmplacement } from '../services/emplacementService'
 import { getArticles } from '../services/articleService'
-import { MapPin, Package, AlertCircle, ArrowLeft, Camera, Keyboard, Barcode, Tag } from 'lucide-react'
+import { MapPin, Package, AlertCircle, ArrowLeft, Camera, Keyboard, Barcode, Tag, Download } from 'lucide-react'
 import { toast } from 'react-toastify'
 
 function ScanQRCode() {
@@ -22,6 +22,58 @@ function ScanQRCode() {
   const [scanMode, setScanMode] = useState('reader') // 'camera' ou 'reader'
   const [manualInput, setManualInput] = useState('')
   const inputRef = useRef(null)
+
+  // Exporter les articles de l'emplacement en CSV
+  const handleExportCSV = () => {
+    if (!articles || articles.length === 0) {
+      toast.warning('Aucun article à exporter')
+      return
+    }
+
+    try {
+      // En-têtes CSV
+      const headers = ['Nom', 'SKU', 'Quantité', 'Quantité min', 'Prix unitaire (€)', 'Valeur totale (€)', 'Catégorie', 'Description']
+
+      // Lignes de données
+      const rows = articles.map(article => [
+        article.nom || '',
+        article.sku || '',
+        article.quantite || 0,
+        article.quantite_min || 0,
+        article.prix_unitaire?.toFixed(2) || '0.00',
+        (article.quantite * article.prix_unitaire).toFixed(2) || '0.00',
+        article.categorie?.nom_complet || article.categorie?.nom || '',
+        (article.description || '').replace(/"/g, '""') // Échapper les guillemets
+      ])
+
+      // Construire le CSV
+      let csv = headers.map(h => `"${h}"`).join(',') + '\n'
+      rows.forEach(row => {
+        csv += row.map(cell => `"${cell}"`).join(',') + '\n'
+      })
+
+      // Créer le blob et télécharger
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }) // \uFEFF = BOM UTF-8
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+
+      // Nom du fichier avec le code de l'emplacement et la date
+      const emplacementCode = emplacement?.code || 'emplacement'
+      const date = new Date().toISOString().split('T')[0]
+      link.setAttribute('download', `articles_${emplacementCode}_${date}.csv`)
+
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+
+      toast.success(`✅ Export CSV réussi : ${articles.length} article(s)`)
+    } catch (error) {
+      console.error('Erreur lors de l\'export CSV:', error)
+      toast.error('Erreur lors de l\'export CSV')
+    }
+  }
 
   // Récupérer les détails de l'emplacement scanné
   const { data: emplacement, isLoading: emplacementLoading } = useQuery({
@@ -436,7 +488,17 @@ function ScanQRCode() {
                     </div>
                   )}
 
-                  <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                  <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    {articles && articles.length > 0 && (
+                      <button
+                        className="btn btn-success"
+                        onClick={handleExportCSV}
+                        title="Exporter la liste des articles en CSV"
+                      >
+                        <Download size={18} />
+                        Exporter CSV
+                      </button>
+                    )}
                     <button
                       className="btn btn-primary"
                       onClick={handleRescan}
