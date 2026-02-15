@@ -229,31 +229,45 @@ function Articles() {
     setBarcodeArticle(article)
   }
 
-  const handleDownloadBarcode = (article) => {
-    const token = localStorage.getItem('token')
-    const url = `${API_URL}/articles/${article.id}/barcode`
+  const handleDownloadBarcode = async (article) => {
+    try {
+      console.log('Téléchargement barcode pour article:', article.id, 'SKU:', article.sku)
 
-    fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`
+      const response = await api.get(`/articles/${article.id}/barcode`, {
+        responseType: 'blob'
+      })
+
+      console.log('Blob reçu, taille:', response.data.size, 'type:', response.data.type)
+
+      // Créer un lien de téléchargement
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `barcode_${article.sku}.png`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast.success('Code-barre téléchargé')
+    } catch (error) {
+      console.error('Erreur lors du téléchargement du code-barre:', error)
+      console.error('Détails erreur:', error.response)
+
+      if (error.response?.status === 404) {
+        toast.error('Article non trouvé')
+      } else if (error.response?.status === 400) {
+        toast.error('Cet article n\'a pas de SKU')
+      } else if (error.response?.data) {
+        // Essayer de lire le message d'erreur du blob
+        const errorBlob = error.response.data
+        const errorText = await errorBlob.text()
+        console.error('Message erreur serveur:', errorText)
+        toast.error(`Erreur serveur: ${errorText}`)
+      } else {
+        toast.error(`Erreur lors du téléchargement: ${error.message}`)
       }
-    })
-      .then(response => response.blob())
-      .then(blob => {
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `barcode_${article.sku}.png`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-        toast.success('Code-barre téléchargé')
-      })
-      .catch(error => {
-        toast.error('Erreur lors du téléchargement du code-barre')
-        console.error(error)
-      })
+    }
   }
 
   if (isLoading) {

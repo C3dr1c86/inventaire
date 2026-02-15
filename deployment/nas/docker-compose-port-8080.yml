@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ghcr.io/c3dr1c86/inventaire/backend:latest
+    container_name: inventaire-backend
+    restart: unless-stopped
+    user: "0:0"  # Fix permissions pour volumes NAS
+    environment:
+      - SECRET_KEY=ac68ceb02c5ca196e5d82e7290f1c053e08cd865caaea43ffe1da3fe7ad27ca8
+      - DATABASE_URL=sqlite:///./database/inventaire.db
+      - CORS_ORIGINS=http://192.168.1.37:8080,http://localhost,http://localhost:8080
+    volumes:
+      - ./data/database:/app/database
+      - ./data/exports:/app/exports
+      - ./data/uploads:/app/uploads
+    healthcheck:
+      test: python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health').read()" || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - inventaire-network
+
+  frontend:
+    image: ghcr.io/c3dr1c86/inventaire/frontend:latest
+    container_name: inventaire-frontend
+    restart: unless-stopped
+    environment:
+      - VITE_API_URL=http://192.168.1.37:8080/api
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - inventaire-network
+
+networks:
+  inventaire-network:
+    driver: bridge
+
+volumes:
+  backend_data:
+  frontend_assets:

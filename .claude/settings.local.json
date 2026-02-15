@@ -66,7 +66,14 @@
       "Bash(venv/Scripts/python.exe -m pytest tests/test_crud_articles.py -v)",
       "Bash(venv/Scripts/python.exe -m pytest tests/ -v --tb=short)",
       "Bash(venv/Scripts/python.exe -m pytest:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(git push)",
+      "Bash(git tag:*)",
+      "Bash(git push:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh run list:*)",
+      "Bash(ssh Cédric@192.168.1.37 'pwd && ls -la / | grep -E \"\"mnt|volume|home\"\"')",
+      "Bash(ssh:*)"
     ]
   }
 }

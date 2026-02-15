@@ -1,6 +1,6 @@
 @echo off
 REM ============================================
-REM Script de déploiement automatisé sur NAS
+REM Script de deploiement automatise sur NAS
 REM Inventaire v1.6.0
 REM ============================================
 
@@ -10,7 +10,7 @@ echo   Deploiement Inventaire sur NAS
 echo ========================================
 echo.
 
-REM Vérifier que .env existe
+REM Verifier que .env existe
 if not exist .env (
     echo [ERREUR] Fichier .env introuvable !
     echo.
@@ -24,13 +24,13 @@ if not exist .env (
 )
 
 REM Charger les variables .env
-for /f "tokens=1,2 delims==" %%a in (.env) do (
+for /f "usebackq tokens=1,2 delims==" %%a in (.env) do (
     if not "%%a"=="" if not "%%b"=="" (
         set "%%a=%%b"
     )
 )
 
-REM Vérifier que les variables critiques sont définies
+REM Verifier que les variables critiques sont definies
 if "%NAS_HOST%"=="" (
     echo [ERREUR] NAS_HOST non defini dans .env
     pause
@@ -60,7 +60,7 @@ echo   - NAS: %NAS_USER%@%NAS_HOST%
 echo   - Chemin: %NAS_DEPLOY_PATH%
 echo.
 
-REM Vérifier la connexion SSH
+REM Verifier la connexion SSH
 echo [1/6] Test de connexion SSH au NAS...
 ssh -o ConnectTimeout=5 %NAS_USER%@%NAS_HOST% "echo 'Connexion OK'" >nul 2>&1
 if errorlevel 1 (
@@ -77,7 +77,7 @@ if errorlevel 1 (
 echo [OK] Connexion SSH reussie
 echo.
 
-REM Créer les dossiers sur le NAS
+REM Creer les dossiers sur le NAS
 echo [2/6] Creation des dossiers sur le NAS...
 ssh %NAS_USER%@%NAS_HOST% "mkdir -p %NAS_DEPLOY_PATH%/data/database %NAS_DEPLOY_PATH%/data/exports %NAS_DEPLOY_PATH%/data/uploads"
 if errorlevel 1 (
@@ -110,10 +110,10 @@ if errorlevel 1 (
 echo [OK] .env copie
 echo.
 
-REM Télécharger et démarrer les conteneurs
+REM Telecharger et demarrer les conteneurs
 echo [5/6] Telechargement des images Docker...
 echo (cela peut prendre quelques minutes...)
-ssh %NAS_USER%@%NAS_HOST% "cd %NAS_DEPLOY_PATH% && docker-compose pull"
+ssh %NAS_USER%@%NAS_HOST% "cd %NAS_DEPLOY_PATH% && docker compose -f docker-compose.yml pull"
 if errorlevel 1 (
     echo [ERREUR] Impossible de telecharger les images Docker
     pause
@@ -123,7 +123,7 @@ echo [OK] Images Docker telechargees
 echo.
 
 echo [6/6] Demarrage des conteneurs...
-ssh %NAS_USER%@%NAS_HOST% "cd %NAS_DEPLOY_PATH% && docker-compose up -d"
+ssh %NAS_USER%@%NAS_HOST% "cd %NAS_DEPLOY_PATH% && docker compose -f docker-compose.yml up -d"
 if errorlevel 1 (
     echo [ERREUR] Impossible de demarrer les conteneurs
     pause
@@ -146,9 +146,9 @@ echo   1. Creer votre premier utilisateur (S'inscrire)
 echo   2. Configurer les categories et articles
 echo.
 echo Gestion des conteneurs:
-echo   - Voir les logs: ssh %NAS_USER%@%NAS_HOST% "cd %NAS_DEPLOY_PATH% && docker-compose logs -f"
-echo   - Redemarrer: ssh %NAS_USER%@%NAS_HOST% "cd %NAS_DEPLOY_PATH% && docker-compose restart"
-echo   - Arreter: ssh %NAS_USER%@%NAS_HOST% "cd %NAS_DEPLOY_PATH% && docker-compose stop"
+echo   - Voir les logs: ssh %NAS_USER%@%NAS_HOST% "cd %NAS_DEPLOY_PATH% && docker compose logs -f"
+echo   - Redemarrer: ssh %NAS_USER%@%NAS_HOST% "cd %NAS_DEPLOY_PATH% && docker compose restart"
+echo   - Arreter: ssh %NAS_USER%@%NAS_HOST% "cd %NAS_DEPLOY_PATH% && docker compose stop"
 echo.
 
 pause

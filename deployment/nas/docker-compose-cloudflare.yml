@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ghcr.io/c3dr1c86/inventaire/backend:latest
+    container_name: inventaire-backend
+    restart: unless-stopped
+    user: "0:0"  # Fix permissions pour volumes NAS
+    environment:
+      - SECRET_KEY=ac68ceb02c5ca196e5d82e7290f1c053e08cd865caaea43ffe1da3fe7ad27ca8
+      - DATABASE_URL=sqlite:///./database/inventaire.db
+      # IMPORTANT: Remplacez inventaire.votredomaine.com par votre vrai domaine Cloudflare
+      - CORS_ORIGINS=https://inventaire.votredomaine.com,http://localhost
+    volumes:
+      - ./data/database:/app/database
+      - ./data/exports:/app/exports
+      - ./data/uploads:/app/uploads
+    healthcheck:
+      test: python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health').read()" || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - inventaire-network
+
+  frontend:
+    image: ghcr.io/c3dr1c86/inventaire/frontend:latest
+    container_name: inventaire-frontend
+    restart: unless-stopped
+    environment:
+      # IMPORTANT: L'API est accessible depuis le réseau Docker interne
+      - VITE_API_URL=http://inventaire-backend:8000/api
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - inventaire-network
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: inventaire-cloudflared
+    restart: unless-stopped
+    # IMPORTANT: Remplacez VOTRE_TOKEN_CLOUDFLARE par le token obtenu sur Cloudflare Zero Trust
+    command: tunnel --no-autoupdate run --token VOTRE_TOKEN_CLOUDFLARE
+    depends_on:
+      frontend:
+        condition: service_healthy
+    networks:
+      - inventaire-network
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "info"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  inventaire-network:
+    driver: bridge
+
+volumes:
+  backend_data:
+  frontend_assets:
