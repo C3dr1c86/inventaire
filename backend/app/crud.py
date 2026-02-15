@@ -12,6 +12,8 @@ from typing import Optional, List, Union, Tuple
 from app import models, schemas
 from fastapi import HTTPException, status
 import logging
+import unicodedata
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -508,6 +510,69 @@ def get_articles(
     return articles, total
 
 
+def _generate_sku_from_categorie(db: Session, categorie_id: int) -> str:
+    """
+    Génère un SKU automatique basé sur la catégorie.
+    Format : 4 premières lettres (majuscules, sans accents) + 3 chiffres incrémentés
+
+    Args:
+        db: Session de base de données
+        categorie_id: ID de la catégorie
+
+    Returns:
+        SKU généré (ex: "ELEC001", "PLOM002", etc.)
+    """
+    # Récupérer la catégorie
+    categorie = get_categorie(db, categorie_id)
+    if not categorie:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Catégorie {categorie_id} non trouvée"
+        )
+
+    # Extraire le nom de la catégorie (utiliser parent si c'est une sous-catégorie)
+    nom_categorie = categorie.nom
+    if categorie.parent:
+        nom_categorie = categorie.parent.nom
+
+    # Nettoyer le nom : enlever accents et mettre en majuscules
+    def remove_accents(text: str) -> str:
+        """Supprime les accents d'une chaîne."""
+        nfkd_form = unicodedata.normalize('NFKD', text)
+        return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+
+    # Prendre les 4 premières lettres (ou moins si le nom est court)
+    nom_clean = remove_accents(nom_categorie).upper()
+    # Garder uniquement les lettres
+    nom_clean = re.sub(r'[^A-Z]', '', nom_clean)
+    prefix = nom_clean[:4].ljust(4, 'X')  # Compléter avec X si < 4 lettres
+
+    # Trouver tous les SKU avec ce préfixe et format correct (PREFIX###)
+    articles_with_prefix = (
+        db.query(models.Article.sku)
+        .filter(models.Article.sku.like(f'{prefix}%'))
+        .all()
+    )
+
+    # Filtrer pour ne garder que les SKU au format exact PREFIX### (4 lettres + 3 chiffres)
+    valid_skus = []
+    for (sku,) in articles_with_prefix:
+        if sku and len(sku) == 7 and sku[:4] == prefix and sku[4:].isdigit():
+            valid_skus.append(sku)
+
+    # Trouver le numéro maximum
+    if valid_skus:
+        max_number = max([int(sku[-3:]) for sku in valid_skus])
+        next_number = max_number + 1
+    else:
+        next_number = 1
+
+    # Générer le nouveau SKU
+    new_sku = f"{prefix}{next_number:03d}"
+
+    return new_sku
+
+
 def create_article(
     db: Session, article: schemas.ArticleCreate, current_user: models.User
 ) -> models.Article:
@@ -538,6 +603,12 @@ def create_article(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Catégorie {article.categorie_id} non trouvée",
         )
+
+    # Générer automatiquement le SKU si non fourni et catégorie présente
+    if not article.sku and article.categorie_id:
+        generated_sku = _generate_sku_from_categorie(db, article.categorie_id)
+        # Assigner le SKU généré
+        article.sku = generated_sku
 
     # Valider la capacité de l'emplacement (si fourni)
     if article.emplacement_id:
@@ -1833,11 +1904,37 @@ def delete_emplacement(db: Session, emplacement_id: int) -> bool:
     return True
 
 
+def _get_all_children_emplacement_ids(db: Session, emplacement_id: int) -> List[int]:
+    """
+    Récupère récursivement tous les IDs des sous-emplacements.
+
+    Args:
+        db: Session de base de données
+        emplacement_id: ID de l'emplacement parent
+
+    Returns:
+        Liste de tous les IDs des sous-emplacements (incluant l'ID parent)
+    """
+    ids = [emplacement_id]
+
+    # Récupérer les enfants directs
+    children = db.query(models.Emplacement.id).filter(
+        models.Emplacement.parent_id == emplacement_id
+    ).all()
+
+    # Récursivement récupérer les enfants de chaque enfant
+    for child in children:
+        child_id = child[0]
+        ids.extend(_get_all_children_emplacement_ids(db, child_id))
+
+    return ids
+
+
 def get_articles_by_emplacement(
     db: Session, emplacement_id: int, skip: int = 0, limit: int = 100
 ) -> List[models.Article]:
     """
-    Récupère tous les articles d'un emplacement.
+    Récupère tous les articles d'un emplacement ET de ses sous-emplacements.
 
     Args:
         db: Session de base de données
@@ -1846,7 +1943,7 @@ def get_articles_by_emplacement(
         limit: Limite de résultats
 
     Returns:
-        Liste des articles de l'emplacement
+        Liste des articles de l'emplacement et de ses sous-emplacements
 
     Raises:
         HTTPException: Si l'emplacement n'existe pas
@@ -1858,9 +1955,12 @@ def get_articles_by_emplacement(
             detail=f"Emplacement {emplacement_id} non trouvé",
         )
 
+    # Récupérer tous les IDs (emplacement + sous-emplacements récursifs)
+    all_emplacement_ids = _get_all_children_emplacement_ids(db, emplacement_id)
+
     return (
         db.query(models.Article)
-        .filter(models.Article.emplacement_id == emplacement_id)
+        .filter(models.Article.emplacement_id.in_(all_emplacement_ids))
         .options(joinedload(models.Article.categorie))
         .options(joinedload(models.Article.emplacement))
         .options(joinedload(models.Article.tags))

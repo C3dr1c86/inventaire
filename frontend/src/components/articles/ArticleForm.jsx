@@ -377,9 +377,7 @@ function ArticleForm({ article, onSubmit, onCancel, isSubmitting }) {
       newErrors.nom = 'Le nom est requis'
     }
 
-    if (!formData.sku.trim()) {
-      newErrors.sku = 'Le SKU est requis'
-    }
+    // Le SKU n'est plus requis - il sera généré automatiquement si non fourni
 
     if (formData.quantite < 0) {
       newErrors.quantite = 'La quantité ne peut pas être négative'
@@ -456,7 +454,10 @@ function ArticleForm({ article, onSubmit, onCancel, isSubmitting }) {
 
         <div className="form-group">
           <label htmlFor="sku">
-            Code SKU <span className="required">*</span>
+            Code SKU
+            <small style={{ marginLeft: '0.5rem', fontWeight: 'normal', color: '#6c757d' }}>
+              (optionnel - généré automatiquement)
+            </small>
           </label>
           <input
             type="text"
@@ -464,10 +465,16 @@ function ArticleForm({ article, onSubmit, onCancel, isSubmitting }) {
             name="sku"
             value={formData.sku}
             onChange={handleChange}
+            placeholder={formData.categorie_id ? "Ex: ELEC001 (sera généré automatiquement si vide)" : "Laissez vide pour génération automatique"}
             className={errors.sku ? 'error' : ''}
             disabled={isSubmitting}
           />
           {errors.sku && <span className="error-message">{errors.sku}</span>}
+          {formData.categorie_id && !formData.sku && (
+            <small style={{ display: 'block', marginTop: '0.25rem', color: '#28a745' }}>
+              ✓ Le SKU sera généré automatiquement selon la catégorie sélectionnée
+            </small>
+          )}
         </div>
       </div>
 
