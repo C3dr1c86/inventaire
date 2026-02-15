@@ -2,6 +2,27 @@
 
 Ce guide explique comment déployer l'application Inventaire sur votre NAS en utilisant les images Docker pré-construites.
 
+## 📑 Index des guides
+
+### Déploiement de base (accès local réseau)
+- **[Ce fichier](#méthode-1--déploiement-automatisé-depuis-pc-recommandé)** : Déploiement standard avec accès local uniquement
+- **[GUIDE-INTERFACE-WEB.md](GUIDE-INTERFACE-WEB.md)** : Déploiement via interface web UGOS/Synology
+
+### Accès externe sécurisé (depuis Internet)
+- **[COMPARATIF-SOLUTIONS-ACCES-EXTERNE.md](COMPARATIF-SOLUTIONS-ACCES-EXTERNE.md)** : ⭐ Commencez ici! Compare Tailscale vs Cloudflare
+- **[DEPLOIEMENT-TAILSCALE-RAPIDE.md](DEPLOIEMENT-TAILSCALE-RAPIDE.md)** : Guide rapide Tailscale (100% gratuit, VPN privé)
+- **[DEPLOIEMENT-CLOUDFLARE-RAPIDE.md](DEPLOIEMENT-CLOUDFLARE-RAPIDE.md)** : Guide rapide Cloudflare Tunnel (nécessite domaine)
+- **[GUIDE-TAILSCALE.md](GUIDE-TAILSCALE.md)** : Guide complet Tailscale avec troubleshooting
+- **[GUIDE-CLOUDFLARE-TUNNEL.md](GUIDE-CLOUDFLARE-TUNNEL.md)** : Guide complet Cloudflare Tunnel
+
+### Fichiers de configuration Docker
+
+| Fichier | Usage | Description |
+|---------|-------|-------------|
+| `docker-compose.yml` | Déploiement de base | Accès local réseau uniquement (ex: `http://192.168.1.37:8080`) |
+| `docker-compose-tailscale.yml` | Tailscale VPN | Accès via Tailscale (VPN privé, 0€) + accès local |
+| `docker-compose-cloudflare.yml` | Cloudflare Tunnel | Accès via domaine public (ex: `https://inventaire.mondomaine.com`) |
+
 ## Prérequis
 
 - NAS avec Docker installé (Container Station pour QNAP, Docker pour Synology/Ugreen)

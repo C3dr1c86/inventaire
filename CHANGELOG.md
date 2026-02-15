@@ -7,6 +7,33 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ---
 
+## [1.6.5] - 2026-02-15
+
+### Corrigé
+
+#### Frontend - Téléchargement codes-barres
+
+- **Amélioration gestion d'erreurs** pour le téléchargement de codes-barres (`Articles.jsx`) :
+  - Utilisation de l'instance `api` Axios au lieu de `fetch()` directement pour cohérence avec les autres exports
+  - Ajout de logs détaillés (`console.log`) pour faciliter le diagnostic des problèmes
+  - Gestion des erreurs HTTP avec messages spécifiques selon le code (404, 400, 500)
+  - Amélioration de l'affichage des messages d'erreur pour l'utilisateur (toasts explicites)
+  - Fix : Vérification de la réponse avant traitement du blob
+
+#### Documentation
+
+- **Guides d'accès externe** (`deployment/nas/`) :
+  - Ajout guide complet Tailscale (VPN gratuit, 0€)
+  - Ajout guide complet Cloudflare Tunnel (nécessite domaine, 1-12€/an)
+  - Ajout comparatif détaillé des 2 solutions (coûts, sécurité, performances)
+  - Ajout guides de déploiement rapide pour les 2 solutions
+
+- **Nettoyage fichiers temporaires** :
+  - Suppression `docker-compose-final.yml`, `docker-compose-fix.yml`, `docker-compose-port-8080.yml`
+  - Conservation uniquement des configurations finales : base, Cloudflare, Tailscale
+
+---
+
 ## [1.6.0] - 2026-02-12
 
 ### Ajouté

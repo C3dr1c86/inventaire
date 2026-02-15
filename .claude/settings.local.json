@@ -73,7 +73,9 @@
       "WebFetch(domain:github.com)",
       "Bash(gh run list:*)",
       "Bash(ssh Cédric@192.168.1.37 'pwd && ls -la / | grep -E \"\"mnt|volume|home\"\"')",
-      "Bash(ssh:*)"
+      "Bash(ssh:*)",
+      "Bash(grep:*)",
+      "Bash(git rm:*)"
     ]
   }
 }
