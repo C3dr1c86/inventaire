@@ -351,8 +351,12 @@ def get_article(db: Session, article_id: int) -> Optional[models.Article]:
     """
     return (
         db.query(models.Article)
-        .options(joinedload(models.Article.categorie))
-        .options(joinedload(models.Article.emplacement))
+        .options(
+            joinedload(models.Article.categorie).joinedload(models.Categorie.parent)
+        )
+        .options(
+            joinedload(models.Article.emplacement).joinedload(models.Emplacement.parent)
+        )
         .options(joinedload(models.Article.tags))
         .options(joinedload(models.Article.photos))
         .options(joinedload(models.Article.fournisseurs))
@@ -409,8 +413,12 @@ def get_articles(
     """
     query = (
         db.query(models.Article)
-        .options(joinedload(models.Article.categorie))
-        .options(joinedload(models.Article.emplacement))
+        .options(
+            joinedload(models.Article.categorie).joinedload(models.Categorie.parent)
+        )
+        .options(
+            joinedload(models.Article.emplacement).joinedload(models.Emplacement.parent)
+        )
         .options(joinedload(models.Article.tags))
         .options(joinedload(models.Article.photos))
         .options(joinedload(models.Article.fournisseurs))
