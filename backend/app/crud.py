@@ -527,7 +527,7 @@ def _generate_sku_from_categorie(db: Session, categorie_id: int) -> str:
     if not categorie:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Catégorie {categorie_id} non trouvée"
+            detail=f"Catégorie {categorie_id} non trouvée",
         )
 
     # Extraire le nom de la catégorie (utiliser parent si c'est une sous-catégorie)
@@ -538,20 +538,18 @@ def _generate_sku_from_categorie(db: Session, categorie_id: int) -> str:
     # Nettoyer le nom : enlever accents et mettre en majuscules
     def remove_accents(text: str) -> str:
         """Supprime les accents d'une chaîne."""
-        nfkd_form = unicodedata.normalize('NFKD', text)
-        return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+        nfkd_form = unicodedata.normalize("NFKD", text)
+        return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
     # Prendre les 4 premières lettres (ou moins si le nom est court)
     nom_clean = remove_accents(nom_categorie).upper()
     # Garder uniquement les lettres
-    nom_clean = re.sub(r'[^A-Z]', '', nom_clean)
-    prefix = nom_clean[:4].ljust(4, 'X')  # Compléter avec X si < 4 lettres
+    nom_clean = re.sub(r"[^A-Z]", "", nom_clean)
+    prefix = nom_clean[:4].ljust(4, "X")  # Compléter avec X si < 4 lettres
 
     # Trouver tous les SKU avec ce préfixe et format correct (PREFIX###)
     articles_with_prefix = (
-        db.query(models.Article.sku)
-        .filter(models.Article.sku.like(f'{prefix}%'))
-        .all()
+        db.query(models.Article.sku).filter(models.Article.sku.like(f"{prefix}%")).all()
     )
 
     # Filtrer pour ne garder que les SKU au format exact PREFIX### (4 lettres + 3 chiffres)
@@ -1918,9 +1916,11 @@ def _get_all_children_emplacement_ids(db: Session, emplacement_id: int) -> List[
     ids = [emplacement_id]
 
     # Récupérer les enfants directs
-    children = db.query(models.Emplacement.id).filter(
-        models.Emplacement.parent_id == emplacement_id
-    ).all()
+    children = (
+        db.query(models.Emplacement.id)
+        .filter(models.Emplacement.parent_id == emplacement_id)
+        .all()
+    )
 
     # Récursivement récupérer les enfants de chaque enfant
     for child in children:
