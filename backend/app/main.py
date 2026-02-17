@@ -24,7 +24,7 @@ app = FastAPI(
     redoc_url="/redoc",
     # CRITIQUE: redirect_slashes=False pour éviter les redirections 307 en HTTPS
     # Les redirections 307 causent des erreurs Mixed Content car FastAPI redirige en HTTP
-    redirect_slashes=False
+    redirect_slashes=False,
 )
 
 # Configuration CORS pour le développement local
