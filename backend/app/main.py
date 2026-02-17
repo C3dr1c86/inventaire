@@ -22,9 +22,9 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    # Note : redirect_slashes=False est nécessaire seulement pour Docker avec Nginx reverse proxy
-    # En développement local, on laisse le comportement par défaut (True)
-    # pour que /api/categories redirige vers /api/categories/
+    # CRITIQUE: redirect_slashes=False pour éviter les redirections 307 en HTTPS
+    # Les redirections 307 causent des erreurs Mixed Content car FastAPI redirige en HTTP
+    redirect_slashes=False
 )
 
 # Configuration CORS pour le développement local
