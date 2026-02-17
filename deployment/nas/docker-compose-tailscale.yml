@@ -9,9 +9,9 @@ services:
     environment:
       - SECRET_KEY=ac68ceb02c5ca196e5d82e7290f1c053e08cd865caaea43ffe1da3fe7ad27ca8
       - DATABASE_URL=sqlite:///./database/inventaire.db
-      # IMPORTANT: Remplacez par votre URL Tailscale (après première connexion)
-      # Format: https://inventaire-nas.tail<ID>.ts.net
-      - CORS_ORIGINS=https://inventaire-nas.tail1234.ts.net,http://localhost
+      # IMPORTANT: Avec Nginx proxy, CORS pas nécessaire (même origine)
+      # mais on laisse pour compatibilité
+      - CORS_ORIGINS=https://inventaire-nas.tail53f399.ts.net,http://localhost
     volumes:
       - ./data/database:/app/database
       - ./data/exports:/app/exports
@@ -30,7 +30,8 @@ services:
     container_name: inventaire-frontend
     restart: unless-stopped
     environment:
-      - VITE_API_URL=http://inventaire-backend:8000/api
+      # IMPORTANT: Chemin relatif car Nginx proxy gère la redirection
+      - VITE_API_URL=/api
     depends_on:
       backend:
         condition: service_healthy
@@ -51,10 +52,11 @@ services:
     environment:
       # IMPORTANT: Remplacez par votre Auth Key Tailscale
       # Obtenu sur: https://login.tailscale.com/admin/settings/keys
-      - TS_AUTHKEY=tskey-auth-VOTRE_CLE_TAILSCALE_ICI
+      - TS_AUTHKEY=tskey-auth-kGxY7WTQoB21CNTRL-idWAm8WBNcBu4XYFAJSgcB1posMDVGC1
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_SOCKET=/var/run/tailscale/tailscaled.sock
       - TS_USERSPACE=false
+      - TS_EXTRA_ARGS=--reset --accept-dns=false
     volumes:
       - tailscale-state:/var/lib/tailscale
       - /dev/net/tun:/dev/net/tun
