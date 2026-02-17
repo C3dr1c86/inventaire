@@ -8,7 +8,7 @@ Application full-stack de gestion d'inventaire avec :
 - **Backend** : FastAPI + SQLAlchemy + SQLite (100% complet)
 - **Frontend** : React 18 + Vite + React Query (100% complet)
 - **Langue** : Français (commentaires de code, UI, documentation)
-- **Version actuelle** : v1.6.0 (Multi-utilisateurs & Permissions)
+- **Version actuelle** : v1.6.5 (Fix téléchargement codes-barres + Guides accès externe)
 - **Prochaine version** : v1.7.0 (Dashboard Analytique Avancé) - Voir [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ## Commandes de développement
@@ -52,6 +52,102 @@ npm run build
 
 # Linter le code
 npm run lint
+```
+
+## Workflow Git et CI/CD
+
+### Créer une nouvelle version
+
+Le projet utilise **GitHub Actions** pour automatiser le build et la publication des images Docker.
+
+**Processus complet** :
+
+```bash
+# 1. Développer et tester en local
+cd backend
+venv\Scripts\activate
+uvicorn app.main:app --reload
+
+# Dans un autre terminal
+cd frontend
+npm run dev
+
+# 2. Commit et push des changements
+git add -A
+git commit -m "type: description du changement"
+git push origin main
+
+# 3. Créer un tag de version (déclenche le workflow Docker)
+git tag v1.x.x
+git push origin v1.x.x
+
+# 4. Attendre le workflow GitHub Actions (~3-5 min)
+# Vérifier sur: https://github.com/C3dr1c86/inventaire/actions/workflows/docker-build.yml
+
+# 5. Déployer sur le NAS une fois le workflow terminé
+cd deployment\nas
+deploy.bat
+```
+
+### Workflows GitHub Actions
+
+**Fichiers dans `.github/workflows/`** :
+
+1. **`ci.yml`** : Tests et linting
+   - Déclenché sur : chaque push sur `main` et chaque PR
+   - Vérifie : Black (formatage Python), Flake8 (linting), tests pytest
+
+2. **`docker-build.yml`** : Build et publication des images Docker
+   - Déclenché sur : tags `v*.*.*` (ex: v1.6.5) ou déclenchement manuel
+   - Publie sur : GitHub Container Registry (ghcr.io)
+   - Images : `ghcr.io/c3dr1c86/inventaire/backend:latest` et `frontend:latest`
+   - Crée automatiquement une release GitHub avec notes
+
+3. **`dependency-review.yml`** : Revue de sécurité des dépendances
+   - Déclenché sur : Pull Requests
+   - Vérifie : Vulnérabilités dans requirements.txt et package.json
+
+### Convention de commits
+
+**Format** : `type: description`
+
+**Types** :
+- `feat:` Nouvelle fonctionnalité
+- `fix:` Correction de bug
+- `docs:` Documentation seulement
+- `style:` Formatage (pas de changement de code)
+- `refactor:` Refactoring (pas de nouvelle fonctionnalité ni fix)
+- `test:` Ajout/modification de tests
+- `chore:` Tâches de maintenance
+
+**Exemples** :
+```bash
+git commit -m "feat: Ajout génération automatique SKU depuis catégorie"
+git commit -m "fix: Charger le parent de l'emplacement pour édition d'articles"
+git commit -m "docs: Mise à jour CHANGELOG v1.6.5"
+```
+
+### Déploiement sur NAS via Git
+
+**Architecture** :
+1. Code poussé sur GitHub (main + tag)
+2. GitHub Actions build les images Docker → ghcr.io
+3. Script `deploy.bat` pull les images depuis ghcr.io → NAS
+4. Conteneurs redémarrés sur le NAS avec les nouvelles images
+
+**Le script `deployment/nas/deploy.bat` fait automatiquement** :
+- ✅ Connexion SSH au NAS
+- ✅ Création des dossiers nécessaires
+- ✅ Copie docker-compose.yml et .env
+- ✅ `docker compose pull` (télécharge images depuis ghcr.io)
+- ✅ `docker compose up -d` (démarre les conteneurs)
+
+**Configuration requise** (fichier `deployment/nas/.env`) :
+```env
+NAS_HOST=192.168.1.37
+NAS_USER=admin
+NAS_DEPLOY_PATH=/volume1/docker/inventaire
+SECRET_KEY=<généré avec openssl rand -hex 32>
 ```
 
 ## Architecture
@@ -467,20 +563,43 @@ scripts\start.bat
 ```
 
 ##### Sur NAS Ugreen/Synology
-```bash
-# Windows - Déploiement complet automatisé
-scripts\deploy-to-nas.bat
 
-# Le script va :
-# 1. Construire les images Docker
-# 2. Les transférer via SCP vers le NAS
-# 3. Se connecter en SSH et démarrer les conteneurs
-# 4. Afficher l'URL d'accès
+**Déploiement de base (accès local réseau uniquement)** :
+```bash
+# Windows - Déploiement automatisé
+cd deployment\nas
+deploy.bat
 
 # Configuration dans .env :
-# HOST_IP=192.168.x.x  # IP du NAS
-# SECRET_KEY=...        # Clé JWT (générer avec openssl rand -hex 32)
+# NAS_HOST=192.168.1.37
+# NAS_USER=admin
+# NAS_DEPLOY_PATH=/volume1/docker/inventaire
+# SECRET_KEY=<générer avec openssl rand -hex 32>
 ```
+
+**Accès : http://192.168.1.37:8080** (réseau local seulement)
+
+---
+
+**Accès externe sécurisé (depuis Internet)** :
+
+Deux solutions disponibles avec guides complets dans `deployment/nas/` :
+
+| Solution | Coût | Avantages | Documentation |
+|----------|------|-----------|---------------|
+| **Tailscale** | 0€ | VPN privé gratuit, HTTPS automatique, jusqu'à 100 appareils | [GUIDE-TAILSCALE.md](deployment/nas/GUIDE-TAILSCALE.md) |
+| **Cloudflare Tunnel** | 1-12€/an (domaine) | URL publique personnalisée, protection DDoS, cache CDN | [GUIDE-CLOUDFLARE-TUNNEL.md](deployment/nas/GUIDE-CLOUDFLARE-TUNNEL.md) |
+
+**Comparatif détaillé** : [COMPARATIF-SOLUTIONS-ACCES-EXTERNE.md](deployment/nas/COMPARATIF-SOLUTIONS-ACCES-EXTERNE.md)
+
+**Guides de déploiement rapide** :
+- [DEPLOIEMENT-TAILSCALE-RAPIDE.md](deployment/nas/DEPLOIEMENT-TAILSCALE-RAPIDE.md) : 15 minutes setup
+- [DEPLOIEMENT-CLOUDFLARE-RAPIDE.md](deployment/nas/DEPLOIEMENT-CLOUDFLARE-RAPIDE.md) : 20 minutes setup
+
+**Fichiers docker-compose spécifiques** :
+- `docker-compose.yml` : Déploiement de base (local uniquement)
+- `docker-compose-tailscale.yml` : Avec Tailscale VPN
+- `docker-compose-cloudflare.yml` : Avec Cloudflare Tunnel
 
 ##### Sur Raspberry Pi 3B+ (ou supérieur)
 
