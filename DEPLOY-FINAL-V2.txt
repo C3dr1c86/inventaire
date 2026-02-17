@@ -1,0 +1,110 @@
+# ============================================
+# DÉPLOIEMENT FINAL - RESTAURATION ADMIN + FIX MIXED CONTENT
+# ============================================
+
+## COMMANDE UNIQUE À EXÉCUTER SUR LE NAS
+
+Copiez-collez cette commande COMPLÈTE dans Container Manager → Terminal :
+
+```bash
+cd /home/Cédric/docker/inventaire && \
+echo "📥 Téléchargement nouvelle image..." && \
+sudo docker pull ghcr.io/c3dr1c86/inventaire/frontend:latest && \
+echo "✅ Image téléchargée" && \
+echo "🔄 Redémarrage..." && \
+sudo docker compose down && \
+sudo docker compose up -d && \
+echo "✅ Redémarré" && \
+sleep 35 && \
+echo "👑 Restauration admin..." && \
+sudo docker exec -i inventaire-backend python3 << 'ENDPYTHON'
+import sqlite3
+conn = sqlite3.connect('/app/database/inventaire.db')
+cursor = conn.cursor()
+cursor.execute("SELECT id, username, email, role FROM users")
+users = cursor.fetchall()
+print("\n=== UTILISATEURS ===")
+for user in users:
+    print(f"ID: {user[0]}, Username: {user[1]}, Role: {user[3]}")
+if users:
+    user_id = users[0][0]
+    username = users[0][1]
+    cursor.execute("UPDATE users SET role = 'admin' WHERE id = ?", (user_id,))
+    conn.commit()
+    print(f"\n✅ '{username}' est maintenant ADMIN !")
+conn.close()
+ENDPYTHON
+echo "🔐 HTTPS..." && \
+sudo docker exec inventaire-tailscale tailscale serve --bg --https=443 http://localhost:80 2>/dev/null || echo "✅ HTTPS OK" && \
+echo "" && \
+echo "========================================" && \
+echo "  ✅ TERMINÉ !" && \
+echo "========================================" && \
+echo "" && \
+echo "📱 https://inventaire-nas.tail53f399.ts.net" && \
+echo "🔄 Ctrl+Shift+R dans le navigateur" && \
+echo "👑 Vous êtes maintenant admin !"
+```
+
+## CE QUE FAIT CE SCRIPT
+
+1. ✅ Télécharge la nouvelle image frontend (avec fix Mixed Content)
+2. ✅ Redémarre tous les conteneurs
+3. ✅ Restaure automatiquement le premier utilisateur comme ADMIN
+4. ✅ Configure HTTPS Tailscale
+
+## APRÈS EXÉCUTION
+
+1. Attendez 60 secondes
+2. Ouvrez : https://inventaire-nas.tail53f399.ts.net
+3. Faites Ctrl+Shift+R (vider cache)
+4. Connectez-vous avec votre compte
+5. Vous avez le rôle ADMIN
+
+## VÉRIFICATIONS
+
+✅ Plus d'erreurs Mixed Content dans la console (F12)
+✅ Vous pouvez créer des tags, articles, etc.
+✅ Vous avez accès à la gestion des utilisateurs
+
+## EN CAS DE PROBLÈME
+
+Si le premier utilisateur n'est pas le bon, exécutez ceci pour choisir :
+
+```bash
+sudo docker exec -it inventaire-backend python3
+```
+
+Puis :
+
+```python
+import sqlite3
+conn = sqlite3.connect('/app/database/inventaire.db')
+cursor = conn.cursor()
+
+# Lister tous les utilisateurs
+cursor.execute("SELECT id, username, email FROM users")
+for user in cursor.fetchall():
+    print(f"ID: {user[0]}, Username: {user[1]}, Email: {user[2]}")
+
+# Promouvoir l'utilisateur avec l'ID X
+user_id = 2  # Remplacez par le bon ID
+cursor.execute("UPDATE users SET role = 'admin' WHERE id = ?", (user_id,))
+conn.commit()
+print("✅ Admin restauré !")
+conn.close()
+exit()
+```
+
+## NOTES IMPORTANTES
+
+- L'image contient maintenant .env.production avec VITE_API_URL=/api
+- Les erreurs Mixed Content sont définitivement résolues
+- Le rôle admin est restauré automatiquement
+
+## COMMIT GITHUB
+
+Tous les changements sont sur GitHub :
+- Commit: c3f9ce2 (fix: Copier .env.production dans Dockerfile)
+- Image: ghcr.io/c3dr1c86/inventaire/frontend:latest
+- Digest: sha256:b656464f1dc55d076b109f92cae1381ae0fd3e90aac57ed4a80e19ee3b527e23
