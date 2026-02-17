@@ -17,6 +17,8 @@ COPY public/ ./public/
 COPY src/ ./src/
 COPY index.html ./
 COPY vite.config.js ./
+# IMPORTANT: Copier .env.production pour que Vite utilise VITE_API_URL=/api
+COPY .env.production ./
 
 # Build de production
 RUN npm run build
