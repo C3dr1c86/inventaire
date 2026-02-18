@@ -33,6 +33,14 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+
+    // IMPORTANT: Ajouter automatiquement le trailing slash pour les routes racines
+    // Ex: /api/tags -> /api/tags/ (nécessaire car les routes FastAPI sont définies avec /)
+    // Ne pas ajouter de slash si l'URL contient déjà un slash final, des paramètres, ou un segment après la ressource
+    if (config.url && !config.url.endsWith('/') && !config.url.includes('?') && !config.url.match(/\/api\/\w+\/\w+/)) {
+      config.url = config.url + '/'
+    }
+
     return config
   },
   (error) => {
