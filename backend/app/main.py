@@ -16,15 +16,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Créer l'instance FastAPI
+# IMPORTANT: redirect_slashes=False en production Docker pour éviter les redirections 307
+# qui causent des erreurs Mixed Content en HTTPS avec Nginx proxy
+# En dev/test: redirect_slashes=True (défaut) pour que les tests passent
 app = FastAPI(
     title="API Gestion d'Inventaire",
     description="API REST pour gérer un inventaire d'articles avec suivi des mouvements de stock",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    # CRITIQUE: redirect_slashes=False pour éviter les redirections 307 en HTTPS
-    # Les redirections 307 causent des erreurs Mixed Content car FastAPI redirige en HTTP
-    redirect_slashes=False,
+    redirect_slashes=os.getenv("REDIRECT_SLASHES", "true").lower() != "false",
 )
 
 # Configuration CORS pour le développement local

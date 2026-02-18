@@ -34,6 +34,9 @@ COPY --from=builder /opt/venv /opt/venv
 # Ajouter le virtualenv au PATH
 ENV PATH="/opt/venv/bin:$PATH"
 
+# IMPORTANT: Désactiver les redirections pour éviter Mixed Content en HTTPS
+ENV REDIRECT_SLASHES=false
+
 # Copier le code de l'application
 COPY app/ ./app/
 
