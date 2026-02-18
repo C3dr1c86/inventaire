@@ -35,10 +35,17 @@ api.interceptors.request.use(
     }
 
     // IMPORTANT: Ajouter automatiquement le trailing slash pour les routes racines
-    // Ex: /api/tags -> /api/tags/ (nécessaire car les routes FastAPI sont définies avec /)
-    // Ne pas ajouter de slash si l'URL contient déjà un slash final, des paramètres, ou un segment après la ressource
-    if (config.url && !config.url.endsWith('/') && !config.url.includes('?') && !config.url.match(/\/api\/\w+\/\w+/)) {
-      config.url = config.url + '/'
+    // Ex: /tags -> /tags/ (nécessaire car les routes FastAPI sont définies avec /)
+    // Ne PAS ajouter de slash si :
+    // - L'URL se termine déjà par /
+    // - L'URL contient des paramètres de query (?)
+    // - L'URL contient plusieurs segments (ex: /auth/login, /categories/tree)
+    if (config.url && !config.url.endsWith('/') && !config.url.includes('?') && !config.url.match(/\/\w+\//)) {
+      // Ajouter le slash seulement si c'est une route racine (ex: /tags, /articles)
+      const segments = config.url.split('/').filter(s => s.length > 0)
+      if (segments.length === 1) {
+        config.url = config.url + '/'
+      }
     }
 
     return config
