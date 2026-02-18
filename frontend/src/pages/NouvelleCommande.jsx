@@ -60,7 +60,7 @@ const NouvelleCommande = () => {
   // Récupérer les articles
   const { data: articlesData, isLoading: loadingArticles } = useQuery({
     queryKey: ['articles-all'],
-    queryFn: () => getArticles({ skip: 0, limit: 1000 }) // Charger tous les articles
+    queryFn: () => getArticles({ skip: 0, limit: 500 }) // Charger 500 articles max (limite backend)
   })
 
   const articles = articlesData?.items || []
