@@ -209,7 +209,7 @@ def envoyer_commande(
 
 
 @router.post("/{commande_id}/recevoir", response_model=schemas.CommandeResponse)
-def recevoir_commande(
+def recevoir_commande_endpoint(
     commande_id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
@@ -221,11 +221,13 @@ def recevoir_commande(
     - Met à jour quantite_recue = quantite_commandee pour chaque ligne
     - Incrémente article.quantite de quantite_recue
     - Crée un mouvement ENTREE pour chaque ligne
+    - Change le statut à RECUE
     - Définit date_reception_reelle = now()
 
     Args:
         commande_id: ID de la commande
         db: Session de base de données
+        current_user: Utilisateur qui réceptionne la commande
 
     Returns:
         Commande réceptionnée avec stock mis à jour
@@ -234,10 +236,7 @@ def recevoir_commande(
         HTTPException 404: Si la commande n'existe pas
         HTTPException 400: Si la commande n'est pas ENVOYEE
     """
-    commande = crud.recevoir_commande(db, commande_id)
-    # Mettre à jour le statut après réception
-    crud.update_commande_statut(db, commande_id, "RECUE", current_user)
-    return commande
+    return crud.recevoir_commande(db, commande_id, current_user)
 
 
 @router.post("/{commande_id}/annuler", response_model=schemas.CommandeResponse)

@@ -2827,7 +2827,7 @@ def update_commande_statut(
     # Valider les transitions de statut autorisées
     transitions_autorisees = {
         "BROUILLON": ["ENVOYEE", "ANNULEE"],
-        "ENVOYEE": ["RECUE", "ANNULEE"],
+        "ENVOYEE": ["ANNULEE"],  # RECUE doit passer par recevoir_commande()
         "RECUE": [],  # Statut final
         "ANNULEE": [],  # Statut final
     }
@@ -2845,9 +2845,8 @@ def update_commande_statut(
     if nouveau_statut == "ENVOYEE":
         db_commande.date_commande = datetime.now()
 
-    elif nouveau_statut == "RECUE":
-        # Appeler la fonction de réception qui met à jour les stocks
-        recevoir_commande(db, commande_id)
+    # Note: Pour passer à RECUE, utiliser directement recevoir_commande()
+    # qui gère le stock, le statut et l'audit trail en une seule opération
 
     # Audit trail
     db_commande.updated_by = current_user.id
@@ -2894,7 +2893,9 @@ def delete_commande(db: Session, commande_id: int) -> bool:
     return True
 
 
-def recevoir_commande(db: Session, commande_id: int) -> models.Commande:
+def recevoir_commande(
+    db: Session, commande_id: int, current_user: models.User
+) -> models.Commande:
     """
     Réceptionne une commande et met à jour automatiquement les stocks.
 
@@ -2903,11 +2904,12 @@ def recevoir_commande(db: Session, commande_id: int) -> models.Commande:
     - Incrémente article.quantite de quantite_recue
     - Crée un mouvement ENTREE avec le motif "Réception commande N°..."
 
-    Définit date_reception_reelle = now()
+    Change le statut à RECUE et définit date_reception_reelle = now()
 
     Args:
         db: Session de base de données
         commande_id: ID de la commande à réceptionner
+        current_user: Utilisateur qui réceptionne la commande
 
     Returns:
         La commande réceptionnée
@@ -2961,8 +2963,10 @@ def recevoir_commande(db: Session, commande_id: int) -> models.Commande:
         )
         db.add(db_mouvement)
 
-    # Mettre à jour la commande
+    # Mettre à jour la commande (statut + dates + audit)
+    db_commande.statut = "RECUE"
     db_commande.date_reception_reelle = datetime.now()
+    db_commande.updated_by = current_user.id
 
     db.commit()
     db.refresh(db_commande)
