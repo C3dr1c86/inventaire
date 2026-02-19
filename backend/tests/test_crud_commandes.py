@@ -348,10 +348,13 @@ class TestDeleteCommande:
         self, client, gestionnaire_token, sample_commande, db
     ):
         """Impossible de supprimer une commande ENVOYEE pour un non-admin (admin peut le faire)"""
-        # Changer le statut à ENVOYEE
-        sample_commande.statut = "ENVOYEE"
-        sample_commande.date_commande = datetime.utcnow()
-        db.commit()
+        # Passer la commande à ENVOYEE via l'API (plus fiable que la manipulation directe du DB)
+        envoyer_response = client.post(
+            f"/api/commandes/{sample_commande.id}/envoyer",
+            headers={"Authorization": f"Bearer {gestionnaire_token}"},
+        )
+        assert envoyer_response.status_code == 200
+        assert envoyer_response.json()["statut"] == "ENVOYEE"
 
         response = client.delete(
             f"/api/commandes/{sample_commande.id}",
