@@ -196,3 +196,31 @@ def deactivate_user(
         HTTPException 400: Si tentative de se désactiver ou si dernier admin
     """
     return crud.deactivate_user(db, user_id, current_user)
+
+
+@router.post(
+    "/{user_id}/reactivate",
+    response_model=schemas.UserResponse,
+    dependencies=[Depends(require_admin)],
+)
+def reactivate_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_admin),
+):
+    """
+    Réactive un utilisateur (is_active = True) (admin only).
+
+    Args:
+        user_id: ID de l'utilisateur à réactiver
+        db: Session de base de données
+        current_user: Utilisateur qui effectue la réactivation
+
+    Returns:
+        L'utilisateur réactivé
+
+    Raises:
+        HTTPException 404: Si l'utilisateur n'existe pas
+        HTTPException 400: Si l'utilisateur est déjà actif
+    """
+    return crud.reactivate_user(db, user_id, current_user)

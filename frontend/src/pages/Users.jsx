@@ -7,8 +7,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
-import { getUsers, createUser, updateUserRole, updateUserPermissions, deactivateUser } from '../services/userService'
-import { Users as UsersIcon, Plus, UserCog, Shield, UserX, CheckCircle, XCircle } from 'lucide-react'
+import { getUsers, createUser, updateUserRole, updateUserPermissions, deactivateUser, reactivateUser } from '../services/userService'
+import { Users as UsersIcon, Plus, UserCog, Shield, UserX, UserCheck, CheckCircle, XCircle } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import Loader from '../components/common/Loader'
 
@@ -80,6 +80,18 @@ function Users() {
     }
   })
 
+  // Mutation pour réactiver un utilisateur
+  const reactivateMutation = useMutation({
+    mutationFn: reactivateUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['users'])
+      toast.success('Utilisateur réactivé avec succès')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Erreur lors de la réactivation')
+    }
+  })
+
   // Handlers
   const handleCreateUser = (e) => {
     e.preventDefault()
@@ -120,6 +132,12 @@ function Users() {
   const handleDeactivate = (user) => {
     if (window.confirm(`Êtes-vous sûr de vouloir désactiver l'utilisateur "${user.username}" ?`)) {
       deactivateMutation.mutate(user.id)
+    }
+  }
+
+  const handleReactivate = (user) => {
+    if (window.confirm(`Réactiver l'utilisateur "${user.username}" ?`)) {
+      reactivateMutation.mutate(user.id)
     }
   }
 
@@ -251,13 +269,21 @@ function Users() {
                       >
                         <Shield size={14} />
                       </button>
-                      {user.is_active && (
+                      {user.is_active ? (
                         <button
                           onClick={() => handleDeactivate(user)}
                           className="btn btn-sm btn-danger"
                           title="Désactiver"
                         >
                           <UserX size={14} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleReactivate(user)}
+                          className="btn btn-sm btn-success"
+                          title="Réactiver"
+                        >
+                          <UserCheck size={14} />
                         </button>
                       )}
                     </div>

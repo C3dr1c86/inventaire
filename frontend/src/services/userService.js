@@ -72,3 +72,14 @@ export const deactivateUser = async (userId) => {
   const response = await api.delete(`/users/${userId}`)
   return response.data
 }
+
+/**
+ * Réactive un utilisateur (is_active = true).
+ *
+ * @param {number} userId - ID de l'utilisateur
+ * @returns {Promise} Utilisateur réactivé
+ */
+export const reactivateUser = async (userId) => {
+  const response = await api.post(`/users/${userId}/reactivate`)
+  return response.data
+}

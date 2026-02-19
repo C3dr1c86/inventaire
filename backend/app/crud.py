@@ -2363,6 +2363,46 @@ def deactivate_user(
     return user
 
 
+def reactivate_user(
+    db: Session, user_id: int, current_user: models.User
+) -> models.User:
+    """
+    Réactive un utilisateur (is_active = True).
+
+    Args:
+        db: Session de base de données
+        user_id: ID de l'utilisateur à réactiver
+        current_user: Utilisateur qui effectue la réactivation
+
+    Returns:
+        L'utilisateur réactivé
+
+    Raises:
+        HTTPException 404: Si l'utilisateur n'existe pas
+        HTTPException 400: Si l'utilisateur est déjà actif
+    """
+    user = get_user(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Utilisateur {user_id} non trouvé",
+        )
+
+    if user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="L'utilisateur est déjà actif",
+        )
+
+    user.is_active = True
+    user.updated_by = current_user.id
+
+    db.commit()
+    db.refresh(user)
+
+    return user
+
+
 # ============================================================================
 # CRUD PHOTOS
 # ============================================================================
