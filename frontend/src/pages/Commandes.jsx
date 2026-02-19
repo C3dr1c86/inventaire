@@ -81,10 +81,43 @@ const Commandes = () => {
   // Mutation pour envoyer
   const envoyerMutation = useMutation({
     mutationFn: envoyerCommande,
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries(['commandes'])
       toast.success('Commande envoyée avec succès')
       setShowActionModal(false)
+
+      // Ouvrir un brouillon email pré-rempli si le fournisseur a un email
+      if (data.fournisseur?.email) {
+        const subject = `Commande N°${data.numero_commande}`
+
+        let body = `Bonjour,\n\n`
+        body += `Veuillez trouver ci-dessous notre commande N°${data.numero_commande}.\n\n`
+        body += `Détail de la commande :\n`
+        body += `${'─'.repeat(50)}\n`
+
+        data.lignes.forEach(ligne => {
+          body += `• ${ligne.article.nom} : ${ligne.quantite_commandee} unité(s) à ${parseFloat(ligne.prix_unitaire).toFixed(2)} € = ${parseFloat(ligne.montant_ligne).toFixed(2)} €\n`
+        })
+
+        body += `${'─'.repeat(50)}\n`
+        body += `TOTAL TTC : ${parseFloat(data.montant_total).toFixed(2)} €\n`
+
+        if (data.date_reception_prevue) {
+          const dateRecep = new Date(data.date_reception_prevue).toLocaleDateString('fr-FR')
+          body += `\nDate de réception souhaitée : ${dateRecep}\n`
+        }
+
+        if (data.notes) {
+          body += `\nNotes : ${data.notes}\n`
+        }
+
+        body += `\nCordialement,`
+
+        const mailtoUrl = `mailto:${data.fournisseur.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+        window.open(mailtoUrl, '_blank')
+      } else {
+        toast.warning('Le fournisseur n\'a pas d\'adresse email configurée — aucun brouillon email ouvert.')
+      }
     },
     onError: (error) => {
       const message = error.response?.data?.detail || 'Erreur lors de l\'envoi'
