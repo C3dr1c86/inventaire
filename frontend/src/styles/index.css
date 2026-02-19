@@ -1055,3 +1055,284 @@ body {
     font-size: 1.25rem;
   }
 }
+
+/* ============================================================================
+   MODE SOMBRE
+   ============================================================================ */
+
+[data-theme="dark"] {
+  --primary: #4a9eda;
+  --primary-dark: #3b8ecf;
+  --bg-main: #0f172a;
+  --bg-white: #1e293b;
+  --bg-light: #263347;
+  --bg-dark: #0a1120;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.5);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.5);
+}
+
+/* Badges */
+[data-theme="dark"] .badge-success {
+  background-color: rgba(44, 160, 44, 0.2);
+  color: #6ee36e;
+}
+[data-theme="dark"] .badge-danger {
+  background-color: rgba(214, 39, 40, 0.2);
+  color: #ff7b7b;
+}
+[data-theme="dark"] .badge-warning {
+  background-color: rgba(255, 152, 0, 0.2);
+  color: #ffc107;
+}
+
+/* Alertes */
+[data-theme="dark"] .alert-success {
+  background-color: rgba(44, 160, 44, 0.15);
+  color: #6ee36e;
+}
+[data-theme="dark"] .alert-danger {
+  background-color: rgba(214, 39, 40, 0.15);
+  color: #ff7b7b;
+}
+[data-theme="dark"] .alert-warning {
+  background-color: rgba(255, 152, 0, 0.15);
+  color: #ffd060;
+}
+[data-theme="dark"] .alert-info {
+  background-color: rgba(23, 162, 184, 0.15);
+  color: #6bdce8;
+}
+
+/* Formulaires */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select,
+[data-theme="dark"] .form-group textarea {
+  background-color: var(--bg-light);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group select:focus,
+[data-theme="dark"] .form-group textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(74, 158, 218, 0.2);
+}
+[data-theme="dark"] .form-group input:disabled,
+[data-theme="dark"] .form-group select:disabled,
+[data-theme="dark"] .form-group textarea:disabled {
+  background-color: var(--bg-dark);
+  opacity: 0.5;
+}
+[data-theme="dark"] .form-group input::placeholder,
+[data-theme="dark"] .form-group textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+/* Boutons */
+[data-theme="dark"] .btn-secondary {
+  background-color: #475569;
+}
+
+/* Modal */
+[data-theme="dark"] .modal-content {
+  border: 1px solid var(--border-color);
+}
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-footer {
+  border-color: var(--border-color);
+}
+[data-theme="dark"] .modal-close:hover {
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+}
+
+/* Tables */
+[data-theme="dark"] .table {
+  background-color: var(--bg-white);
+  color: var(--text-primary);
+}
+[data-theme="dark"] .table th {
+  background-color: #1e3a5f;
+}
+[data-theme="dark"] .table tbody tr:hover {
+  background-color: var(--bg-light);
+}
+[data-theme="dark"] .table tr {
+  background-color: var(--bg-white);
+  border-color: var(--border-color);
+}
+
+/* Pagination */
+[data-theme="dark"] .pagination-btn,
+[data-theme="dark"] .pagination-number {
+  background-color: var(--bg-white);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+[data-theme="dark"] .pagination-info {
+  background-color: var(--bg-light);
+  color: var(--text-secondary);
+}
+
+/* Stat cards */
+[data-theme="dark"] .stat-card {
+  background: linear-gradient(135deg, #1e3a5f, #1a3050);
+}
+
+/* Article preview */
+[data-theme="dark"] .article-preview {
+  background-color: var(--bg-light);
+  border-color: var(--border-color);
+}
+[data-theme="dark"] .article-preview-warning {
+  background-color: rgba(255, 152, 0, 0.15);
+  color: #ffd060;
+}
+
+/* Movement type selector */
+[data-theme="dark"] .movement-type-content {
+  background-color: var(--bg-white);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+/* Auth page */
+[data-theme="dark"] .auth-container {
+  background: linear-gradient(135deg, #1e1b4b 0%, #1a1035 100%);
+}
+[data-theme="dark"] .auth-card .form-group input {
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+/* Bottom nav dark */
+[data-theme="dark"] .bottom-nav {
+  background-color: #0a1120;
+  border-top: 1px solid var(--border-color);
+}
+
+/* ============================================================================
+   BARRE DE NAVIGATION MOBILE (BOTTOM NAV)
+   ============================================================================ */
+
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 576px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: var(--bg-dark);
+    z-index: 1000;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.3);
+    height: 4rem;
+    align-items: stretch;
+  }
+
+  .bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    color: rgba(255, 255, 255, 0.55);
+    text-decoration: none;
+    font-size: 0.6rem;
+    font-weight: 500;
+    padding: 0.25rem 0.1rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: color 0.2s;
+    min-height: 44px;
+    position: relative;
+    letter-spacing: 0.01em;
+  }
+
+  .bottom-nav-item:hover {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .bottom-nav-item.active {
+    color: var(--primary);
+  }
+
+  .bottom-nav-item.active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 2px;
+    background-color: var(--primary);
+    border-radius: 0 0 3px 3px;
+  }
+
+  /* Masquer le hamburger, utiliser le bottom nav */
+  .mobile-menu-btn {
+    display: none !important;
+  }
+
+  /* Padding pour ne pas être caché par le bottom nav */
+  .main-content {
+    padding-bottom: 5rem;
+    padding-top: 1rem;
+  }
+}
+
+/* ============================================================================
+   AMÉLIORATIONS TACTILES MOBILE
+   ============================================================================ */
+
+@media (max-width: 576px) {
+  /* Touch targets minimums (44px Apple HIG) */
+  .btn {
+    min-height: 44px;
+  }
+
+  .btn-sm {
+    min-height: 36px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  .form-control {
+    min-height: 44px;
+    font-size: 1rem; /* évite le zoom auto iOS */
+  }
+
+  /* Boutons d'action dans les tableaux (cartes) */
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+  }
+
+  .action-buttons .btn-sm {
+    min-height: 40px;
+    min-width: 40px;
+  }
+
+  /* Pagination plus tactile */
+  .pagination-btn,
+  .pagination-number {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

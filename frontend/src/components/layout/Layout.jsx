@@ -18,9 +18,11 @@ import {
   ShoppingCart,
   Menu,
   LogOut,
-  Users
+  Users,
+  Moon,
+  Sun
 } from 'lucide-react'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -30,6 +32,20 @@ function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user, role, hasPermission, logoutUser } = useAuth()
 
+  // Thème clair/sombre persisté dans localStorage
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('theme') || 'light'
+  })
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light')
+  }
+
   const handleLogout = () => {
     logoutUser()
     navigate('/login')
@@ -38,10 +54,10 @@ function Layout({ children }) {
 
   // Couleurs des badges de rôles
   const roleBadgeColors = {
-    admin: '#8b5cf6',          // Violet
-    gestionnaire: '#3b82f6',    // Bleu
-    technicien: '#10b981',      // Vert
-    consultation: '#6b7280'     // Gris
+    admin: '#8b5cf6',
+    gestionnaire: '#3b82f6',
+    technicien: '#10b981',
+    consultation: '#6b7280'
   }
 
   // Navigation items avec permissions requises
@@ -50,7 +66,7 @@ function Layout({ children }) {
     { path: '/articles', icon: Package, label: 'Articles', permission: { resource: 'articles', action: 'read' } },
     { path: '/categories', icon: Layers, label: 'Catégories', permission: { resource: 'categories', action: 'read' } },
     { path: '/emplacements', icon: MapPin, label: 'Emplacements', permission: { resource: 'emplacements', action: 'read' } },
-    { path: '/scan-qrcode', icon: ScanLine, label: 'Scanner QR Code' },
+    { path: '/scan-qrcode', icon: ScanLine, label: 'Scanner QR' },
     { path: '/tags', icon: Tag, label: 'Tags', permission: { resource: 'tags', action: 'read' } },
     { path: '/fournisseurs', icon: Truck, label: 'Fournisseurs', permission: { resource: 'fournisseurs', action: 'read' } },
     { path: '/commandes', icon: ShoppingCart, label: 'Commandes', permission: { resource: 'commandes', action: 'read' } },
@@ -66,6 +82,11 @@ function Layout({ children }) {
       return hasPermission(item.permission.resource, item.permission.action)
     })
   }, [hasPermission])
+
+  // Items du bottom nav (4 premiers + bouton "Plus" si nécessaire)
+  const maxBottomItems = 4
+  const bottomNavItems = visibleNavItems.slice(0, maxBottomItems)
+  const hasOverflowItems = visibleNavItems.length > maxBottomItems
 
   // Vérifier si un lien est actif
   const isActive = (path) => location.pathname === path
@@ -132,6 +153,27 @@ function Layout({ children }) {
             )}
           </div>
 
+          {/* Toggle thème */}
+          <button
+            onClick={toggleTheme}
+            className="btn"
+            style={{
+              width: '100%',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: '0.5rem',
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              color: 'white',
+              border: '1px solid rgba(255,255,255,0.15)'
+            }}
+            title={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            {theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+          </button>
+
           {/* Bouton déconnexion */}
           <button
             onClick={handleLogout}
@@ -166,7 +208,7 @@ function Layout({ children }) {
 
       {/* Main Content */}
       <main className="main-content">
-        {/* Bouton menu mobile */}
+        {/* Bouton menu mobile (affiché seulement si bottom nav est absent, i.e. >576px) */}
         <button
           className="btn btn-secondary mobile-menu-btn"
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -183,6 +225,32 @@ function Layout({ children }) {
 
         {children}
       </main>
+
+      {/* Barre de navigation mobile (bottom nav) */}
+      <nav className="bottom-nav">
+        {bottomNavItems.map((item) => {
+          const Icon = item.icon
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`bottom-nav-item ${isActive(item.path) ? 'active' : ''}`}
+            >
+              <Icon size={22} />
+              <span>{item.label}</span>
+            </Link>
+          )
+        })}
+        {hasOverflowItems && (
+          <button
+            className={`bottom-nav-item ${sidebarOpen ? 'active' : ''}`}
+            onClick={() => setSidebarOpen(prev => !prev)}
+          >
+            <Menu size={22} />
+            <span>Plus</span>
+          </button>
+        )}
+      </nav>
     </div>
   )
 }
