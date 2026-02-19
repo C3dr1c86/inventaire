@@ -7,8 +7,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
-import { getMouvements, createMouvement } from '../services/mouvementService'
-import { ArrowUp, ArrowDown, Plus } from 'lucide-react'
+import { getMouvements, createMouvement, deleteMouvement } from '../services/mouvementService'
+import { ArrowUp, ArrowDown, Plus, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 import Modal from '../components/common/Modal'
 import MouvementForm from '../components/mouvements/MouvementForm'
@@ -16,8 +16,9 @@ import Pagination from '../components/common/Pagination'
 import { usePermissions } from '../hooks/usePermissions'
 
 function Mouvements() {
-  const { canCreate } = usePermissions()
+  const { canCreate, canDelete } = usePermissions()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
@@ -46,6 +47,23 @@ function Mouvements() {
     }
   })
 
+  // Mutation pour supprimer un mouvement
+  const deleteMutation = useMutation({
+    mutationFn: deleteMouvement,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['mouvements'])
+      queryClient.invalidateQueries(['articles'])
+      queryClient.invalidateQueries(['statistiques'])
+      queryClient.invalidateQueries(['stock-bas'])
+      setDeleteConfirm(null)
+      toast.success('Mouvement supprimé — vérifiez le stock de l\'article si nécessaire')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Erreur lors de la suppression du mouvement')
+      setDeleteConfirm(null)
+    }
+  })
+
   const handleCreateClick = () => {
     setIsModalOpen(true)
   }
@@ -56,6 +74,16 @@ function Mouvements() {
 
   const handleModalClose = () => {
     setIsModalOpen(false)
+  }
+
+  const handleDeleteClick = (mouvement) => {
+    setDeleteConfirm(mouvement)
+  }
+
+  const handleDeleteConfirm = () => {
+    if (deleteConfirm) {
+      deleteMutation.mutate(deleteConfirm.id)
+    }
   }
 
   const handlePageChange = (page) => {
@@ -119,6 +147,7 @@ function Mouvements() {
                 <th>Avant</th>
                 <th>Après</th>
                 <th>Motif</th>
+                {canDelete('mouvements') && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -147,6 +176,17 @@ function Mouvements() {
                   <td data-label="Avant">{mouvement.quantite_avant}</td>
                   <td data-label="Après">{mouvement.quantite_apres}</td>
                   <td data-label="Motif">{mouvement.motif || '-'}</td>
+                  {canDelete('mouvements') && (
+                    <td data-label="Actions">
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDeleteClick(mouvement)}
+                        title="Supprimer ce mouvement"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -176,6 +216,57 @@ function Mouvements() {
           onCancel={handleModalClose}
           isSubmitting={createMutation.isPending}
         />
+      </Modal>
+
+      {/* Modal de confirmation de suppression */}
+      <Modal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        title="Confirmer la suppression"
+        size="small"
+      >
+        {deleteConfirm && (
+          <div>
+            <p>
+              Supprimer le mouvement{' '}
+              <strong>
+                {deleteConfirm.type === 'ENTREE' ? 'Entrée' : 'Sortie'} de {deleteConfirm.quantite} unité(s)
+              </strong>{' '}
+              pour <strong>{deleteConfirm.article?.nom || 'N/A'}</strong> ?
+            </p>
+            <div
+              style={{
+                background: '#fff3cd',
+                border: '1px solid #ffc107',
+                borderRadius: '6px',
+                padding: '0.75rem 1rem',
+                marginTop: '1rem',
+                marginBottom: '1rem',
+                fontSize: '0.875rem',
+                color: '#856404'
+              }}
+            >
+              ⚠️ Le stock de l&apos;article ne sera <strong>PAS</strong> mis à jour.
+              Vérifiez et corrigez le stock manuellement si nécessaire.
+            </div>
+            <div className="form-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleteMutation.isPending}
+              >
+                Annuler
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={handleDeleteConfirm}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   )

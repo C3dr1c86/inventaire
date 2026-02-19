@@ -46,3 +46,14 @@ export const createMouvement = async (data) => {
   const response = await api.post('/mouvements', data)
   return response.data
 }
+
+/**
+ * Supprime un mouvement de l'historique
+ * Note : Le stock de l'article n'est PAS modifié
+ * @param {number} id - ID du mouvement
+ * @returns {Promise<Object>} Message de confirmation
+ */
+export const deleteMouvement = async (id) => {
+  const response = await api.delete(`/mouvements/${id}`)
+  return response.data
+}

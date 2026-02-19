@@ -5,6 +5,7 @@ Endpoints:
 - GET /api/mouvements - Liste tous les mouvements
 - GET /api/mouvements/{id} - Récupère un mouvement
 - POST /api/mouvements - Crée un mouvement (entrée/sortie)
+- DELETE /api/mouvements/{id} - Supprime un mouvement (admin/gestionnaire)
 - GET /api/mouvements/article/{article_id} - Historique d'un article
 """
 
@@ -175,3 +176,38 @@ def creer_mouvement(
         ```
     """
     return crud.create_mouvement(db, mouvement, current_user)
+
+
+@router.delete(
+    "/{mouvement_id}",
+    response_model=schemas.MessageResponse,
+    dependencies=[Depends(require_permission("mouvements", "delete"))],
+)
+def supprimer_mouvement(
+    mouvement_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Supprime un mouvement de l'historique.
+
+    IMPORTANT : Le stock de l'article n'est PAS modifié lors de la suppression.
+    Vérifiez et corrigez le stock manuellement si nécessaire.
+
+    Accessible aux : Administrateurs et Gestionnaires
+
+    Args:
+        mouvement_id: ID du mouvement à supprimer
+        db: Session de base de données
+
+    Returns:
+        Message de confirmation
+
+    Raises:
+        HTTPException 404: Si le mouvement n'existe pas
+        HTTPException 403: Si l'utilisateur n'a pas la permission mouvements:delete
+    """
+    crud.delete_mouvement(db, mouvement_id)
+    return schemas.MessageResponse(
+        message=f"Mouvement {mouvement_id} supprimé avec succès"
+    )

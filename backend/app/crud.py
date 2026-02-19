@@ -923,6 +923,34 @@ def create_mouvement(
         )
 
 
+def delete_mouvement(db: Session, mouvement_id: int) -> bool:
+    """
+    Supprime un mouvement de l'historique.
+
+    IMPORTANT : Le stock de l'article n'est PAS modifié.
+    L'administrateur doit vérifier et corriger le stock manuellement si nécessaire.
+
+    Args:
+        db: Session de base de données
+        mouvement_id: ID du mouvement à supprimer
+
+    Returns:
+        True si suppression réussie
+
+    Raises:
+        HTTPException 404: Si le mouvement n'existe pas
+    """
+    db_mouvement = get_mouvement(db, mouvement_id)
+    if not db_mouvement:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Mouvement {mouvement_id} non trouvé",
+        )
+    db.delete(db_mouvement)
+    db.commit()
+    return True
+
+
 # ============================================================================
 # FONCTIONS POUR LES RAPPORTS
 # ============================================================================
