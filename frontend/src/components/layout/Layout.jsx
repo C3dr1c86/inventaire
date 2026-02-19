@@ -192,7 +192,7 @@ function Layout({ children }) {
 
           {/* Version */}
           <div style={{ marginTop: '1rem', opacity: 0.6, fontSize: '0.75rem', textAlign: 'center' }}>
-            <p>v1.0.0</p>
+            <p>v1.9.16</p>
             <p>© 2026</p>
           </div>
         </div>
