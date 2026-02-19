@@ -1167,6 +1167,53 @@ body {
 }
 
 /* ============================================================================
+   EMPLACEMENTS - LIGNES HIÉRARCHIQUES 3 NIVEAUX
+   ============================================================================ */
+
+.emplacement-zone-row {
+  background-color: var(--bg-light);
+  font-weight: 600;
+}
+
+.emplacement-etagere-row {
+  background-color: var(--bg-white);
+}
+
+.emplacement-boite-row {
+  background-color: var(--bg-main);
+}
+
+.emplacement-niveau-1 {
+  padding-left: 2rem !important;
+}
+
+.emplacement-niveau-2 {
+  padding-left: 4rem !important;
+}
+
+/* Barre de progression capacité */
+.progress-track {
+  flex: 1;
+  height: 20px;
+  background-color: var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 80px;
+}
+
+[data-theme="dark"] .emplacement-zone-row {
+  background-color: var(--bg-light);
+}
+
+[data-theme="dark"] .emplacement-etagere-row {
+  background-color: var(--bg-white);
+}
+
+[data-theme="dark"] .emplacement-boite-row {
+  background-color: #111827;
+}
+
+/* ============================================================================
    MODE SOMBRE
    ============================================================================ */
 

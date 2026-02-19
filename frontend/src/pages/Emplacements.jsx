@@ -166,21 +166,14 @@ function Emplacements() {
   // Rendu de l'indicateur de remplissage
   const renderIndicateurRemplissage = (emplacement) => {
     if (emplacement.capacite_max === null || emplacement.capacite_max === 0) {
-      return <span style={{ color: '#6c757d' }}>Illimité</span>
+      return <span className="text-muted-italic">Illimité</span>
     }
 
     const pourcentage = emplacement.pourcentage_remplissage
 
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <div style={{
-          flex: 1,
-          height: '20px',
-          backgroundColor: '#e9ecef',
-          borderRadius: '4px',
-          overflow: 'hidden',
-          minWidth: '100px'
-        }}>
+        <div className="progress-track">
           <div style={{
             width: `${Math.min(pourcentage, 100)}%`,
             height: '100%',
@@ -267,48 +260,32 @@ function Emplacements() {
               <tbody>
                 {emplacementsTree?.map((zone) => (
                   <React.Fragment key={zone.id}>
-                    {/* ZONE (Niveau 0) - Gras, fond gris */}
-                    <tr style={{ fontWeight: 'bold', backgroundColor: '#f8f9fa' }}>
-                      <td>
-                        🏢 {zone.code}
+                    {/* ZONE (Niveau 0) */}
+                    <tr className="emplacement-zone-row">
+                      <td data-label="Code">
+                        🏢 <strong>{zone.code}</strong>
                         {zone.children?.length > 0 && (
-                          <small style={{ marginLeft: '0.5rem', fontWeight: 'normal', color: '#6c757d' }}>
+                          <span className="categorie-count">
                             ({zone.children.length} étagère{zone.children.length > 1 ? 's' : ''})
-                          </small>
-                        )}
-                      </td>
-                      <td>
-                        {zone.description || (
-                          <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                            Aucune description
                           </span>
                         )}
                       </td>
-                      <td>{renderIndicateurRemplissage(zone)}</td>
-                      <td>
+                      <td data-label="Description">
+                        {zone.description || <span className="text-muted-italic">Aucune description</span>}
+                      </td>
+                      <td data-label="Capacité">{renderIndicateurRemplissage(zone)}</td>
+                      <td data-label="Actions">
                         <div className="action-buttons">
                           {canUpdate('emplacements') && (
-                            <button
-                              onClick={() => handleEdit(zone)}
-                              className="btn btn-sm btn-secondary"
-                              title="Modifier la zone"
-                            >
+                            <button onClick={() => handleEdit(zone)} className="btn btn-sm btn-secondary" title="Modifier la zone">
                               <Edit2 size={14} />
                             </button>
                           )}
-                          <button
-                            onClick={() => handleQRCodeClick(zone)}
-                            className="btn btn-sm btn-info"
-                            title="Voir QR Code"
-                          >
+                          <button onClick={() => handleQRCodeClick(zone)} className="btn btn-sm btn-info" title="Voir QR Code">
                             <QrCode size={14} />
                           </button>
                           {canDelete('emplacements') && (
-                            <button
-                              onClick={() => handleDelete(zone)}
-                              className="btn btn-sm btn-danger"
-                              title="Supprimer la zone"
-                            >
+                            <button onClick={() => handleDelete(zone)} className="btn btn-sm btn-danger" title="Supprimer la zone">
                               <Trash2 size={14} />
                             </button>
                           )}
@@ -316,50 +293,34 @@ function Emplacements() {
                       </td>
                     </tr>
 
-                    {/* ÉTAGÈRES (Niveau 1) - Indentées 2rem */}
+                    {/* ÉTAGÈRES (Niveau 1) */}
                     {zone.children?.map((etagere) => (
                       <React.Fragment key={etagere.id}>
-                        <tr style={{ backgroundColor: '#fff' }}>
-                          <td style={{ paddingLeft: '2rem' }}>
+                        <tr className="emplacement-etagere-row">
+                          <td data-label="Code" className="emplacement-niveau-1">
                             ↳ 📚 {etagere.code}
                             {etagere.children?.length > 0 && (
-                              <small style={{ marginLeft: '0.5rem', color: '#6c757d' }}>
+                              <span className="categorie-count">
                                 ({etagere.children.length} boîte{etagere.children.length > 1 ? 's' : ''})
-                              </small>
-                            )}
-                          </td>
-                          <td>
-                            {etagere.description || (
-                              <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                                Aucune description
                               </span>
                             )}
                           </td>
-                          <td>{renderIndicateurRemplissage(etagere)}</td>
-                          <td>
+                          <td data-label="Description">
+                            {etagere.description || <span className="text-muted-italic">Aucune description</span>}
+                          </td>
+                          <td data-label="Capacité">{renderIndicateurRemplissage(etagere)}</td>
+                          <td data-label="Actions">
                             <div className="action-buttons">
                               {canUpdate('emplacements') && (
-                                <button
-                                  onClick={() => handleEdit(etagere)}
-                                  className="btn btn-sm btn-secondary"
-                                  title="Modifier l'étagère"
-                                >
+                                <button onClick={() => handleEdit(etagere)} className="btn btn-sm btn-secondary" title="Modifier l'étagère">
                                   <Edit2 size={14} />
                                 </button>
                               )}
-                              <button
-                                onClick={() => handleQRCodeClick(etagere)}
-                                className="btn btn-sm btn-info"
-                                title="Voir QR Code"
-                              >
+                              <button onClick={() => handleQRCodeClick(etagere)} className="btn btn-sm btn-info" title="Voir QR Code">
                                 <QrCode size={14} />
                               </button>
                               {canDelete('emplacements') && (
-                                <button
-                                  onClick={() => handleDelete(etagere)}
-                                  className="btn btn-sm btn-danger"
-                                  title="Supprimer l'étagère"
-                                >
+                                <button onClick={() => handleDelete(etagere)} className="btn btn-sm btn-danger" title="Supprimer l'étagère">
                                   <Trash2 size={14} />
                                 </button>
                               )}
@@ -367,44 +328,28 @@ function Emplacements() {
                           </td>
                         </tr>
 
-                        {/* BOÎTES (Niveau 2) - Indentées 4rem */}
+                        {/* BOÎTES (Niveau 2) */}
                         {etagere.children?.map((boite) => (
-                          <tr key={boite.id} style={{ backgroundColor: '#fafafa' }}>
-                            <td style={{ paddingLeft: '4rem' }}>
+                          <tr key={boite.id} className="emplacement-boite-row">
+                            <td data-label="Code" className="emplacement-niveau-2">
                               ↳ 📦 {boite.code}
                             </td>
-                            <td>
-                              {boite.description || (
-                                <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                                  Aucune description
-                                </span>
-                              )}
+                            <td data-label="Description">
+                              {boite.description || <span className="text-muted-italic">Aucune description</span>}
                             </td>
-                            <td>{renderIndicateurRemplissage(boite)}</td>
-                            <td>
+                            <td data-label="Capacité">{renderIndicateurRemplissage(boite)}</td>
+                            <td data-label="Actions">
                               <div className="action-buttons">
                                 {canUpdate('emplacements') && (
-                                  <button
-                                    onClick={() => handleEdit(boite)}
-                                    className="btn btn-sm btn-secondary"
-                                    title="Modifier la boîte"
-                                  >
+                                  <button onClick={() => handleEdit(boite)} className="btn btn-sm btn-secondary" title="Modifier la boîte">
                                     <Edit2 size={14} />
                                   </button>
                                 )}
-                                <button
-                                  onClick={() => handleQRCodeClick(boite)}
-                                  className="btn btn-sm btn-info"
-                                  title="Voir QR Code"
-                                >
+                                <button onClick={() => handleQRCodeClick(boite)} className="btn btn-sm btn-info" title="Voir QR Code">
                                   <QrCode size={14} />
                                 </button>
                                 {canDelete('emplacements') && (
-                                  <button
-                                    onClick={() => handleDelete(boite)}
-                                    className="btn btn-sm btn-danger"
-                                    title="Supprimer la boîte"
-                                  >
+                                  <button onClick={() => handleDelete(boite)} className="btn btn-sm btn-danger" title="Supprimer la boîte">
                                     <Trash2 size={14} />
                                   </button>
                                 )}
