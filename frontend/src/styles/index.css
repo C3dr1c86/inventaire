@@ -603,12 +603,18 @@ body {
     display: none;
   }
 
+  /* Réinitialise le scroll horizontal du breakpoint 768px */
+  .table-responsive {
+    overflow-x: visible;
+  }
+
   .table,
   .table tbody,
   .table tr,
   .table td {
     display: block;
     width: 100%;
+    white-space: normal; /* annule le nowrap du breakpoint 768px */
   }
 
   .table tr {
