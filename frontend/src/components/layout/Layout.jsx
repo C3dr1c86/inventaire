@@ -1,7 +1,8 @@
 /**
  * Composant Layout - Structure principale de l'application.
  *
- * Contient le sidebar de navigation et la zone de contenu principale.
+ * Contient la sidebar de navigation, le header fixe et la zone de contenu.
+ * Conforme à la charte graphique : aucun style inline.
  */
 
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -20,16 +21,37 @@ import {
   LogOut,
   Users,
   Moon,
-  Sun
+  Sun,
+  ChevronLeft,
+  ChevronRight,
+  Warehouse,
 } from 'lucide-react'
 import { useState, useMemo, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import { useAuth } from '../../contexts/AuthContext'
 
+// Titre affiché dans le header selon la route
+const PAGE_TITLES = {
+  '/dashboard':        { title: 'Tableau de bord',  subtitle: 'Vue d\'ensemble de votre inventaire' },
+  '/articles':         { title: 'Articles',          subtitle: 'Gestion du catalogue produits' },
+  '/categories':       { title: 'Catégories',        subtitle: 'Organisation hiérarchique' },
+  '/emplacements':     { title: 'Emplacements',      subtitle: 'Gestion des zones de stockage' },
+  '/scan-qrcode':      { title: 'Scanner QR Code',   subtitle: 'Identification par code-barres' },
+  '/plan-atelier':     { title: 'Plan atelier',      subtitle: 'Visualisation des zones' },
+  '/tags':             { title: 'Tags',              subtitle: 'Étiquettes et catégorisation' },
+  '/fournisseurs':     { title: 'Fournisseurs',      subtitle: 'Gestion des partenaires' },
+  '/commandes':        { title: 'Commandes',         subtitle: 'Suivi des commandes' },
+  '/commandes/nouvelle': { title: 'Nouvelle commande', subtitle: 'Créer une commande' },
+  '/mouvements':       { title: 'Mouvements',        subtitle: 'Historique des entrées / sorties' },
+  '/rapports':         { title: 'Rapports',          subtitle: 'Analyses et exports' },
+  '/users':            { title: 'Utilisateurs',      subtitle: 'Gestion des comptes et permissions' },
+}
+
 function Layout({ children }) {
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
   const { user, role, hasPermission, logoutUser } = useAuth()
 
   // Thème clair/sombre persisté dans localStorage
@@ -42,6 +64,11 @@ function Layout({ children }) {
     localStorage.setItem('theme', theme)
   }, [theme])
 
+  // Fermer la sidebar mobile au changement de route
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [location.pathname])
+
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light')
   }
@@ -52,30 +79,22 @@ function Layout({ children }) {
     toast.info('Déconnexion réussie')
   }
 
-  // Couleurs des badges de rôles
-  const roleBadgeColors = {
-    admin: '#8b5cf6',
-    gestionnaire: '#3b82f6',
-    technicien: '#10b981',
-    consultation: '#6b7280'
-  }
-
   // Navigation items avec permissions requises
   const navItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/articles', icon: Package, label: 'Articles', permission: { resource: 'articles', action: 'read' } },
-    { path: '/categories', icon: Layers, label: 'Catégories', permission: { resource: 'categories', action: 'read' } },
-    { path: '/emplacements', icon: MapPin, label: 'Emplacements', permission: { resource: 'emplacements', action: 'read' } },
-    { path: '/scan-qrcode', icon: ScanLine, label: 'Scanner QR' },
-    { path: '/tags', icon: Tag, label: 'Tags', permission: { resource: 'tags', action: 'read' } },
-    { path: '/fournisseurs', icon: Truck, label: 'Fournisseurs', permission: { resource: 'fournisseurs', action: 'read' } },
-    { path: '/commandes', icon: ShoppingCart, label: 'Commandes', permission: { resource: 'commandes', action: 'read' } },
-    { path: '/mouvements', icon: ArrowRightLeft, label: 'Mouvements', permission: { resource: 'mouvements', action: 'read' } },
-    { path: '/rapports', icon: FileText, label: 'Rapports', permission: { resource: 'rapports', action: 'read' } },
-    { path: '/users', icon: Users, label: 'Utilisateurs', permission: { resource: 'users', action: 'read' } },
+    { path: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/articles',   icon: Package,         label: 'Articles',     permission: { resource: 'articles',     action: 'read' } },
+    { path: '/categories', icon: Layers,          label: 'Catégories',   permission: { resource: 'categories',   action: 'read' } },
+    { path: '/emplacements', icon: MapPin,         label: 'Emplacements', permission: { resource: 'emplacements', action: 'read' } },
+    { path: '/scan-qrcode',  icon: ScanLine,       label: 'Scanner QR' },
+    { path: '/tags',         icon: Tag,            label: 'Tags',         permission: { resource: 'tags',         action: 'read' } },
+    { path: '/fournisseurs', icon: Truck,          label: 'Fournisseurs', permission: { resource: 'fournisseurs', action: 'read' } },
+    { path: '/commandes',    icon: ShoppingCart,   label: 'Commandes',    permission: { resource: 'commandes',    action: 'read' } },
+    { path: '/mouvements',   icon: ArrowRightLeft, label: 'Mouvements',   permission: { resource: 'mouvements',   action: 'read' } },
+    { path: '/rapports',     icon: FileText,       label: 'Rapports',     permission: { resource: 'rapports',     action: 'read' } },
+    { path: '/users',        icon: Users,          label: 'Utilisateurs', permission: { resource: 'users',        action: 'read' } },
   ]
 
-  // Filtrer les items de navigation selon les permissions
+  // Filtrer selon les permissions
   const visibleNavItems = useMemo(() => {
     return navItems.filter(item => {
       if (!item.permission) return true
@@ -83,151 +102,175 @@ function Layout({ children }) {
     })
   }, [hasPermission])
 
-  // Items du bottom nav (4 premiers + bouton "Plus" si nécessaire)
+  // Items du bottom nav (4 premiers)
   const maxBottomItems = 4
   const bottomNavItems = visibleNavItems.slice(0, maxBottomItems)
   const hasOverflowItems = visibleNavItems.length > maxBottomItems
 
-  // Vérifier si un lien est actif
   const isActive = (path) => location.pathname === path
 
+  // Titre du header selon la route courante
+  const currentPage = PAGE_TITLES[location.pathname] || { title: 'Inventaire', subtitle: '' }
+
   return (
-    <div className="app-container">
-      {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-            📦 Inventaire
-          </h1>
-          <p style={{ fontSize: '0.875rem', opacity: 0.8 }}>
-            Gestion de stock
-          </p>
+    <div className="app-shell">
+      {/* ================================================================
+          SIDEBAR
+          ================================================================ */}
+      <aside
+        className={[
+          'sidebar',
+          collapsed   ? 'collapsed'    : '',
+          sidebarOpen ? 'mobile-open'  : '',
+        ].filter(Boolean).join(' ')}
+        aria-label="Navigation principale"
+      >
+        {/* Logo */}
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-icon" aria-hidden="true">
+            <Warehouse size={20} />
+          </div>
+          <span className="sidebar-logo-text">Inventaire</span>
         </div>
 
-        <nav>
-          <ul className="nav-menu">
+        {/* Navigation */}
+        <nav className="sidebar-nav" aria-label="Menu">
+          <div className="sidebar-section">
+            <div className="sidebar-section-label" aria-hidden="true">Navigation</div>
             {visibleNavItems.map((item) => {
               const Icon = item.icon
               return (
-                <li key={item.path} className="nav-item">
-                  <Link
-                    to={item.path}
-                    className={`nav-link ${isActive(item.path) ? 'active' : ''}`}
-                    onClick={() => setSidebarOpen(false)}
-                  >
-                    <Icon className="nav-icon" size={20} />
-                    <span>{item.label}</span>
-                  </Link>
-                </li>
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`sidebar-item ${isActive(item.path) ? 'active' : ''}`}
+                  aria-label={item.label}
+                  title={collapsed ? item.label : undefined}
+                >
+                  <span className="sidebar-item-icon" aria-hidden="true">
+                    <Icon size={18} />
+                  </span>
+                  <span className="sidebar-item-label">{item.label}</span>
+                </Link>
               )
             })}
-          </ul>
+          </div>
         </nav>
 
-        <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
-          {/* Informations utilisateur */}
-          <div style={{
-            padding: '1rem',
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            marginBottom: '1rem'
-          }}>
-            <p style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '0.25rem' }}>
-              Connecté en tant que
-            </p>
-            <p style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-              {user?.username}
-            </p>
-            {role && (
-              <span style={{
-                display: 'inline-block',
-                padding: '0.25rem 0.5rem',
-                fontSize: '0.75rem',
-                borderRadius: '0.25rem',
-                backgroundColor: roleBadgeColors[role] || '#6b7280',
-                color: '#fff',
-                fontWeight: 500,
-                textTransform: 'capitalize'
-              }}>
-                {role}
-              </span>
-            )}
+        {/* Footer : utilisateur + thème + collapse */}
+        <div className="sidebar-footer">
+          {/* Infos utilisateur */}
+          <div className="sidebar-user">
+            <div className="sidebar-item-icon" aria-hidden="true">
+              <Users size={18} />
+            </div>
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-name">{user?.username}</div>
+              {role && (
+                <span className={`sidebar-user-role ${role}`}>
+                  {role}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Toggle thème */}
           <button
             onClick={toggleTheme}
-            className="btn"
-            style={{
-              width: '100%',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: '0.5rem',
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              color: 'white',
-              border: '1px solid rgba(255,255,255,0.15)'
-            }}
+            className="sidebar-item"
             title={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+            aria-label={theme === 'dark' ? 'Activer le mode clair' : 'Activer le mode sombre'}
           >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            {theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+            <span className="sidebar-item-icon" aria-hidden="true">
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </span>
+            <span className="sidebar-item-label">
+              {theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+            </span>
           </button>
 
-          {/* Bouton déconnexion */}
+          {/* Déconnexion */}
           <button
             onClick={handleLogout}
-            className="btn btn-secondary"
-            style={{
-              width: '100%',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              display: 'flex',
-              alignItems: 'center'
-            }}
+            className="sidebar-item"
+            aria-label="Se déconnecter"
           >
-            <LogOut size={18} />
-            Déconnexion
+            <span className="sidebar-item-icon" aria-hidden="true">
+              <LogOut size={18} />
+            </span>
+            <span className="sidebar-item-label">Déconnexion</span>
+          </button>
+
+          {/* Collapse (desktop uniquement) */}
+          <button
+            className="sidebar-collapse-btn"
+            onClick={() => setCollapsed(prev => !prev)}
+            aria-label={collapsed ? 'Déplier la sidebar' : 'Replier la sidebar'}
+            title={collapsed ? 'Déplier' : 'Replier'}
+          >
+            <span className="sidebar-item-icon" aria-hidden="true">
+              {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+            </span>
+            <span className="sidebar-item-label">Réduire</span>
           </button>
 
           {/* Version */}
-          <div style={{ marginTop: '1rem', opacity: 0.6, fontSize: '0.75rem', textAlign: 'center' }}>
-            <p>v1.9.16</p>
-            <p>© 2026</p>
+          <div className="sidebar-version">
+            v1.9.16 · © 2026
           </div>
         </div>
       </aside>
 
-      {/* Overlay pour fermer la sidebar sur mobile */}
+      {/* Overlay mobile */}
       {sidebarOpen && (
         <div
           className="sidebar-overlay"
           onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
         />
       )}
 
-      {/* Main Content */}
-      <main className="main-content">
-        {/* Bouton menu mobile (affiché seulement si bottom nav est absent, i.e. >576px) */}
-        <button
-          className="btn btn-secondary mobile-menu-btn"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          style={{
-            position: 'fixed',
-            top: '1rem',
-            left: '1rem',
-            zIndex: 1001
-          }}
-          aria-label="Menu"
-        >
-          <Menu size={20} />
-        </button>
+      {/* ================================================================
+          HEADER (fixe en haut)
+          ================================================================ */}
+      <header
+        className={`header ${collapsed ? 'sidebar-collapsed' : ''}`}
+        role="banner"
+      >
+        <div className="header-left">
+          {/* Hamburger — visible en tablet (768px) et masqué sous 576px (bottom nav) */}
+          <button
+            className="btn btn-ghost btn-icon mobile-menu-btn"
+            onClick={() => setSidebarOpen(prev => !prev)}
+            aria-label="Ouvrir le menu"
+          >
+            <Menu size={20} />
+          </button>
 
+          <div>
+            <div className="header-page-title">{currentPage.title}</div>
+          </div>
+        </div>
+
+        <div className="header-right">
+          <span className="text-muted text-sm">{user?.username}</span>
+        </div>
+      </header>
+
+      {/* ================================================================
+          CONTENU PRINCIPAL
+          ================================================================ */}
+      <main
+        className={`main-content-wrapper ${collapsed ? 'sidebar-collapsed' : ''}`}
+        id="main-content"
+      >
         {children}
       </main>
 
-      {/* Barre de navigation mobile (bottom nav) */}
-      <nav className="bottom-nav">
+      {/* ================================================================
+          BOTTOM NAV MOBILE (≤576px)
+          ================================================================ */}
+      <nav className="bottom-nav" aria-label="Navigation mobile">
         {bottomNavItems.map((item) => {
           const Icon = item.icon
           return (
@@ -235,8 +278,9 @@ function Layout({ children }) {
               key={item.path}
               to={item.path}
               className={`bottom-nav-item ${isActive(item.path) ? 'active' : ''}`}
+              aria-label={item.label}
             >
-              <Icon size={22} />
+              <Icon size={22} aria-hidden="true" />
               <span>{item.label}</span>
             </Link>
           )
@@ -245,8 +289,9 @@ function Layout({ children }) {
           <button
             className={`bottom-nav-item ${sidebarOpen ? 'active' : ''}`}
             onClick={() => setSidebarOpen(prev => !prev)}
+            aria-label="Plus de navigation"
           >
-            <Menu size={22} />
+            <Menu size={22} aria-hidden="true" />
             <span>Plus</span>
           </button>
         )}

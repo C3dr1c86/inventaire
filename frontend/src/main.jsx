@@ -10,12 +10,13 @@ import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
 
-// Charte graphique — ordre d'import obligatoire
-import './styles/variables.css'   // 1. Tokens design (couleurs, typo, espacements)
-import './styles/base.css'        // 2. Reset + typographie + utilitaires
-import './styles/layout.css'      // 3. Sidebar, Header, grilles, responsive
-import './styles/components.css'  // 4. Composants réutilisables
-import './styles/index.css'       // 5. Styles existants (surcharges temporaires pendant migration)
+// Styles existants en base (héritage v1.9.16)
+import './styles/index.css'
+// Charte graphique — toujours en dernier pour prendre priorité
+import './styles/variables.css'   // tokens design
+import './styles/base.css'        // reset + typo
+import './styles/layout.css'      // sidebar, header, grilles
+import './styles/components.css'  // composants
 
 // Configuration de React Query
 const queryClient = new QueryClient({

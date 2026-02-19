@@ -24,6 +24,10 @@
   z-index: var(--z-fixed);
   transition: width var(--transition-slow), transform var(--transition-slow);
   overflow: hidden;
+  /* Réinitialisation des styles hérités de index.css */
+  padding: 0;
+  box-shadow: none;
+  color: var(--color-sidebar-text);
 }
 
 .sidebar.collapsed {
@@ -276,6 +280,9 @@
   z-index: var(--z-sticky);
   transition: left var(--transition-slow);
   box-shadow: var(--shadow-xs);
+  /* Réinitialisation des styles hérités de index.css */
+  margin: 0;
+  border-radius: 0;
 }
 
 .header.sidebar-collapsed { left: var(--sidebar-width-collapsed); }
@@ -387,9 +394,16 @@
    RESPONSIVE
    ============================================================================ */
 @media (max-width: 768px) {
+  /* Bouton hamburger visible en tablet */
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+
   .sidebar {
     transform: translateX(-100%);
     width: var(--sidebar-width) !important;
+    /* Neutralise le left: -250px de index.css */
+    left: 0;
   }
 
   .sidebar.mobile-open {
