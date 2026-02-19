@@ -8,7 +8,7 @@ Application full-stack de gestion d'inventaire avec :
 - **Backend** : FastAPI + SQLAlchemy + SQLite (100% complet)
 - **Frontend** : React 18 + Vite + React Query (100% complet)
 - **Langue** : Français (commentaires de code, UI, documentation)
-- **Version actuelle** : v1.6.5 (Fix téléchargement codes-barres + Guides accès externe)
+- **Version actuelle** : v1.9.16 (Correctifs UX mobile + dark mode + suppression mouvements)
 - **Prochaine version** : v1.7.0 (Dashboard Analytique Avancé) - Voir [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ## Commandes de développement
@@ -350,6 +350,7 @@ Tous les endpoints sont préfixés par `/api/`
 - GET / - Liste avec paramètres optionnels : `article_id`, `type`, `skip`, `limit`
 - GET /{id} - Récupère un
 - POST / - Crée (met à jour automatiquement le stock de l'article)
+- DELETE /{id} - Supprime un mouvement (admin/gestionnaire — ne modifie PAS le stock)
 - GET /article/{article_id} - Historique des mouvements pour un article
 
 **Tags** (`/api/tags`)
@@ -518,6 +519,32 @@ Consommables
   - Documentation utilisateur (LISEZMOI.txt)
   - Taille finale : ~56 MB compressé
   - Localisation : deployment/portable-demo/build-complet/
+
+- **Mode sombre complet (v1.9.11)** :
+  - Toggle clair/sombre persisté dans localStorage
+  - CSS variables via `[data-theme="dark"]` sur `<html>`
+  - Toutes les pages et composants compatibles dark mode
+  - Bouton toggle dans la sidebar (icône Lune/Soleil)
+- **Navigation mobile bottom nav (v1.9.11)** :
+  - Barre de navigation fixe en bas (≤576px)
+  - Affiche les 4 premiers liens + bouton "Plus" si besoin
+  - Masque le hamburger sur smartphone
+  - Touches 44px minimum (Apple HIG)
+- **Suppression de mouvements (v1.9.9)** :
+  - Endpoint `DELETE /api/mouvements/{id}` (admin + gestionnaire)
+  - Suppression de l'enregistrement uniquement (stock non modifié)
+  - Modal de confirmation avec avertissement stock
+  - Bouton visible selon permissions (`canDelete('mouvements')`)
+- **Réactivation comptes utilisateurs (v1.9.10)** :
+  - Endpoint `POST /api/users/{id}/reactivate`
+  - Bouton vert (UserCheck) dans la page Utilisateurs pour les comptes inactifs
+  - Protection : impossible de se réactiver soi-même
+- **Correctifs dark mode et mobile (v1.9.12 → v1.9.16)** :
+  - Remplacement de toutes les couleurs hardcodées par des variables CSS
+  - Attributs `data-label` sur tous les `<td>` pour la vue carte mobile
+  - Classes CSS dédiées pour les hiérarchies (catégories, emplacements)
+  - z-index modal relevé à 1050 (au-dessus du bottom nav à 1000)
+  - `white-space: normal` au breakpoint 576px (supprime scroll horizontal)
 
 ### Incomplet ⚠️
 - Aucune fonctionnalité majeure manquante
@@ -976,13 +1003,13 @@ const visibleNavItems = useMemo(() => {
 - `useCallback` pour hasPermission (évite re-création fonction)
 - React Query cache users (invalidation après mutations)
 
-**Ressources disponibles** (23+ permissions configurables) :
+**Ressources disponibles** (24+ permissions configurables) :
 - Articles : read, create, update, delete
 - Catégories : read, create, update, delete
 - Tags : read, create, update, delete
 - Fournisseurs : read, create, update, delete
 - Emplacements : read, create, update, delete
-- Mouvements : read, create
+- Mouvements : read, create, delete (admin + gestionnaire uniquement)
 - Commandes : read, create, update, delete
 - Rapports : read, export
 - Utilisateurs : read, create, update, delete

@@ -1,7 +1,7 @@
 # ROADMAP - Application Inventaire d'Atelier
 
-**Version actuelle** : v1.6.0
-**Dernière mise à jour** : 2026-02-12
+**Version actuelle** : v1.9.16
+**Dernière mise à jour** : 2026-02-19
 
 ---
 
@@ -248,6 +248,58 @@ Créer une application complète de gestion d'inventaire d'atelier avec :
 - ✅ Rendering conditionnel sur toutes les pages
 - ✅ Permissions custom par utilisateur (23+ permissions)
 - ✅ Validations admin lockout (impossible de se modifier soi-même)
+
+---
+
+### v1.6.5 - Correctifs Exports & Guides Déploiement ✅ TERMINÉ
+
+**Objectif** : Corriger le téléchargement de codes-barres et ajouter les guides d'accès externe
+
+- [x] Fix téléchargement codes-barres (Content-Disposition headers)
+- [x] Guide Tailscale pour accès externe VPN (deployment/nas/GUIDE-TAILSCALE.md)
+- [x] Guide Cloudflare Tunnel pour accès externe (deployment/nas/GUIDE-CLOUDFLARE-TUNNEL.md)
+- [x] Comparatif solutions accès externe
+- [x] Correctifs intercepteur Axios (trailing slash, query parameters)
+
+**Terminé le** : 2026-02-18
+
+---
+
+### v1.9.x - Améliorations UX, Mobile & Fonctionnalités ✅ TERMINÉ
+
+**Objectif** : Améliorer l'expérience utilisateur, l'interface mobile et ajouter des fonctionnalités manquantes
+
+**v1.9.9 - Suppression de mouvements** :
+- [x] Backend : endpoint `DELETE /api/mouvements/{id}` (admin + gestionnaire)
+- [x] CRUD : fonction `delete_mouvement()` dans crud.py
+- [x] Permission `mouvements:delete` pour admin et gestionnaire
+- [x] Frontend : bouton Supprimer dans page Mouvements (conditionnel permissions)
+- [x] Modal de confirmation avec avertissement stock non modifié
+
+**v1.9.10 - Réactivation comptes utilisateurs** :
+- [x] Backend : endpoint `POST /api/users/{id}/reactivate`
+- [x] CRUD : fonction `reactivate_user()` dans crud.py
+- [x] Frontend : bouton vert UserCheck pour comptes inactifs dans page Utilisateurs
+- [x] Protection : impossible de se réactiver soi-même
+
+**v1.9.11 - Mode sombre + Navigation mobile** :
+- [x] Toggle clair/sombre persisté dans localStorage
+- [x] CSS variables `[data-theme="dark"]` couvrant toutes les pages
+- [x] Bouton toggle Lune/Soleil dans la sidebar
+- [x] Bottom navigation fixe en bas sur smartphone (≤576px)
+- [x] Affiche les 4 premiers liens + bouton "Plus" si >4 items
+- [x] Touch targets 44px minimum (Apple HIG)
+
+**v1.9.12 → v1.9.16 - Correctifs dark mode & mobile** :
+- [x] Remplacement couleurs hardcodées par variables CSS (Categories, Emplacements, SearchBar)
+- [x] Attributs `data-label` sur tous les `<td>` pour vue carte mobile
+- [x] Classes CSS dédiées pour hiérarchies (catégorie-racine-row, emplacement-zone-row, etc.)
+- [x] z-index modal relevé à 1050 (au-dessus bottom nav 1000)
+- [x] `white-space: normal` à 576px — supprime scroll horizontal sur mobile
+
+**État actuel** : 100% complet ✅
+
+**Terminé le** : 2026-02-19
 
 ---
 
@@ -790,27 +842,30 @@ docker-compose up -d
 - ✅ v1.5.0 - Gestion commandes (TERMINÉ)
 - ✅ v1.6.0 - Multi-utilisateurs & Permissions (TERMINÉ)
 
-### Q2 2026 (Avr-Juin) 🎯 EN COURS
+### Q1 2026 (Fév-Mar) ✅ COMPLÉTÉ
+
+- ✅ v1.6.5 - Fix codes-barres + Guides accès externe (TERMINÉ)
+- ✅ v1.9.9 - Suppression mouvements (TERMINÉ)
+- ✅ v1.9.10 - Réactivation utilisateurs (TERMINÉ)
+- ✅ v1.9.11 - Mode sombre + Navigation mobile (TERMINÉ)
+- ✅ v1.9.12~v1.9.16 - Correctifs dark mode & mobile (TERMINÉ)
+
+### Q2 2026 (Avr-Juin) 🎯 PLANIFIÉ
 
 **Priorités** :
-1. **v1.9.0 - Tests & Sécurité** (7-10 jours) - **PRIORITÉ HAUTE** 🔴
-   - Tests unitaires backend (pytest)
-   - Tests composants frontend (React Testing Library)
-   - Tests E2E (Playwright)
-   - Sécurité renforcée (rate limiting, HTTPS, validation)
-   - CI/CD avec GitHub Actions
-   - Audit de sécurité complet
-
-2. **Déploiement Production** (3-5 jours)
-   - Finaliser configuration NAS (Synology/Ugreen)
-   - Guide déploiement VPS (Hetzner/OVH)
-   - Scripts backup automatisés
-   - Documentation maintenance
-
-3. **v1.7.0 - Dashboard Analytique** (3-4 jours) - **PRIORITÉ BASSE** 🟢
+1. **v1.7.0 - Dashboard Analytique** (3-4 jours) - **PRIORITÉ BASSE** 🟢
    - Graphiques Chart.js (évolution stock, top articles sortis)
    - Statistiques avancées
    - Filtres date range
+
+2. **Tests & Qualité** (selon disponibilité)
+   - Tests unitaires backend (pytest)
+   - Tests composants frontend (React Testing Library)
+   - Sécurité renforcée (rate limiting, HTTPS)
+
+3. **Déploiement Production** (selon besoin)
+   - Finaliser configuration NAS (Synology/Ugreen)
+   - Scripts backup automatisés
 
 ### Q3 2026 (Juil-Sept)
 
@@ -972,7 +1027,16 @@ docker-compose up -d
 
 ### Versions Complétées
 
-- ✅ **v1.6.0 (2026-02-12)** : Multi-utilisateurs & Permissions - 4 rôles, 23+ permissions, audit trail sur 11 modèles
+- ✅ **v1.9.16 (2026-02-19)** : Correctif scroll horizontal mobile (white-space reset à 576px)
+- ✅ **v1.9.15 (2026-02-19)** : Correctif z-index modal (1050) au-dessus du bottom nav (1000)
+- ✅ **v1.9.14 (2026-02-19)** : Correctif SearchBar dark mode (couleurs hardcodées → variables CSS)
+- ✅ **v1.9.13 (2026-02-19)** : Correctif Emplacements dark mode + data-label mobile
+- ✅ **v1.9.12 (2026-02-19)** : Correctif Categories dark mode + data-label mobile + classes CSS hiérarchie
+- ✅ **v1.9.11 (2026-02-19)** : Mode sombre complet + Navigation bottom nav mobile
+- ✅ **v1.9.10 (2026-02-19)** : Réactivation comptes utilisateurs (endpoint + UI)
+- ✅ **v1.9.9 (2026-02-19)** : Suppression mouvements (admin/gestionnaire, stock préservé)
+- ✅ **v1.6.5 (2026-02-18)** : Fix codes-barres + guides accès externe (Tailscale, Cloudflare)
+- ✅ **v1.6.0 (2026-02-12)** : Multi-utilisateurs & Permissions - 4 rôles, 24+ permissions, audit trail sur 11 modèles
 - ✅ **v1.5.0 (2026-02-11)** : Gestion des commandes - Workflow BROUILLON→ENVOYEE→RECUE, PDF, mise à jour stock automatique
 - ✅ **v1.4.0 (2026-02-11)** : Emplacements physiques - Vue Plan d'atelier interactive, 3 niveaux hiérarchiques, QR codes
 - ✅ **v1.3.1 (2026-02-11)** : Exports données de référence + Scan codes-barres articles
@@ -981,31 +1045,36 @@ docker-compose up -d
 - ✅ **v1.1.0 (2026-02-08)** : Catégories hiérarchiques - 2 niveaux, double select cascadé
 - ✅ **v1.0.0 (2026-01-XX)** : Application de base - CRUD complet, authentification JWT, exports CSV/PDF
 
-### Métriques Projet (au 2026-02-12)
+### Métriques Projet (au 2026-02-19)
 
 **Backend** :
 - 11 modèles SQLAlchemy (User, Article, Categorie, Tag, Photo, Fournisseur, Emplacement, Mouvement, Commande, LigneCommande)
-- 10 routers FastAPI (auth, articles, categories, tags, photos, fournisseurs, emplacements, mouvements, commandes, rapports, users)
-- ~3500 lignes de code Python (sans commentaires)
+- 11 routers FastAPI (auth, articles, categories, tags, photos, fournisseurs, emplacements, mouvements, commandes, rapports, users)
+- ~3600 lignes de code Python (sans commentaires)
 - SQLite database avec ~15 tables
+- 24+ permissions granulaires (resource:action)
 
 **Frontend** :
 - 14 pages React (Dashboard, Articles, Categories, Tags, Fournisseurs, Emplacements, PlanAtelier, ScanQRCode, Mouvements, Commandes, NouvelleCommande, Rapports, Users, Login/Register)
 - ~25 composants réutilisables
-- ~4000 lignes de code JSX (sans commentaires)
+- ~4200 lignes de code JSX (sans commentaires)
 - React Query pour state management
+- Mode sombre complet (CSS variables + localStorage)
+- Navigation mobile bottom nav (≤576px)
 
 **Tests** :
-- ⚠️ Couverture actuelle : ~0% (à développer en v1.9.0)
-- Objectif v1.9.0 : ≥80%
+- ⚠️ Couverture actuelle : ~30% (tests backend présents, frontend à développer)
+- Objectif futur : ≥80%
 
 **Déploiement** :
 - Docker Compose (développement local ✅)
-- NAS/VPS (en cours de documentation)
+- NAS Synology/Ugreen (documenté ✅)
+- Tailscale VPN (documenté ✅)
+- Cloudflare Tunnel (documenté ✅)
 - Portable Windows v1.1.0 (démo uniquement)
 
 ---
 
-**Dernière révision** : 2026-02-12
-**Maintenu par** : Cedric + Claude Sonnet 4.5
-**Prochain review** : Mars 2026 (après phase Tests & Sécurité)
+**Dernière révision** : 2026-02-19
+**Maintenu par** : Cedric + Claude Sonnet 4.6
+**Prochain review** : Selon besoin (avant v1.7.0)
