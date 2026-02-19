@@ -164,20 +164,23 @@ def supprimer_commande(
     """
     Supprime une commande.
 
-    Restriction : Seules les commandes BROUILLON peuvent être supprimées.
+    Règles :
+    - Utilisateur normal : Seulement les commandes BROUILLON
+    - Admin : Toutes les commandes (pour nettoyage / tests)
 
     Args:
         commande_id: ID de la commande à supprimer
         db: Session de base de données
+        current_user: Utilisateur connecté (rôle vérifié)
 
     Returns:
         Message de confirmation
 
     Raises:
         HTTPException 404: Si la commande n'existe pas
-        HTTPException 400: Si la commande n'est pas BROUILLON
+        HTTPException 400: Si la commande n'est pas BROUILLON (hors admin)
     """
-    crud.delete_commande(db, commande_id)
+    crud.delete_commande(db, commande_id, current_user)
     return schemas.MessageResponse(
         message=f"Commande {commande_id} supprimée avec succès"
     )

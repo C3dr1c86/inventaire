@@ -2857,22 +2857,27 @@ def update_commande_statut(
     return db_commande
 
 
-def delete_commande(db: Session, commande_id: int) -> bool:
+def delete_commande(
+    db: Session, commande_id: int, current_user: models.User = None
+) -> bool:
     """
     Supprime une commande.
 
-    Validation : Seulement les commandes BROUILLON peuvent être supprimées.
+    Règles :
+    - Utilisateur normal : Seulement les commandes BROUILLON
+    - Admin : Toutes les commandes (BROUILLON, ENVOYEE, RECUE, ANNULEE)
 
     Args:
         db: Session de base de données
         commande_id: ID de la commande à supprimer
+        current_user: Utilisateur qui supprime (pour vérifier le rôle admin)
 
     Returns:
         True si suppression réussie
 
     Raises:
         HTTPException 404: Si la commande n'existe pas
-        HTTPException 400: Si la commande n'est pas BROUILLON
+        HTTPException 400: Si la commande n'est pas BROUILLON (hors admin)
     """
     db_commande = get_commande(db, commande_id)
     if not db_commande:
@@ -2881,10 +2886,12 @@ def delete_commande(db: Session, commande_id: int) -> bool:
             detail=f"Commande {commande_id} non trouvée",
         )
 
-    if db_commande.statut != "BROUILLON":
+    is_admin = current_user and current_user.role.value == "admin"
+
+    if not is_admin and db_commande.statut != "BROUILLON":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Impossible de supprimer une commande {db_commande.statut}. Seules les commandes BROUILLON peuvent être supprimées.",
+            detail=f"Impossible de supprimer une commande {db_commande.statut}. Seules les commandes BROUILLON peuvent être supprimées (ou connectez-vous en admin).",
         )
 
     db.delete(db_commande)

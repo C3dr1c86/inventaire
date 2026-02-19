@@ -32,7 +32,7 @@ import { usePermissions } from '../hooks/usePermissions'
 const Commandes = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { canCreate, canUpdate, canDelete } = usePermissions()
+  const { canCreate, canUpdate, canDelete, isAdmin } = usePermissions()
 
   // États locaux
   const [page, setPage] = useState(1)
@@ -210,10 +210,6 @@ const Commandes = () => {
 
   const handleNewCommande = () => {
     navigate('/commandes/nouvelle')
-  }
-
-  const handleViewDetails = (commande) => {
-    navigate(`/commandes/${commande.id}`)
   }
 
   // Helper pour obtenir le badge de statut
@@ -397,20 +393,7 @@ const Commandes = () => {
                   {commandes.map(commande => (
                     <tr key={commande.id}>
                       <td data-label="N° Commande">
-                        <button
-                          onClick={() => handleViewDetails(commande)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#007bff',
-                            textDecoration: 'underline',
-                            cursor: 'pointer',
-                            padding: 0,
-                            font: 'inherit'
-                          }}
-                        >
-                          {commande.numero_commande}
-                        </button>
+                        <strong>{commande.numero_commande}</strong>
                       </td>
                       <td data-label="Fournisseur">{commande.fournisseur.nom}</td>
                       <td data-label="Statut">{getStatutBadge(commande.statut)}</td>
@@ -462,12 +445,12 @@ const Commandes = () => {
                             </button>
                           )}
 
-                          {/* Bouton Supprimer (seulement pour BROUILLON) */}
-                          {commande.statut === 'BROUILLON' && canDelete('commandes') && (
+                          {/* Bouton Supprimer : BROUILLON pour tous, toutes commandes pour admin */}
+                          {(commande.statut === 'BROUILLON' || isAdmin) && canDelete('commandes') && (
                             <button
                               onClick={() => handleDeleteClick(commande)}
                               className="btn btn-sm btn-danger"
-                              title="Supprimer la commande"
+                              title={isAdmin && commande.statut !== 'BROUILLON' ? 'Supprimer (admin)' : 'Supprimer la commande'}
                             >
                               <Trash2 size={16} />
                             </button>
