@@ -14,7 +14,18 @@ import { getTags } from '../services/tagService'
 import { getFournisseurs } from '../services/fournisseurService'
 import { getEmplacements } from '../services/emplacementService'
 import api from '../services/api'
-import { Plus, Trash2, ChevronUp, ChevronDown, Barcode, Download, Image as ImageIcon } from 'lucide-react'
+import {
+  Plus,
+  Trash2,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
+  Barcode,
+  Download,
+  Image as ImageIcon,
+  Pencil,
+  AlertTriangle,
+} from 'lucide-react'
 import Modal from '../components/common/Modal'
 import ArticleForm from '../components/articles/ArticleForm'
 import ArticleDetailModal from '../components/articles/ArticleDetailModal'
@@ -78,7 +89,6 @@ function Articles() {
       }
       loadBarcode()
     } else {
-      // Nettoyer l'URL du blob quand le modal se ferme
       if (barcodeUrl) {
         window.URL.revokeObjectURL(barcodeUrl)
         setBarcodeUrl(null)
@@ -209,20 +219,18 @@ function Articles() {
 
   const handleSort = (column) => {
     if (sortBy === column) {
-      // Si on clique sur la même colonne, inverser l'ordre
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
-      // Nouvelle colonne, trier en ordre croissant
       setSortBy(column)
       setSortOrder('asc')
     }
   }
 
   const renderSortIcon = (column) => {
-    if (sortBy !== column) {
-      return null
-    }
-    return sortOrder === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+    if (sortBy !== column) return <ChevronsUpDown size={12} className="sort-icon-neutral" />
+    return sortOrder === 'asc'
+      ? <ChevronUp size={12} />
+      : <ChevronDown size={12} />
   }
 
   const handleBarcodeClick = (article) => {
@@ -231,15 +239,9 @@ function Articles() {
 
   const handleDownloadBarcode = async (article) => {
     try {
-      console.log('Téléchargement barcode pour article:', article.id, 'SKU:', article.sku)
-
       const response = await api.get(`/articles/${article.id}/barcode`, {
         responseType: 'blob'
       })
-
-      console.log('Blob reçu, taille:', response.data.size, 'type:', response.data.type)
-
-      // Créer un lien de téléchargement
       const url = window.URL.createObjectURL(new Blob([response.data]))
       const a = document.createElement('a')
       a.href = url
@@ -248,43 +250,43 @@ function Articles() {
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-
       toast.success('Code-barre téléchargé')
     } catch (error) {
-      console.error('Erreur lors du téléchargement du code-barre:', error)
-      console.error('Détails erreur:', error.response)
-
       if (error.response?.status === 404) {
         toast.error('Article non trouvé')
       } else if (error.response?.status === 400) {
         toast.error('Cet article n\'a pas de SKU')
       } else if (error.response?.data) {
-        // Essayer de lire le message d'erreur du blob
-        const errorBlob = error.response.data
-        const errorText = await errorBlob.text()
-        console.error('Message erreur serveur:', errorText)
-        toast.error(`Erreur serveur: ${errorText}`)
+        const errorText = await error.response.data.text()
+        toast.error(`Erreur serveur : ${errorText}`)
       } else {
-        toast.error(`Erreur lors du téléchargement: ${error.message}`)
+        toast.error(`Erreur lors du téléchargement : ${error.message}`)
       }
     }
   }
 
+  // État de chargement
   if (isLoading) {
     return (
-      <div>
-        <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>Articles</h1>
-        <div className="loader"></div>
+      <div className="loading-page">
+        <span className="spinner spinner-lg" role="status" aria-label="Chargement des articles" />
+        <span>Chargement des articles...</span>
       </div>
     )
   }
 
+  // État d'erreur
   if (error) {
     return (
       <div>
-        <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>Articles</h1>
-        <div className="alert alert-danger">
-          Erreur lors du chargement des articles : {error.message}
+        <div className="page-header">
+          <div className="page-header-info">
+            <h1 className="page-title">Articles</h1>
+          </div>
+        </div>
+        <div className="alert alert-danger" role="alert">
+          <AlertTriangle size={18} aria-hidden="true" />
+          <span>Erreur lors du chargement des articles : {error.message}</span>
         </div>
       </div>
     )
@@ -294,402 +296,415 @@ function Articles() {
 
   return (
     <div>
-      <div className="flex-between" style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem' }}>Articles</h1>
-        {canCreate('articles') && (
-          <button className="btn btn-primary" onClick={handleCreateClick}>
-            <Plus size={18} />
-            Nouvel article
-          </button>
-        )}
-      </div>
-
-      {/* Barre de recherche */}
-      <SearchBar
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        placeholder="Rechercher un article ou scanner un code-barre..."
-        autoFocus={true}
-      />
-
-      {/* Filtres */}
-      <div className="card">
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ minWidth: '200px' }}>
-            <select
-              className="form-control"
-              value={selectedCategorie}
-              onChange={(e) => setSelectedCategorie(e.target.value)}
-            >
-              <option value="">Toutes les catégories</option>
-              {categoriesTree?.map(cat => (
-                cat.children && cat.children.length > 0 ? (
-                  // Catégorie avec sous-catégories : utiliser optgroup
-                  <optgroup key={cat.id} label={`📁 ${cat.nom}`}>
-                    <option value={cat.id}>
-                      {cat.nom} (toutes)
-                    </option>
-                    {cat.children.map(sousCat => (
-                      <option key={sousCat.id} value={sousCat.id}>
-                        ↳ {sousCat.nom}
-                      </option>
-                    ))}
-                  </optgroup>
-                ) : (
-                  // Catégorie racine sans sous-catégories
-                  <option key={cat.id} value={cat.id}>
-                    📁 {cat.nom}
-                  </option>
-                )
-              ))}
-            </select>
-          </div>
-          <div style={{ minWidth: '200px' }}>
-            <select
-              className="form-control"
-              value={selectedTag}
-              onChange={(e) => setSelectedTag(e.target.value)}
-            >
-              <option value="">Tous les tags</option>
-              {tags?.map(tag => (
-                <option key={tag.id} value={tag.id}>
-                  {tag.nom}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={{ minWidth: '200px' }}>
-            <select
-              className="form-control"
-              value={selectedFournisseur}
-              onChange={(e) => setSelectedFournisseur(e.target.value)}
-            >
-              <option value="">Tous les fournisseurs</option>
-              {fournisseurs?.map(fournisseur => (
-                <option key={fournisseur.id} value={fournisseur.id}>
-                  {fournisseur.nom}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={{ minWidth: '200px' }}>
-            <select
-              className="form-control"
-              value={showSansEmplacement ? 'sans' : selectedEmplacement}
-              onChange={(e) => {
-                if (e.target.value === 'sans') {
-                  setShowSansEmplacement(true)
-                  setSelectedEmplacement('')
-                } else {
-                  setShowSansEmplacement(false)
-                  setSelectedEmplacement(e.target.value)
-                }
-              }}
-            >
-              <option value="">Tous les emplacements</option>
-              <option value="sans">📍 Sans emplacement</option>
-              {emplacements?.map(emplacement => (
-                <option key={emplacement.id} value={emplacement.id}>
-                  {emplacement.code_complet || emplacement.code}
-                </option>
-              ))}
-            </select>
-          </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-            <input
-              type="checkbox"
-              checked={showStockBas}
-              onChange={(e) => setShowStockBas(e.target.checked)}
-            />
-            <span>Stock bas uniquement</span>
-          </label>
+      {/* En-tête de page */}
+      <div className="page-header">
+        <div className="page-header-info">
+          <h1 className="page-title">Articles</h1>
+          <p className="page-subtitle">
+            {data?.total || 0} article{(data?.total || 0) > 1 ? 's' : ''} au total
+          </p>
+        </div>
+        <div className="page-actions">
+          {canCreate('articles') && (
+            <button className="btn btn-primary" onClick={handleCreateClick}>
+              <Plus size={16} aria-hidden="true" />
+              Nouvel article
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Liste des articles */}
+      {/* Barre de recherche */}
+      <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+        <div className="card-body">
+          <SearchBar
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Rechercher un article ou scanner un code-barre..."
+            autoFocus={true}
+          />
+        </div>
+      </div>
+
+      {/* Filtres */}
+      <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+        <div className="card-body">
+          <div className="filters-bar">
+            <div className="filter-item">
+              <select
+                className="form-control form-select"
+                value={selectedCategorie}
+                onChange={(e) => setSelectedCategorie(e.target.value)}
+                aria-label="Filtrer par catégorie"
+              >
+                <option value="">Toutes les catégories</option>
+                {categoriesTree?.map(cat => (
+                  cat.children && cat.children.length > 0 ? (
+                    <optgroup key={cat.id} label={`📁 ${cat.nom}`}>
+                      <option value={cat.id}>{cat.nom} (toutes)</option>
+                      {cat.children.map(sousCat => (
+                        <option key={sousCat.id} value={sousCat.id}>↳ {sousCat.nom}</option>
+                      ))}
+                    </optgroup>
+                  ) : (
+                    <option key={cat.id} value={cat.id}>📁 {cat.nom}</option>
+                  )
+                ))}
+              </select>
+            </div>
+
+            <div className="filter-item">
+              <select
+                className="form-control form-select"
+                value={selectedTag}
+                onChange={(e) => setSelectedTag(e.target.value)}
+                aria-label="Filtrer par tag"
+              >
+                <option value="">Tous les tags</option>
+                {tags?.map(tag => (
+                  <option key={tag.id} value={tag.id}>{tag.nom}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="filter-item">
+              <select
+                className="form-control form-select"
+                value={selectedFournisseur}
+                onChange={(e) => setSelectedFournisseur(e.target.value)}
+                aria-label="Filtrer par fournisseur"
+              >
+                <option value="">Tous les fournisseurs</option>
+                {fournisseurs?.map(fournisseur => (
+                  <option key={fournisseur.id} value={fournisseur.id}>{fournisseur.nom}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="filter-item">
+              <select
+                className="form-control form-select"
+                value={showSansEmplacement ? 'sans' : selectedEmplacement}
+                onChange={(e) => {
+                  if (e.target.value === 'sans') {
+                    setShowSansEmplacement(true)
+                    setSelectedEmplacement('')
+                  } else {
+                    setShowSansEmplacement(false)
+                    setSelectedEmplacement(e.target.value)
+                  }
+                }}
+                aria-label="Filtrer par emplacement"
+              >
+                <option value="">Tous les emplacements</option>
+                <option value="sans">📍 Sans emplacement</option>
+                {emplacements?.map(emplacement => (
+                  <option key={emplacement.id} value={emplacement.id}>
+                    {emplacement.code_complet || emplacement.code}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <label className="filter-check">
+              <input
+                type="checkbox"
+                checked={showStockBas}
+                onChange={(e) => setShowStockBas(e.target.checked)}
+              />
+              <span>Stock bas uniquement</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Tableau des articles */}
       <div className="card">
-        <h2 className="card-header">
-          Liste des articles ({data?.total || 0})
-        </h2>
+        <div className="card-header">
+          <h2 className="card-title">
+            Liste des articles ({data?.total || 0})
+          </h2>
+        </div>
 
         {articles.length === 0 ? (
-          <div className="card-body text-center">
-            <p>Aucun article trouvé.</p>
-            <button className="btn btn-primary mt-2" onClick={handleCreateClick}>
-              <Plus size={18} />
-              Créer votre premier article
-            </button>
+          <div className="card-body">
+            <div className="empty-state">
+              <ImageIcon className="empty-state-icon" aria-hidden="true" />
+              <p className="empty-state-title">Aucun article trouvé</p>
+              <p className="empty-state-description">
+                {searchTerm || showStockBas || selectedCategorie || selectedTag
+                  ? 'Aucun article ne correspond à vos filtres.'
+                  : 'Commencez par créer votre premier article.'}
+              </p>
+              {canCreate('articles') && !searchTerm && !showStockBas && (
+                <button className="btn btn-primary" onClick={handleCreateClick}>
+                  <Plus size={16} aria-hidden="true" />
+                  Créer votre premier article
+                </button>
+              )}
+            </div>
           </div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Photo</th>
-                <th
-                  onClick={() => handleSort('id')}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSort('id')}
-                  tabIndex={0}
-                  role="button"
-                  aria-label="Trier par ID"
-                  style={{ cursor: 'pointer', userSelect: 'none' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    ID {renderSortIcon('id')}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('nom')}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSort('nom')}
-                  tabIndex={0}
-                  role="button"
-                  aria-label="Trier par nom"
-                  style={{ cursor: 'pointer', userSelect: 'none' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    Nom {renderSortIcon('nom')}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('sku')}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSort('sku')}
-                  tabIndex={0}
-                  role="button"
-                  aria-label="Trier par SKU"
-                  style={{ cursor: 'pointer', userSelect: 'none' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    SKU {renderSortIcon('sku')}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('quantite')}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSort('quantite')}
-                  tabIndex={0}
-                  role="button"
-                  aria-label="Trier par quantité"
-                  style={{ cursor: 'pointer', userSelect: 'none' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    Quantité {renderSortIcon('quantite')}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('prix_unitaire')}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSort('prix_unitaire')}
-                  tabIndex={0}
-                  role="button"
-                  aria-label="Trier par prix unitaire"
-                  style={{ cursor: 'pointer', userSelect: 'none' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    Prix unitaire {renderSortIcon('prix_unitaire')}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('categorie')}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSort('categorie')}
-                  tabIndex={0}
-                  role="button"
-                  aria-label="Trier par catégorie"
-                  style={{ cursor: 'pointer', userSelect: 'none' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    Catégorie {renderSortIcon('categorie')}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('valeur')}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSort('valeur')}
-                  tabIndex={0}
-                  role="button"
-                  aria-label="Trier par valeur"
-                  style={{ cursor: 'pointer', userSelect: 'none' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    Valeur {renderSortIcon('valeur')}
-                  </div>
-                </th>
-                <th>Tags</th>
-                <th>Fournisseurs</th>
-                <th>Emplacement</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {articles.map((article) => (
-                <tr key={article.id}>
-                  <td data-label="Photo">
-                    {article.photos && article.photos.length > 0 ? (
-                      <img
-                        src={`${API_URL.replace('/api', '')}/uploads/${article.photos[0].thumbnail_path || article.photos[0].filepath}`}
-                        alt={article.nom}
-                        style={{
-                          width: '50px',
-                          height: '50px',
-                          objectFit: 'cover',
-                          borderRadius: '4px',
-                          border: '1px solid #dee2e6'
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: '50px',
-                          height: '50px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: '#f8f9fa',
-                          borderRadius: '4px',
-                          border: '1px solid #dee2e6',
-                          color: '#6c757d'
-                        }}
-                      >
-                        <ImageIcon size={20} />
-                      </div>
-                    )}
-                  </td>
-                  <td data-label="ID">{article.id}</td>
-                  <td data-label="Nom">
-                    <div>
-                      <strong
-                        onClick={() => setArticleDetail(article)}
-                        style={{
-                          cursor: 'pointer',
-                          color: 'var(--primary)',
-                          textDecoration: 'underline',
-                          textDecorationStyle: 'dotted'
-                        }}
-                        title="Cliquez pour voir les détails"
-                      >
-                        {article.nom}
-                      </strong>
-                      {article.est_stock_bas && (
-                        <span className="badge badge-danger" style={{ marginLeft: '0.5rem' }}>
-                          Stock bas
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td data-label="SKU">
-                    {article.sku ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <code style={{ fontSize: '0.875rem' }}>{article.sku}</code>
-                        <button
-                          onClick={() => handleBarcodeClick(article)}
-                          className="btn btn-sm"
-                          style={{ padding: '0.25rem', minWidth: 'auto' }}
-                          title="Voir le code-barre"
-                          aria-label="Voir le code-barre"
-                        >
-                          <Barcode size={16} />
-                        </button>
-                      </div>
-                    ) : '-'}
-                  </td>
-                  <td data-label="Quantité">
-                    {article.quantite} / {article.quantite_min}
-                  </td>
-                  <td data-label="Prix unitaire">{article.prix_unitaire.toFixed(2)} €</td>
-                  <td data-label="Catégorie">{article.categorie?.nom || 'Sans catégorie'}</td>
-                  <td data-label="Valeur"><strong>{article.valeur_stock.toFixed(2)} €</strong></td>
-                  <td data-label="Tags">
-                    {article.tags && article.tags.length > 0 ? (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                        {article.tags.map(tag => (
-                          <span
-                            key={tag.id}
-                            style={{
-                              display: 'inline-block',
-                              padding: '0.125rem 0.5rem',
-                              fontSize: '0.75rem',
-                              borderRadius: '0.75rem',
-                              backgroundColor: tag.couleur || '#3498db',
-                              color: '#fff',
-                              fontWeight: 500
-                            }}
-                          >
-                            {tag.nom}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>-</span>
-                    )}
-                  </td>
-                  <td data-label="Fournisseurs">
-                    {article.fournisseurs && article.fournisseurs.length > 0 ? (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                        {article.fournisseurs.map(fournisseur => (
-                          <span
-                            key={fournisseur.id}
-                            style={{
-                              display: 'inline-block',
-                              padding: '0.125rem 0.5rem',
-                              fontSize: '0.75rem',
-                              borderRadius: '0.75rem',
-                              backgroundColor: '#6c757d',
-                              color: '#fff',
-                              fontWeight: 500
-                            }}
-                            title={fournisseur.contact || fournisseur.nom}
-                          >
-                            🚚 {fournisseur.nom}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>-</span>
-                    )}
-                  </td>
-                  <td data-label="Emplacement">
-                    {article.emplacement ? (
-                      <span title={article.emplacement.code_complet}>
-                        📍 {article.emplacement.code}
-                      </span>
-                    ) : (
-                      <span style={{ color: '#999', fontStyle: 'italic' }}>Non défini</span>
-                    )}
-                  </td>
-                  <td data-label="Actions">
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      {canUpdate('articles') && (
-                        <button
-                          className="btn btn-sm btn-secondary"
-                          onClick={() => handleEditClick(article)}
-                        >
-                          Modifier
-                        </button>
-                      )}
-                      {canDelete('articles') && (
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleDeleteClick(article)}
-                          aria-label="Supprimer l'article"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+          <>
+            <div className="table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th style={{ width: '60px' }}>Photo</th>
+                    <th
+                      className="sortable"
+                      onClick={() => handleSort('id')}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSort('id')}
+                      tabIndex={0}
+                      aria-sort={sortBy === 'id' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    >
+                      <span className="th-sort">ID {renderSortIcon('id')}</span>
+                    </th>
+                    <th
+                      className="sortable"
+                      onClick={() => handleSort('nom')}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSort('nom')}
+                      tabIndex={0}
+                      aria-sort={sortBy === 'nom' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    >
+                      <span className="th-sort">Nom {renderSortIcon('nom')}</span>
+                    </th>
+                    <th
+                      className="sortable"
+                      onClick={() => handleSort('sku')}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSort('sku')}
+                      tabIndex={0}
+                      aria-sort={sortBy === 'sku' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    >
+                      <span className="th-sort">SKU {renderSortIcon('sku')}</span>
+                    </th>
+                    <th
+                      className="sortable"
+                      onClick={() => handleSort('quantite')}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSort('quantite')}
+                      tabIndex={0}
+                      aria-sort={sortBy === 'quantite' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    >
+                      <span className="th-sort">Quantité {renderSortIcon('quantite')}</span>
+                    </th>
+                    <th
+                      className="sortable"
+                      onClick={() => handleSort('prix_unitaire')}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSort('prix_unitaire')}
+                      tabIndex={0}
+                      aria-sort={sortBy === 'prix_unitaire' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    >
+                      <span className="th-sort">Prix unit. {renderSortIcon('prix_unitaire')}</span>
+                    </th>
+                    <th
+                      className="sortable"
+                      onClick={() => handleSort('categorie')}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSort('categorie')}
+                      tabIndex={0}
+                      aria-sort={sortBy === 'categorie' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    >
+                      <span className="th-sort">Catégorie {renderSortIcon('categorie')}</span>
+                    </th>
+                    <th
+                      className="sortable"
+                      onClick={() => handleSort('valeur')}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSort('valeur')}
+                      tabIndex={0}
+                      aria-sort={sortBy === 'valeur' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    >
+                      <span className="th-sort">Valeur {renderSortIcon('valeur')}</span>
+                    </th>
+                    <th>Tags</th>
+                    <th>Fournisseurs</th>
+                    <th>Emplacement</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {articles.map((article) => (
+                    <tr key={article.id}>
+                      {/* Photo */}
+                      <td data-label="Photo">
+                        {article.photos && article.photos.length > 0 ? (
+                          <img
+                            className="article-thumb"
+                            src={`${API_URL.replace('/api', '')}/uploads/${article.photos[0].thumbnail_path || article.photos[0].filepath}`}
+                            alt={article.nom}
+                          />
+                        ) : (
+                          <div className="article-thumb-placeholder" aria-hidden="true">
+                            <ImageIcon size={20} />
+                          </div>
+                        )}
+                      </td>
 
-        {/* Pagination */}
-        {articles.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalItems={data?.total || 0}
-            itemsPerPage={itemsPerPage}
-            onPageChange={handlePageChange}
-          />
+                      {/* ID */}
+                      <td data-label="ID" className="text-muted">
+                        {article.id}
+                      </td>
+
+                      {/* Nom */}
+                      <td data-label="Nom">
+                        <button
+                          className="article-name-link"
+                          onClick={() => setArticleDetail(article)}
+                          title="Voir les détails"
+                          type="button"
+                        >
+                          {article.nom}
+                        </button>
+                        {article.est_stock_bas && (
+                          <span className="badge badge-danger badge-inline">Stock bas</span>
+                        )}
+                      </td>
+
+                      {/* SKU */}
+                      <td data-label="SKU">
+                        {article.sku ? (
+                          <div className="sku-cell">
+                            <code className="sku-code">{article.sku}</code>
+                            <button
+                              onClick={() => handleBarcodeClick(article)}
+                              className="btn btn-ghost btn-icon btn-sm"
+                              title="Voir le code-barre"
+                              aria-label="Voir le code-barre"
+                              type="button"
+                            >
+                              <Barcode size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-muted">—</span>
+                        )}
+                      </td>
+
+                      {/* Quantité */}
+                      <td
+                        data-label="Quantité"
+                        className={
+                          article.quantite === 0
+                            ? 'cell-danger'
+                            : article.est_stock_bas
+                            ? 'cell-warning'
+                            : ''
+                        }
+                      >
+                        {article.quantite} / {article.quantite_min}
+                      </td>
+
+                      {/* Prix */}
+                      <td data-label="Prix unitaire">
+                        {article.prix_unitaire.toFixed(2)} €
+                      </td>
+
+                      {/* Catégorie */}
+                      <td data-label="Catégorie">
+                        <span className="badge badge-neutral">
+                          {article.categorie?.nom || 'Sans catégorie'}
+                        </span>
+                      </td>
+
+                      {/* Valeur */}
+                      <td data-label="Valeur">
+                        <strong>{article.valeur_stock.toFixed(2)} €</strong>
+                      </td>
+
+                      {/* Tags */}
+                      <td data-label="Tags">
+                        {article.tags && article.tags.length > 0 ? (
+                          <div className="tag-pills">
+                            {article.tags.map(tag => (
+                              <span
+                                key={tag.id}
+                                className="tag-pill"
+                                style={{ backgroundColor: tag.couleur || 'var(--color-primary-500)' }}
+                              >
+                                {tag.nom}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted">—</span>
+                        )}
+                      </td>
+
+                      {/* Fournisseurs */}
+                      <td data-label="Fournisseurs">
+                        {article.fournisseurs && article.fournisseurs.length > 0 ? (
+                          <div className="tag-pills">
+                            {article.fournisseurs.map(fournisseur => (
+                              <span
+                                key={fournisseur.id}
+                                className="badge badge-neutral"
+                                title={fournisseur.contact || fournisseur.nom}
+                              >
+                                🚚 {fournisseur.nom}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted">—</span>
+                        )}
+                      </td>
+
+                      {/* Emplacement */}
+                      <td data-label="Emplacement">
+                        {article.emplacement ? (
+                          <span title={article.emplacement.code_complet}>
+                            📍 {article.emplacement.code}
+                          </span>
+                        ) : (
+                          <span className="text-muted">Non défini</span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td data-label="Actions">
+                        <div className="action-buttons">
+                          {canUpdate('articles') && (
+                            <button
+                              className="btn btn-ghost btn-icon btn-sm"
+                              onClick={() => handleEditClick(article)}
+                              title="Modifier"
+                              aria-label="Modifier l'article"
+                              type="button"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                          )}
+                          {canDelete('articles') && (
+                            <button
+                              className="btn btn-ghost btn-icon btn-sm"
+                              onClick={() => handleDeleteClick(article)}
+                              title="Supprimer"
+                              aria-label="Supprimer l'article"
+                              type="button"
+                            >
+                              <Trash2 size={14} className="text-danger" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="card-footer">
+              <Pagination
+                currentPage={currentPage}
+                totalItems={data?.total || 0}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          </>
         )}
       </div>
 
-      {/* Modal de création/modification */}
+      {/* Modal création / modification */}
       <Modal
         isOpen={isModalOpen}
         onClose={handleModalClose}
@@ -704,96 +719,90 @@ function Articles() {
         />
       </Modal>
 
-      {/* Modal de confirmation de suppression */}
+      {/* Modal confirmation suppression */}
       <Modal
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
         title="Confirmer la suppression"
         size="small"
       >
-        <div>
-          <p>
-            Êtes-vous sûr de vouloir supprimer l'article <strong>{deleteConfirm?.nom}</strong> ?
-          </p>
-          <p style={{ color: '#6c757d', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-            Cette action est irréversible.
-          </p>
-          <div className="form-actions" style={{ marginTop: '1.5rem' }}>
-            <button
-              className="btn btn-secondary"
-              onClick={() => setDeleteConfirm(null)}
-              disabled={deleteMutation.isPending}
-            >
-              Annuler
-            </button>
-            <button
-              className="btn btn-danger"
-              onClick={handleDeleteConfirm}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
-            </button>
+        <div className="confirm-delete-body">
+          <AlertTriangle size={24} className="confirm-delete-icon" aria-hidden="true" />
+          <div>
+            <p>
+              Êtes-vous sûr de vouloir supprimer l'article{' '}
+              <strong>{deleteConfirm?.nom}</strong> ?
+            </p>
+            <p className="text-muted" style={{ marginTop: 'var(--space-1)', fontSize: 'var(--font-size-sm)' }}>
+              Cette action est irréversible.
+            </p>
           </div>
+        </div>
+        <div className="modal-footer">
+          <button
+            className="btn btn-secondary"
+            onClick={() => setDeleteConfirm(null)}
+            disabled={deleteMutation.isPending}
+            type="button"
+          >
+            Annuler
+          </button>
+          <button
+            className="btn btn-danger"
+            onClick={handleDeleteConfirm}
+            disabled={deleteMutation.isPending}
+            type="button"
+          >
+            {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
+          </button>
         </div>
       </Modal>
 
-      {/* Modal affichage code-barre */}
+      {/* Modal code-barre */}
       <Modal
         isOpen={!!barcodeArticle}
         onClose={() => setBarcodeArticle(null)}
-        title={`Code-barre - ${barcodeArticle?.nom}`}
+        title={`Code-barre — ${barcodeArticle?.nom}`}
         size="medium"
       >
         {barcodeArticle && (
-          <div style={{ textAlign: 'center', padding: '1rem' }}>
-            <div style={{ marginBottom: '1rem' }}>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                SKU : <code style={{ fontSize: '1rem', fontWeight: 'bold' }}>{barcodeArticle.sku}</code>
-              </p>
-            </div>
-
-            <div style={{
-              backgroundColor: '#fff',
-              padding: '2rem',
-              borderRadius: '8px',
-              border: '1px solid #e0e0e0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '1.5rem',
-              minWidth: '400px',
-              minHeight: '200px'
-            }}>
+          <div className="barcode-modal">
+            <p className="barcode-sku">
+              SKU : <code>{barcodeArticle.sku}</code>
+            </p>
+            <div className="barcode-container">
               {barcodeUrl ? (
                 <img
                   src={barcodeUrl}
                   alt={`Code-barre ${barcodeArticle.sku}`}
-                  style={{ maxWidth: '100%', height: 'auto' }}
+                  className="barcode-image"
                 />
               ) : (
-                <p style={{ color: 'var(--text-secondary)' }}>Chargement du code-barre...</p>
+                <div className="loading-page" style={{ minHeight: '120px' }}>
+                  <span className="spinner" role="status" aria-label="Chargement du code-barre" />
+                  <span className="text-muted">Chargement...</span>
+                </div>
               )}
             </div>
-
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <div className="barcode-actions">
               <button
-                onClick={() => handleDownloadBarcode(barcodeArticle)}
                 className="btn btn-primary"
-                style={{ gap: '0.5rem' }}
+                onClick={() => handleDownloadBarcode(barcodeArticle)}
+                type="button"
               >
-                <Download size={18} />
+                <Download size={16} aria-hidden="true" />
                 Télécharger
               </button>
               <button
-                onClick={() => setBarcodeArticle(null)}
                 className="btn btn-secondary"
+                onClick={() => setBarcodeArticle(null)}
+                type="button"
               >
                 Fermer
               </button>
             </div>
-
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '1rem' }}>
-              💡 Imprimez ce code-barre pour l'apposer sur votre article
+            <p className="barcode-hint text-muted">
+              Imprimez ce code-barre pour l'apposer sur votre article.
             </p>
           </div>
         )}

@@ -988,6 +988,189 @@
 }
 
 /* ============================================================================
+   FILTRES (barre de filtres sur les pages liste)
+   ============================================================================ */
+.filters-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.filter-item {
+  min-width: 180px;
+  flex: 1;
+}
+
+.filter-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  color: var(--color-text-primary);
+}
+
+.filter-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary-500);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+@media (max-width: 576px) {
+  .filter-item { min-width: 100%; flex: 1 1 100%; }
+}
+
+/* ============================================================================
+   TABLEAU — en-têtes triables
+   ============================================================================ */
+.th-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.sort-icon-neutral {
+  opacity: 0.35;
+}
+
+/* ============================================================================
+   ARTICLES — miniatures et cellules spécifiques
+   ============================================================================ */
+.article-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  display: block;
+}
+
+.article-thumb-placeholder {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+}
+
+.article-name-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-text-link);
+  font-weight: var(--font-weight-medium);
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+  text-align: left;
+}
+
+.article-name-link:hover {
+  color: var(--color-primary-700);
+  text-decoration-style: solid;
+}
+
+.badge-inline {
+  margin-left: var(--space-2);
+  vertical-align: middle;
+}
+
+.sku-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.sku-code {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* ============================================================================
+   MODALE CONFIRMATION SUPPRESSION
+   ============================================================================ */
+.confirm-delete-body {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  padding-bottom: var(--space-4);
+}
+
+.confirm-delete-icon {
+  color: var(--color-danger);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ============================================================================
+   MODALE CODE-BARRE
+   ============================================================================ */
+.barcode-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+}
+
+.barcode-sku {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.barcode-sku code {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.barcode-container {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  padding: var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 280px;
+  min-height: 140px;
+  width: 100%;
+}
+
+.barcode-image {
+  max-width: 100%;
+  height: auto;
+}
+
+.barcode-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
+.barcode-hint {
+  font-size: var(--font-size-xs);
+}
+
+/* ============================================================================
    UTILITAIRES DASHBOARD
    ============================================================================ */
 
