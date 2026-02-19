@@ -164,6 +164,30 @@ export const exportTags = async (format) => {
 }
 
 /**
+ * Exporte les articles sélectionnés au format CSV compatible DYMO Label Software.
+ * Le CSV contient : Nom, SKU, Code_Barres, Emplacement, Categorie
+ * Encodage UTF-8 BOM pour compatibilité DYMO Connect et Excel.
+ * @param {number[]} articleIds - Liste des IDs d'articles sélectionnés
+ * @returns {Promise<void>}
+ */
+export const exportEtiquettesDymo = async (articleIds) => {
+  const response = await api.post('/rapports/export/etiquettes-dymo', {
+    article_ids: articleIds
+  }, {
+    responseType: 'blob'
+  })
+
+  const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `etiquettes_dymo_${new Date().toISOString().split('T')[0]}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
+/**
  * Exporte les emplacements en CSV ou PDF (données, pas QR codes)
  * @param {string} format - Format d'export ('csv' ou 'pdf')
  * @returns {Promise<void>}

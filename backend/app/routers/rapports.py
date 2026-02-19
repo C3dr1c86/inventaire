@@ -412,6 +412,101 @@ def export_tags(
         )
 
 
+@router.post("/export/etiquettes-dymo")
+def export_etiquettes_dymo(
+    request: BarcodesExportRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Exporte les articles sélectionnés au format CSV compatible DYMO Label Software.
+
+    Le CSV contient les colonnes attendues par le template DYMO :
+    - Nom : Nom complet de l'article
+    - SKU : Référence article
+    - Code_Barres : Valeur pour le code-barres 1D (= SKU)
+    - Emplacement : Code de l'emplacement physique
+    - Categorie : Catégorie (parent > enfant si hiérarchique)
+
+    Encodage UTF-8 avec BOM pour compatibilité Excel et DYMO Connect.
+
+    Args:
+        request: Liste des IDs d'articles à exporter
+        db: Session de base de données
+
+    Returns:
+        Fichier CSV téléchargeable
+
+    Raises:
+        HTTPException 400: Si aucun article sélectionné
+        HTTPException 404: Si un article n'existe pas
+    """
+    import csv
+    import io
+    from sqlalchemy.orm import joinedload
+
+    if not request.article_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Aucun article sélectionné"
+        )
+
+    # Récupérer les articles avec leurs relations
+    articles = (
+        db.query(models.Article)
+        .options(
+            joinedload(models.Article.emplacement),
+            joinedload(models.Article.categorie).joinedload(models.Categorie.parent),
+        )
+        .filter(models.Article.id.in_(request.article_ids))
+        .all()
+    )
+
+    if not articles:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Aucun article trouvé pour les IDs fournis",
+        )
+
+    # Générer le CSV en mémoire
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=";", quoting=csv.QUOTE_ALL)
+
+    # En-têtes — doivent correspondre aux variables du template DYMO
+    writer.writerow(["Nom", "SKU", "Code_Barres", "Emplacement", "Categorie"])
+
+    for article in articles:
+        emplacement_code = article.emplacement.code if article.emplacement else ""
+
+        categorie_nom = ""
+        if article.categorie:
+            if article.categorie.parent:
+                categorie_nom = f"{article.categorie.parent.nom} > {article.categorie.nom}"
+            else:
+                categorie_nom = article.categorie.nom
+
+        writer.writerow([
+            article.nom,
+            article.sku or "",
+            article.sku or "",  # Code_Barres = SKU
+            emplacement_code,
+            categorie_nom,
+        ])
+
+    # UTF-8 BOM pour compatibilité Excel et DYMO Connect
+    csv_bytes = ("\ufeff" + output.getvalue()).encode("utf-8")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"etiquettes_dymo_{timestamp}.csv"
+
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Type": "text/csv; charset=utf-8",
+        },
+    )
+
+
 @router.get("/export/emplacements-{format}")
 def export_emplacements_data(
     format: str,
