@@ -71,5 +71,7 @@ docker-compose.override.yml
 
 # Backups
 backup-*.tar.gz
-.claude/
+.claude/settings.local.json
+.claude/todos.json
+.claude/projects/
 inventaire-frontend-fixed.tar
