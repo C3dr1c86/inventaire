@@ -988,6 +988,63 @@
 }
 
 /* ============================================================================
+   UTILITAIRES DASHBOARD
+   ============================================================================ */
+
+/* Pills de tags (couleur dynamique via style inline) */
+.tag-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-full);
+  color: var(--color-white);
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+/* Séparateur dans les sections de carte */
+.divider {
+  border: none;
+  border-top: 1px solid var(--color-border-light);
+  margin: var(--space-4) 0;
+}
+
+/* Liste dans l'alerte stock bas */
+.stock-alert-list {
+  margin-top: var(--space-2);
+  padding-left: var(--space-4);
+  list-style: disc;
+  font-size: var(--font-size-sm);
+}
+
+.stock-alert-list li + li {
+  margin-top: var(--space-1);
+}
+
+/* Liste de bienvenue */
+.welcome-list {
+  list-style: decimal;
+  padding-left: var(--space-6);
+  margin-top: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+.welcome-list li + li {
+  margin-top: var(--space-2);
+}
+
+/* ============================================================================
    BOTTOM NAV MOBILE
    ============================================================================ */
 .bottom-nav { display: none; }

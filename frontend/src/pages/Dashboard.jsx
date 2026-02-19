@@ -14,7 +14,18 @@ import { createCategorie } from '../services/categorieService'
 import { createTag } from '../services/tagService'
 import { createFournisseur } from '../services/fournisseurService'
 import { createEmplacement } from '../services/emplacementService'
-import { AlertTriangle, Package, Layers, ArrowRightLeft, FileText, Tag, Truck, MapPin } from 'lucide-react'
+import {
+  AlertTriangle,
+  Package,
+  Layers,
+  ArrowRightLeft,
+  FileText,
+  Tag,
+  Truck,
+  MapPin,
+  X,
+  TrendingDown,
+} from 'lucide-react'
 import Modal from '../components/common/Modal'
 import ArticleForm from '../components/articles/ArticleForm'
 import CategorieForm from '../components/categories/CategorieForm'
@@ -102,7 +113,6 @@ function Dashboard() {
       queryClient.invalidateQueries(['stock-bas'])
       setIsArticleModalOpen(false)
       toast.success('Article créé avec succès')
-      // Rafraîchir les résultats de recherche si une recherche est active
       if (searchResults) {
         searchRefetch()
       }
@@ -167,285 +177,318 @@ function Dashboard() {
     }
   })
 
+  // État de chargement
   if (statsLoading || stockBasLoading) {
     return (
-      <div>
-        <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>Dashboard</h1>
-        <div className="loader"></div>
+      <div className="loading-page">
+        <span className="spinner spinner-lg" role="status" aria-label="Chargement du tableau de bord" />
+        <span>Chargement du tableau de bord...</span>
       </div>
     )
   }
 
+  const alertesCount = stats?.nombre_articles_stock_bas || 0
+
   return (
     <div>
-      <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>Dashboard</h1>
+      {/* En-tête de page */}
+      <div className="page-header">
+        <div className="page-header-info">
+          <h1 className="page-title">Tableau de bord</h1>
+          <p className="page-subtitle">Vue d'ensemble de votre inventaire</p>
+        </div>
+      </div>
 
       {/* Barre de recherche globale */}
-      <div style={{ position: 'relative' }}>
-        <SearchBar
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Rechercher un article par nom, SKU ou description..."
-          autoFocus={false}
-        />
-        {searchResults && (
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={clearSearch}
-            style={{
-              position: 'absolute',
-              top: '1.5rem',
-              right: '1.5rem',
-              zIndex: 10
-            }}
-          >
-            Effacer
-          </button>
-        )}
-        {searchLoading && (
-          <div style={{
-            position: 'absolute',
-            top: '1.5rem',
-            right: searchResults ? '8rem' : '1.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            color: '#007bff',
-            fontWeight: 500,
-            zIndex: 10
-          }}>
-            <div className="spinner-border spinner-border-sm" role="status"></div>
-            Recherche...
+      <div className="card" style={{ marginBottom: 'var(--space-6)' }}>
+        <div className="card-body">
+          <div className="search-bar">
+            <SearchBar
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher un article par nom, SKU ou description..."
+              autoFocus={false}
+            />
+            {searchResults && (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={clearSearch}
+                aria-label="Effacer la recherche"
+              >
+                <X size={16} />
+                Effacer
+              </button>
+            )}
+            {searchLoading && (
+              <span className="spinner spinner-sm" role="status" aria-label="Recherche en cours" />
+            )}
           </div>
+        </div>
+
+        {/* Résultats de recherche */}
+        {searchResults && (
+          <>
+            <div className="card-header">
+              <h2 className="card-title">
+                Résultats ({searchResults.total || 0} article{searchResults.total > 1 ? 's' : ''})
+              </h2>
+            </div>
+            {searchResults.items && searchResults.items.length === 0 ? (
+              <div className="card-body">
+                <div className="empty-state">
+                  <Package className="empty-state-icon" aria-hidden="true" />
+                  <p className="empty-state-title">Aucun résultat</p>
+                  <p className="empty-state-description">
+                    Aucun article trouvé pour &laquo;&nbsp;{searchQuery}&nbsp;&raquo;
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Nom</th>
+                      <th>SKU</th>
+                      <th>Quantité</th>
+                      <th>Catégorie</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {searchResults.items?.map((article) => (
+                      <tr key={article.id}>
+                        <td data-label="Nom">
+                          <div>
+                            <strong>{article.nom}</strong>
+                            {article.tags && article.tags.length > 0 && (
+                              <div className="tag-pills">
+                                {article.tags.map(tag => (
+                                  <span
+                                    key={tag.id}
+                                    className="tag-pill"
+                                    style={{ backgroundColor: tag.couleur || 'var(--color-primary-500)' }}
+                                  >
+                                    {tag.nom}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td data-label="SKU">
+                          <code className="text-muted">{article.sku || '—'}</code>
+                        </td>
+                        <td data-label="Quantité">
+                          <span className={article.quantite <= article.quantite_min ? (article.quantite === 0 ? 'text-danger' : 'text-warning') : 'text-success'}>
+                            {article.quantite}
+                          </span>
+                          <span className="text-muted"> / {article.quantite_min}</span>
+                        </td>
+                        <td data-label="Catégorie">
+                          <span className="badge badge-neutral">
+                            {article.categorie?.nom || 'Sans catégorie'}
+                          </span>
+                        </td>
+                        <td data-label="Actions">
+                          <a
+                            href={`/articles?highlight=${article.id}`}
+                            className="btn btn-ghost btn-sm"
+                          >
+                            Voir
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Résultats de recherche */}
-      {searchResults && (
-        <div className="card" style={{ marginBottom: '2rem' }}>
-          <h2 className="card-header">
-            Résultats de recherche ({searchResults.total || 0} article{searchResults.total > 1 ? 's' : ''})
-          </h2>
-          {searchResults.items && searchResults.items.length === 0 ? (
-            <div className="card-body text-center">
-              <p>Aucun article trouvé pour "{searchQuery}"</p>
-            </div>
-          ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Nom</th>
-                  <th>SKU</th>
-                  <th>Quantité</th>
-                  <th>Catégorie</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {searchResults.items?.map((article) => (
-                  <tr key={article.id}>
-                    <td data-label="Nom">
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                        <strong>{article.nom}</strong>
-                        {article.tags && article.tags.length > 0 && (
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                            {article.tags.map(tag => (
-                              <span
-                                key={tag.id}
-                                style={{
-                                  display: 'inline-block',
-                                  padding: '0.125rem 0.5rem',
-                                  fontSize: '0.75rem',
-                                  borderRadius: '0.75rem',
-                                  backgroundColor: tag.couleur || '#3498db',
-                                  color: '#fff',
-                                  fontWeight: 500
-                                }}
-                              >
-                                {tag.nom}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td data-label="SKU">{article.sku || '-'}</td>
-                    <td data-label="Quantité">{article.quantite} / {article.quantite_min}</td>
-                    <td data-label="Catégorie">{article.categorie?.nom || 'Sans catégorie'}</td>
-                    <td data-label="Actions">
-                      <a
-                        href={`/articles?highlight=${article.id}`}
-                        className="btn btn-sm btn-secondary"
-                      >
-                        Voir détails
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
-
       {/* Cartes de statistiques */}
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
+      <div className="stats-grid">
         <div
           className="stat-card"
-          style={{ background: 'linear-gradient(135deg, #007bff, #0056b3)', cursor: 'pointer' }}
           onClick={() => navigate('/articles')}
+          style={{ cursor: 'pointer' }}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && navigate('/articles')}
+          aria-label={`${stats?.nombre_articles || 0} articles au total`}
         >
-          <div className="stat-value">{stats?.nombre_articles || 0}</div>
-          <div className="stat-label">
-            <Package size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
-            Articles au total
+          <div className="stat-card-icon primary" aria-hidden="true">
+            <Package size={22} />
+          </div>
+          <div className="stat-card-body">
+            <div className="stat-card-label">Articles au total</div>
+            <div className="stat-card-value">{stats?.nombre_articles || 0}</div>
           </div>
         </div>
 
         <div
           className="stat-card"
-          style={{ background: 'linear-gradient(135deg, #28a745, #1e7e34)', cursor: 'pointer' }}
           onClick={() => navigate('/categories')}
+          style={{ cursor: 'pointer' }}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && navigate('/categories')}
+          aria-label={`${stats?.nombre_categories || 0} catégories`}
         >
-          <div className="stat-value">{stats?.nombre_categories || 0}</div>
-          <div className="stat-label">
-            <Layers size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
-            Catégories
+          <div className="stat-card-icon success" aria-hidden="true">
+            <Layers size={22} />
+          </div>
+          <div className="stat-card-body">
+            <div className="stat-card-label">Catégories</div>
+            <div className="stat-card-value">{stats?.nombre_categories || 0}</div>
           </div>
         </div>
 
         <div
           className="stat-card"
-          style={{ background: 'linear-gradient(135deg, #dc3545, #bd2130)', cursor: 'pointer' }}
           onClick={() => navigate('/articles?stock_bas=true')}
+          style={{ cursor: 'pointer' }}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && navigate('/articles?stock_bas=true')}
+          aria-label={`${alertesCount} alertes stock bas`}
         >
-          <div className="stat-value">{stats?.nombre_articles_stock_bas || 0}</div>
-          <div className="stat-label">
-            <AlertTriangle size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
-            Alertes stock bas
+          <div className={`stat-card-icon ${alertesCount > 0 ? 'danger' : 'success'}`} aria-hidden="true">
+            <AlertTriangle size={22} />
+          </div>
+          <div className="stat-card-body">
+            <div className="stat-card-label">Alertes stock bas</div>
+            <div className="stat-card-value">{alertesCount}</div>
+            {alertesCount > 0 && (
+              <div className="stat-card-trend down">
+                <TrendingDown size={12} aria-hidden="true" />
+                Action requise
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Alerte de stock bas */}
       {stockBas && stockBas.articles && stockBas.articles.length > 0 && (
-        <div className="alert alert-warning">
-          <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <AlertTriangle size={20} />
-            Attention : {stockBas.total} article(s) en stock bas
-          </h3>
-          <ul style={{ marginLeft: '1.5rem' }}>
-            {stockBas.articles.slice(0, 5).map(article => (
-              <li key={article.id}>
-                <strong>{article.nom}</strong> - Stock actuel: {article.quantite}, Minimum: {article.quantite_min}
-              </li>
-            ))}
-          </ul>
-          {stockBas.total > 5 && (
-            <p style={{ marginTop: '1rem', fontStyle: 'italic' }}>
-              ... et {stockBas.total - 5} autre(s) article(s)
-            </p>
-          )}
+        <div className="alert alert-warning" style={{ marginBottom: 'var(--space-6)' }}>
+          <AlertTriangle size={18} aria-hidden="true" />
+          <div>
+            <strong>{stockBas.total} article(s) en stock bas</strong>
+            <ul className="stock-alert-list">
+              {stockBas.articles.slice(0, 5).map(article => (
+                <li key={article.id}>
+                  <strong>{article.nom}</strong>
+                  {' — '}stock actuel&nbsp;: {article.quantite}, minimum&nbsp;: {article.quantite_min}
+                </li>
+              ))}
+            </ul>
+            {stockBas.total > 5 && (
+              <p className="text-muted" style={{ marginTop: 'var(--space-2)', fontStyle: 'italic' }}>
+                … et {stockBas.total - 5} autre(s)
+              </p>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Liens rapides */}
-      <div className="card">
-        <h2 className="card-header">Actions rapides</h2>
+      {/* Actions rapides */}
+      <div className="card" style={{ marginBottom: 'var(--space-6)' }}>
+        <div className="card-header">
+          <h2 className="card-title">Actions rapides</h2>
+        </div>
         <div className="card-body">
-          {/* Boutons de création rapide */}
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+          {/* Boutons de création */}
+          <div className="page-actions" style={{ flexWrap: 'wrap', marginBottom: 'var(--space-4)' }}>
             {canCreate('articles') && (
               <button
-                className="btn"
+                className="btn btn-primary"
                 onClick={() => setIsArticleModalOpen(true)}
-                style={{ backgroundColor: '#007bff', color: '#fff', border: 'none' }}
               >
-                <Package size={18} />
+                <Package size={16} aria-hidden="true" />
                 Créer un article
               </button>
             )}
             {canCreate('categories') && (
               <button
-                className="btn"
+                className="btn btn-success"
                 onClick={() => setIsCategorieModalOpen(true)}
-                style={{ backgroundColor: '#28a745', color: '#fff', border: 'none' }}
               >
-                <Layers size={18} />
+                <Layers size={16} aria-hidden="true" />
                 Créer une catégorie
               </button>
             )}
             {canCreate('tags') && (
               <button
-                className="btn"
+                className="btn btn-warning"
                 onClick={() => setIsTagModalOpen(true)}
-                style={{ backgroundColor: '#fd7e14', color: '#fff', border: 'none' }}
               >
-                <Tag size={18} />
+                <Tag size={16} aria-hidden="true" />
                 Créer un tag
               </button>
             )}
             {canCreate('fournisseurs') && (
               <button
-                className="btn"
+                className="btn btn-secondary"
                 onClick={() => setIsFournisseurModalOpen(true)}
-                style={{ backgroundColor: '#6f42c1', color: '#fff', border: 'none' }}
               >
-                <Truck size={18} />
+                <Truck size={16} aria-hidden="true" />
                 Créer un fournisseur
               </button>
             )}
             {canCreate('emplacements') && (
               <button
-                className="btn"
+                className="btn btn-secondary"
                 onClick={() => setIsEmplacementModalOpen(true)}
-                style={{ backgroundColor: '#17a2b8', color: '#fff', border: 'none' }}
               >
-                <MapPin size={18} />
+                <MapPin size={16} aria-hidden="true" />
                 Créer un emplacement
               </button>
             )}
           </div>
 
-          {/* Séparateur */}
-          <hr style={{ margin: '1rem 0', border: 'none', borderTop: '1px solid #dee2e6' }} />
+          <hr className="divider" />
 
-          {/* Liens vers les pages */}
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <a href="/articles" className="btn btn-secondary">
-              <Package size={18} />
+          {/* Liens de navigation */}
+          <div className="page-actions" style={{ flexWrap: 'wrap' }}>
+            <a href="/articles" className="btn btn-ghost">
+              <Package size={16} aria-hidden="true" />
               Gérer les articles
             </a>
-            <a href="/mouvements" className="btn btn-secondary">
-              <ArrowRightLeft size={18} />
+            <a href="/mouvements" className="btn btn-ghost">
+              <ArrowRightLeft size={16} aria-hidden="true" />
               Enregistrer un mouvement
             </a>
-            <a href="/rapports" className="btn btn-secondary">
-              <FileText size={18} />
+            <a href="/rapports" className="btn btn-ghost">
+              <FileText size={16} aria-hidden="true" />
               Voir les rapports
             </a>
           </div>
         </div>
       </div>
 
-      {/* Message de bienvenue si pas de données */}
+      {/* Message de bienvenue si inventaire vide */}
       {stats && stats.nombre_articles === 0 && (
-        <div className="card" style={{ marginTop: '2rem' }}>
-          <h2 className="card-header">Bienvenue !</h2>
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">Bienvenue !</h2>
+          </div>
           <div className="card-body">
             <p>Votre inventaire est vide pour le moment. Commencez par :</p>
-            <ol style={{ marginLeft: '1.5rem', marginTop: '1rem' }}>
+            <ol className="welcome-list">
               <li>Créer des catégories pour organiser vos articles</li>
               <li>Ajouter vos premiers articles</li>
-              <li>Enregistrer des mouvements de stock (entrées/sorties)</li>
+              <li>Enregistrer des mouvements de stock (entrées / sorties)</li>
               <li>Consulter les rapports et exporter vos données</li>
             </ol>
           </div>
         </div>
       )}
 
-      {/* Modal de création d'article */}
+      {/* Modals */}
       <Modal
         isOpen={isArticleModalOpen}
         onClose={() => setIsArticleModalOpen(false)}
@@ -460,7 +503,6 @@ function Dashboard() {
         />
       </Modal>
 
-      {/* Modal de création de catégorie */}
       <Modal
         isOpen={isCategorieModalOpen}
         onClose={() => setIsCategorieModalOpen(false)}
@@ -475,7 +517,6 @@ function Dashboard() {
         />
       </Modal>
 
-      {/* Modal de création de tag */}
       <Modal
         isOpen={isTagModalOpen}
         onClose={() => setIsTagModalOpen(false)}
@@ -490,7 +531,6 @@ function Dashboard() {
         />
       </Modal>
 
-      {/* Modal de création de fournisseur */}
       <Modal
         isOpen={isFournisseurModalOpen}
         onClose={() => setIsFournisseurModalOpen(false)}
@@ -505,7 +545,6 @@ function Dashboard() {
         />
       </Modal>
 
-      {/* Modal de création d'emplacement */}
       <Modal
         isOpen={isEmplacementModalOpen}
         onClose={() => setIsEmplacementModalOpen(false)}
