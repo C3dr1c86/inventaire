@@ -169,33 +169,30 @@ function Categories() {
                 {categoriesTree?.map((categorie) => (
                   <React.Fragment key={categorie.id}>
                     {/* Catégorie racine */}
-                    <tr style={{ fontWeight: 'bold', backgroundColor: '#f8f9fa' }}>
-                      <td>
-                        📁 {categorie.nom}
+                    <tr className="categorie-racine-row">
+                      <td data-label="Nom">
+                        📁 <strong>{categorie.nom}</strong>
                         {categorie.children?.length > 0 && (
-                          <span style={{ fontSize: '0.75rem', color: '#6c757d', marginLeft: '0.5rem' }}>
+                          <span className="categorie-count">
                             ({categorie.children.length} sous-catégorie{categorie.children.length > 1 ? 's' : ''})
                           </span>
                         )}
                       </td>
-                      <td>
+                      <td data-label="Description">
                         {categorie.description || (
-                          <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                            Aucune description
-                          </span>
+                          <span className="text-muted-italic">Aucune description</span>
                         )}
                       </td>
-                      <td>
+                      <td data-label="Créée le">
                         {new Date(categorie.created_at).toLocaleDateString('fr-FR')}
                       </td>
-                      <td>
+                      <td data-label="Actions">
                         <div className="action-buttons">
                           {canUpdate('categories') && (
                             <button
                               onClick={() => handleEdit(categorie)}
                               className="btn btn-sm btn-secondary"
                               title="Modifier la catégorie"
-                              aria-label="Modifier la catégorie"
                             >
                               <Edit2 size={14} />
                             </button>
@@ -205,7 +202,6 @@ function Categories() {
                               onClick={() => handleDelete(categorie)}
                               className="btn btn-sm btn-danger"
                               title="Supprimer la catégorie"
-                              aria-label="Supprimer la catégorie"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -216,28 +212,25 @@ function Categories() {
 
                     {/* Sous-catégories (indentées) */}
                     {categorie.children?.map((sousCategorie) => (
-                      <tr key={sousCategorie.id} style={{ backgroundColor: '#fff' }}>
-                        <td style={{ paddingLeft: '2rem' }}>
+                      <tr key={sousCategorie.id} className="categorie-enfant-row">
+                        <td data-label="Nom" className="categorie-enfant-nom">
                           ↳ {sousCategorie.nom}
                         </td>
-                        <td>
+                        <td data-label="Description">
                           {sousCategorie.description || (
-                            <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                              Aucune description
-                            </span>
+                            <span className="text-muted-italic">Aucune description</span>
                           )}
                         </td>
-                        <td>
+                        <td data-label="Créée le">
                           {new Date(sousCategorie.created_at).toLocaleDateString('fr-FR')}
                         </td>
-                        <td>
+                        <td data-label="Actions">
                           <div className="action-buttons">
                             {canUpdate('categories') && (
                               <button
                                 onClick={() => handleEdit(sousCategorie)}
                                 className="btn btn-sm btn-secondary"
                                 title="Modifier la sous-catégorie"
-                                aria-label="Modifier la sous-catégorie"
                               >
                                 <Edit2 size={14} />
                               </button>
@@ -247,7 +240,6 @@ function Categories() {
                                 onClick={() => handleDelete(sousCategorie)}
                                 className="btn btn-sm btn-danger"
                                 title="Supprimer la sous-catégorie"
-                                aria-label="Supprimer la sous-catégorie"
                               >
                                 <Trash2 size={14} />
                               </button>

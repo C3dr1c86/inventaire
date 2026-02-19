@@ -1057,6 +1057,116 @@ body {
 }
 
 /* ============================================================================
+   UTILITAIRES GLOBAUX
+   ============================================================================ */
+
+/* Boutons d'action en ligne (tableau) */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+/* Texte muted italique */
+.text-muted-italic {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Page layout */
+.page-container {
+  width: 100%;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-xl);
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.page-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-lg);
+  color: var(--text-secondary);
+}
+
+.empty-state svg {
+  opacity: 0.3;
+  margin-bottom: var(--spacing-lg);
+}
+
+.empty-state h2 {
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.empty-state p {
+  margin-bottom: var(--spacing-lg);
+}
+
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+}
+
+/* ============================================================================
+   CATÉGORIES - LIGNES HIÉRARCHIQUES
+   ============================================================================ */
+
+.categorie-racine-row {
+  background-color: var(--bg-light);
+  font-weight: 600;
+}
+
+.categorie-enfant-row {
+  background-color: var(--bg-white);
+}
+
+.categorie-enfant-nom {
+  padding-left: 2rem !important;
+}
+
+.categorie-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+  margin-left: 0.5rem;
+}
+
+[data-theme="dark"] .categorie-racine-row {
+  background-color: var(--bg-light);
+}
+
+[data-theme="dark"] .categorie-enfant-row {
+  background-color: var(--bg-white);
+}
+
+/* ============================================================================
    MODE SOMBRE
    ============================================================================ */
 
