@@ -480,17 +480,21 @@ def export_etiquettes_dymo(
         categorie_nom = ""
         if article.categorie:
             if article.categorie.parent:
-                categorie_nom = f"{article.categorie.parent.nom} > {article.categorie.nom}"
+                categorie_nom = (
+                    f"{article.categorie.parent.nom} > {article.categorie.nom}"
+                )
             else:
                 categorie_nom = article.categorie.nom
 
-        writer.writerow([
-            article.nom,
-            article.sku or "",
-            article.sku or "",  # Code_Barres = SKU
-            emplacement_code,
-            categorie_nom,
-        ])
+        writer.writerow(
+            [
+                article.nom,
+                article.sku or "",
+                article.sku or "",  # Code_Barres = SKU
+                emplacement_code,
+                categorie_nom,
+            ]
+        )
 
     # UTF-8 BOM pour compatibilité Excel et DYMO Connect
     csv_bytes = ("\ufeff" + output.getvalue()).encode("utf-8")
