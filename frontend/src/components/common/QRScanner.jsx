@@ -1,6 +1,10 @@
 /**
  * Composant de scan de QR code
  * Utilise html5-qrcode pour scanner les QR codes avec la caméra
+ *
+ * Correction v2.0.1 : le div #qr-reader doit être visible (display != none)
+ * avant d'appeler Html5Qrcode.start(). On utilise un useEffect déclenché
+ * par isScanning=true (après le rendu) pour lancer la caméra.
  */
 
 import { useEffect, useRef, useState } from 'react'
@@ -12,8 +16,11 @@ const QRScanner = ({ onScan, onError, onClose }) => {
   const [isScanning, setIsScanning] = useState(false)
   const [cameras, setCameras] = useState([])
   const [selectedCamera, setSelectedCamera] = useState(null)
-  const scannerRef = useRef(null)
-  const html5QrCodeRef = useRef(null)
+  // Callbacks stables via ref pour éviter les dépendances cycliques dans useEffect
+  const onScanRef = useRef(onScan)
+  const onErrorRef = useRef(onError)
+  useEffect(() => { onScanRef.current = onScan }, [onScan])
+  useEffect(() => { onErrorRef.current = onError }, [onError])
 
   // Récupérer la liste des caméras disponibles
   useEffect(() => {
@@ -21,78 +28,70 @@ const QRScanner = ({ onScan, onError, onClose }) => {
       .then((devices) => {
         if (devices && devices.length) {
           setCameras(devices)
-          // Sélectionner la caméra arrière par défaut (ou la première)
+          // Préférer la caméra arrière (mots-clés multi-langues)
           const backCamera = devices.find(device =>
             device.label.toLowerCase().includes('back') ||
-            device.label.toLowerCase().includes('arrière')
+            device.label.toLowerCase().includes('arrière') ||
+            device.label.toLowerCase().includes('rear') ||
+            device.label.toLowerCase().includes('environment')
           )
           setSelectedCamera(backCamera?.id || devices[0].id)
         } else {
-          onError?.('Aucune caméra détectée')
+          onErrorRef.current?.('Aucune caméra détectée')
         }
       })
       .catch((err) => {
         console.error('Erreur lors de la détection des caméras:', err)
-        onError?.('Impossible d\'accéder aux caméras')
+        onErrorRef.current?.('Impossible d\'accéder aux caméras')
       })
-  }, [onError])
+  }, [])
 
-  // Démarrer le scan
-  const startScanning = async () => {
+  // Démarrer la caméra APRÈS que le div #qr-reader soit visible dans le DOM.
+  // Ce useEffect s'exécute après chaque rendu où isScanning passe à true,
+  // ce qui garantit que display:block est appliqué avant Html5Qrcode.start().
+  useEffect(() => {
+    if (!isScanning || !selectedCamera) return
+
+    let cancelled = false
+    const scanner = new Html5Qrcode('qr-reader')
+
+    scanner.start(
+      selectedCamera,
+      { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+      (decodedText) => {
+        if (cancelled) return
+        scanner.stop().catch(() => {})
+        setIsScanning(false)
+        onScanRef.current(decodedText)
+      },
+      () => {
+        // Erreur de frame normale (pas encore de QR code dans le champ)
+        // On ne remonte pas ces erreurs pour éviter de polluer l'UI
+      }
+    ).catch((err) => {
+      if (cancelled) return
+      console.error('Erreur lors du démarrage du scan:', err)
+      setIsScanning(false)
+      onErrorRef.current?.('Impossible de démarrer la caméra. Vérifiez que l\'application est en HTTPS.')
+    })
+
+    return () => {
+      cancelled = true
+      scanner.stop().catch(() => {})
+    }
+  }, [isScanning, selectedCamera])
+
+  const handleStartScan = () => {
     if (!selectedCamera) {
-      onError?.('Veuillez sélectionner une caméra')
+      onErrorRef.current?.('Veuillez sélectionner une caméra')
       return
     }
-
-    try {
-      html5QrCodeRef.current = new Html5Qrcode('qr-reader')
-
-      const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0
-      }
-
-      await html5QrCodeRef.current.start(
-        selectedCamera,
-        config,
-        (decodedText) => {
-          // QR code scanné avec succès
-          stopScanning()
-          onScan(decodedText)
-        },
-        () => {
-          // Erreur de scan (normale pendant le scan)
-          // On ne fait rien ici pour éviter de polluer la console
-        }
-      )
-
-      setIsScanning(true)
-    } catch (err) {
-      console.error('Erreur lors du démarrage du scan:', err)
-      onError?.('Impossible de démarrer la caméra')
-    }
+    setIsScanning(true) // → re-rendu → div visible → useEffect démarre la caméra
   }
 
-  // Arrêter le scan
-  const stopScanning = async () => {
-    if (html5QrCodeRef.current && isScanning) {
-      try {
-        await html5QrCodeRef.current.stop()
-        html5QrCodeRef.current.clear()
-        setIsScanning(false)
-      } catch (err) {
-        console.error('Erreur lors de l\'arrêt du scan:', err)
-      }
-    }
+  const handleStopScan = () => {
+    setIsScanning(false) // → useEffect cleanup arrête la caméra
   }
-
-  // Cleanup à la fermeture
-  useEffect(() => {
-    return () => {
-      stopScanning()
-    }
-  }, [])
 
   return (
     <div className="qr-scanner-container">
@@ -104,7 +103,7 @@ const QRScanner = ({ onScan, onError, onClose }) => {
         <button
           className="btn-close"
           onClick={() => {
-            stopScanning()
+            setIsScanning(false)
             onClose?.()
           }}
           title="Fermer"
@@ -136,7 +135,7 @@ const QRScanner = ({ onScan, onError, onClose }) => {
 
             <button
               className="btn btn-primary btn-lg"
-              onClick={startScanning}
+              onClick={handleStartScan}
               disabled={!selectedCamera}
             >
               <Camera size={20} />
@@ -144,15 +143,14 @@ const QRScanner = ({ onScan, onError, onClose }) => {
             </button>
 
             <p className="qr-scanner-instructions">
-              Positionnez le QR code d'un emplacement devant la caméra pour scanner.
-              La liste des articles de cet emplacement s'affichera automatiquement.
+              Positionnez le QR code devant la caméra pour scanner automatiquement.
             </p>
           </div>
         )}
 
+        {/* Ce div doit toujours être dans le DOM — la classe contrôle la visibilité */}
         <div
           id="qr-reader"
-          ref={scannerRef}
           className={isScanning ? 'qr-scanner-active' : 'qr-scanner-inactive'}
         />
 
@@ -160,7 +158,7 @@ const QRScanner = ({ onScan, onError, onClose }) => {
           <div className="qr-scanner-actions">
             <button
               className="btn btn-danger"
-              onClick={stopScanning}
+              onClick={handleStopScan}
             >
               <X size={20} />
               Arrêter le scan

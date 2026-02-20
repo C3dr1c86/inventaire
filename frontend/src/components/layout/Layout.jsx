@@ -82,7 +82,7 @@ function Layout({ children }) {
 
   // Navigation items avec permissions requises
   const navItems = [
-    { path: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard',    color: '#3b82f6' },
+    { path: '/dashboard',    icon: LayoutDashboard, label: 'Tableau de bord', color: '#3b82f6' },
     { path: '/articles',     icon: Package,         label: 'Articles',     color: '#3b82f6', permission: { resource: 'articles',     action: 'read' } },
     { path: '/categories',   icon: Layers,          label: 'Catégories',   color: '#28a745', permission: { resource: 'categories',   action: 'read' } },
     { path: '/emplacements', icon: MapPin,          label: 'Emplacements', color: '#17a2b8', permission: { resource: 'emplacements', action: 'read' } },
@@ -131,7 +131,7 @@ function Layout({ children }) {
           <div className="sidebar-logo-icon" aria-hidden="true">
             <Warehouse size={20} />
           </div>
-          <span className="sidebar-logo-text">Inventaire</span>
+          <span className="sidebar-logo-text">Gestion de stock</span>
         </div>
 
         {/* Navigation */}
