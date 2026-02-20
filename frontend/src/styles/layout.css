@@ -314,6 +314,8 @@
    MAIN CONTENT
    ============================================================================ */
 .main-content-wrapper {
+  flex: 1;
+  min-width: 0;
   margin-left: var(--sidebar-width);
   margin-top: var(--header-height);
   min-height: calc(100vh - var(--header-height));

@@ -220,7 +220,7 @@ function Layout({ children }) {
 
           {/* Version */}
           <div className="sidebar-version">
-            v1.9.16 · © 2026
+            v2.0.0 · © 2026
           </div>
         </div>
       </aside>
