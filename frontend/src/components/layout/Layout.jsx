@@ -82,17 +82,17 @@ function Layout({ children }) {
 
   // Navigation items avec permissions requises
   const navItems = [
-    { path: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/articles',   icon: Package,         label: 'Articles',     permission: { resource: 'articles',     action: 'read' } },
-    { path: '/categories', icon: Layers,          label: 'Catégories',   permission: { resource: 'categories',   action: 'read' } },
-    { path: '/emplacements', icon: MapPin,         label: 'Emplacements', permission: { resource: 'emplacements', action: 'read' } },
-    { path: '/scan-qrcode',  icon: ScanLine,       label: 'Scanner QR' },
-    { path: '/tags',         icon: Tag,            label: 'Tags',         permission: { resource: 'tags',         action: 'read' } },
-    { path: '/fournisseurs', icon: Truck,          label: 'Fournisseurs', permission: { resource: 'fournisseurs', action: 'read' } },
-    { path: '/commandes',    icon: ShoppingCart,   label: 'Commandes',    permission: { resource: 'commandes',    action: 'read' } },
-    { path: '/mouvements',   icon: ArrowRightLeft, label: 'Mouvements',   permission: { resource: 'mouvements',   action: 'read' } },
-    { path: '/rapports',     icon: FileText,       label: 'Rapports',     permission: { resource: 'rapports',     action: 'read' } },
-    { path: '/users',        icon: Users,          label: 'Utilisateurs', permission: { resource: 'users',        action: 'read' } },
+    { path: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard',    color: '#3b82f6' },
+    { path: '/articles',     icon: Package,         label: 'Articles',     color: '#3b82f6', permission: { resource: 'articles',     action: 'read' } },
+    { path: '/categories',   icon: Layers,          label: 'Catégories',   color: '#28a745', permission: { resource: 'categories',   action: 'read' } },
+    { path: '/emplacements', icon: MapPin,          label: 'Emplacements', color: '#17a2b8', permission: { resource: 'emplacements', action: 'read' } },
+    { path: '/scan-qrcode',  icon: ScanLine,        label: 'Scanner QR',   color: '#6366f1' },
+    { path: '/tags',         icon: Tag,             label: 'Tags',         color: '#f59e0b', permission: { resource: 'tags',         action: 'read' } },
+    { path: '/fournisseurs', icon: Truck,           label: 'Fournisseurs', color: '#8b5cf6', permission: { resource: 'fournisseurs', action: 'read' } },
+    { path: '/commandes',    icon: ShoppingCart,    label: 'Commandes',    color: '#f97316', permission: { resource: 'commandes',    action: 'read' } },
+    { path: '/mouvements',   icon: ArrowRightLeft,  label: 'Mouvements',   color: '#14b8a6', permission: { resource: 'mouvements',   action: 'read' } },
+    { path: '/rapports',     icon: FileText,        label: 'Rapports',     color: '#ef4444', permission: { resource: 'rapports',     action: 'read' } },
+    { path: '/users',        icon: Users,           label: 'Utilisateurs', color: '#6366f1', permission: { resource: 'users',        action: 'read' } },
   ]
 
   // Filtrer selon les permissions
@@ -149,7 +149,7 @@ function Layout({ children }) {
                   title={collapsed ? item.label : undefined}
                 >
                   <span className="sidebar-item-icon" aria-hidden="true">
-                    <Icon size={18} />
+                    <Icon size={18} style={item.color && !isActive(item.path) ? { color: item.color } : undefined} />
                   </span>
                   <span className="sidebar-item-label">{item.label}</span>
                 </Link>
@@ -284,7 +284,7 @@ function Layout({ children }) {
               className={`bottom-nav-item ${isActive(item.path) ? 'active' : ''}`}
               aria-label={item.label}
             >
-              <Icon size={22} aria-hidden="true" />
+              <Icon size={22} aria-hidden="true" style={item.color && !isActive(item.path) ? { color: item.color } : undefined} />
               <span>{item.label}</span>
             </Link>
           )

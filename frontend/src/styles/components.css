@@ -1389,6 +1389,30 @@
   color: white;
 }
 
+.btn-info {
+  background: var(--color-info);
+  color: white;
+  border: 1px solid var(--color-info-dark);
+}
+
+.btn-info:hover {
+  background: var(--color-info-dark);
+  color: white;
+  box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+}
+
+.btn-orange {
+  background: #f97316;
+  color: white;
+  border: 1px solid #ea6c0a;
+}
+
+.btn-orange:hover {
+  background: #ea6c0a;
+  color: white;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
 /* ============================================================================
    PROGRESS — Indicateur de remplissage
    ============================================================================ */

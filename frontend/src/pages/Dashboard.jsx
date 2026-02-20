@@ -432,7 +432,7 @@ function Dashboard() {
             )}
             {canCreate('fournisseurs') && (
               <button
-                className="btn btn-secondary"
+                className="btn btn-purple"
                 onClick={() => setIsFournisseurModalOpen(true)}
               >
                 <Truck size={16} aria-hidden="true" />
@@ -441,7 +441,7 @@ function Dashboard() {
             )}
             {canCreate('emplacements') && (
               <button
-                className="btn btn-secondary"
+                className="btn btn-info"
                 onClick={() => setIsEmplacementModalOpen(true)}
               >
                 <MapPin size={16} aria-hidden="true" />
