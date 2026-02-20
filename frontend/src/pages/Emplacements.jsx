@@ -154,6 +154,72 @@ function Emplacements() {
     }
   }
 
+  const handleExportCSV = () => {
+    if (!emplacementsTree || emplacementsTree.length === 0) {
+      toast.warning('Aucun emplacement à exporter')
+      return
+    }
+
+    const escapeCSV = (value) => {
+      if (value === null || value === undefined) return ''
+      const str = String(value)
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`
+      }
+      return str
+    }
+
+    const rows = [['Code', 'Description', 'Niveau', 'Parent', 'Capacité max', 'Quantité utilisée', '% remplissage']]
+
+    emplacementsTree.forEach((zone) => {
+      rows.push([
+        escapeCSV(zone.code),
+        escapeCSV(zone.description),
+        'Zone',
+        '',
+        escapeCSV(zone.capacite_max ?? ''),
+        escapeCSV(zone.quantite_utilisee ?? 0),
+        zone.capacite_max ? escapeCSV(zone.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité'
+      ])
+
+      zone.children?.forEach((etagere) => {
+        rows.push([
+          escapeCSV(etagere.code),
+          escapeCSV(etagere.description),
+          'Étagère',
+          escapeCSV(zone.code),
+          escapeCSV(etagere.capacite_max ?? ''),
+          escapeCSV(etagere.quantite_utilisee ?? 0),
+          etagere.capacite_max ? escapeCSV(etagere.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité'
+        ])
+
+        etagere.children?.forEach((boite) => {
+          rows.push([
+            escapeCSV(boite.code),
+            escapeCSV(boite.description),
+            'Boîte',
+            escapeCSV(etagere.code),
+            escapeCSV(boite.capacite_max ?? ''),
+            escapeCSV(boite.quantite_utilisee ?? 0),
+            boite.capacite_max ? escapeCSV(boite.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité'
+          ])
+        })
+      })
+    })
+
+    const csvContent = '\uFEFF' + rows.map(row => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `emplacements_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    toast.success('Export CSV téléchargé')
+  }
+
   // Rendu de l'indicateur de remplissage
   const renderIndicateurRemplissage = (emplacement) => {
     if (emplacement.capacite_max === null || emplacement.capacite_max === 0) {
@@ -201,6 +267,15 @@ function Emplacements() {
           </p>
         </div>
         <div className="page-actions">
+          <button
+            onClick={handleExportCSV}
+            className="btn btn-secondary"
+            title="Exporter les emplacements en CSV"
+            disabled={!emplacementsTree || emplacementsTree.length === 0}
+          >
+            <Download size={20} />
+            Exporter CSV
+          </button>
           <button
             onClick={() => navigate('/plan-atelier')}
             className="btn btn-secondary"

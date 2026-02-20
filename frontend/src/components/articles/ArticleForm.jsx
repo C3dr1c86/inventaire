@@ -191,76 +191,62 @@ function ArticleForm({ article, onSubmit, onCancel, isSubmitting }) {
 
   // === TRIPLE SELECT EMPLACEMENTS ===
 
-  // Charger les étagères d'une zone
+  // Charger les étagères d'une zone (ne modifie pas emplacement_id)
   const loadEtageres = async (zoneId) => {
     if (!zoneId) {
       setEtageres([])
       return
     }
-
     try {
       const data = await getSousEmplacements(zoneId)
       setEtageres(data)
-
-      // Si aucune étagère, utiliser la zone comme emplacement
-      if (!data || data.length === 0) {
-        setFormData(prev => ({ ...prev, emplacement_id: parseInt(zoneId) }))
-      }
     } catch (error) {
       console.error('Erreur chargement étagères:', error)
       setEtageres([])
-      setFormData(prev => ({ ...prev, emplacement_id: parseInt(zoneId) }))
     }
   }
 
-  // Charger les boîtes d'une étagère
+  // Charger les boîtes d'une étagère (ne modifie pas emplacement_id)
   const loadBoites = async (etagereId) => {
     if (!etagereId) {
       setBoites([])
       return
     }
-
     try {
       const data = await getSousEmplacements(etagereId)
       setBoites(data)
-
-      // Si aucune boîte, utiliser l'étagère comme emplacement
-      if (!data || data.length === 0) {
-        setFormData(prev => ({ ...prev, emplacement_id: parseInt(etagereId) }))
-      }
     } catch (error) {
       console.error('Erreur chargement boîtes:', error)
       setBoites([])
-      setFormData(prev => ({ ...prev, emplacement_id: parseInt(etagereId) }))
     }
   }
 
-  // Gérer changement de zone
+  // Gérer changement de zone — la zone elle-même devient immédiatement l'emplacement
   const handleZoneChange = (e) => {
     const selectedZoneId = e.target.value
     setZoneId(selectedZoneId)
     setEtagereId('')
     setBoites([])
-
+    setEtageres([])
+    // La zone est l'emplacement par défaut dès la sélection
+    setFormData(prev => ({ ...prev, emplacement_id: selectedZoneId ? parseInt(selectedZoneId) : null }))
     if (selectedZoneId) {
       loadEtageres(selectedZoneId)
-    } else {
-      setEtageres([])
-      setFormData(prev => ({ ...prev, emplacement_id: null }))
     }
   }
 
-  // Gérer changement d'étagère
+  // Gérer changement d'étagère — l'étagère override la zone
   const handleEtagereChange = (e) => {
     const selectedEtagereId = e.target.value
     setEtagereId(selectedEtagereId)
-
+    setBoites([])
+    // L'étagère devient l'emplacement ; si désélectionnée, revenir à la zone
+    setFormData(prev => ({
+      ...prev,
+      emplacement_id: selectedEtagereId ? parseInt(selectedEtagereId) : (zoneId ? parseInt(zoneId) : null)
+    }))
     if (selectedEtagereId) {
       loadBoites(selectedEtagereId)
-    } else {
-      setBoites([])
-      // Revenir à la zone si aucune étagère choisie
-      setFormData(prev => ({ ...prev, emplacement_id: zoneId ? parseInt(zoneId) : null }))
     }
   }
 

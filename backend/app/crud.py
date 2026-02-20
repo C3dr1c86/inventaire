@@ -468,13 +468,15 @@ def get_articles(
             models.Fournisseur.id == fournisseur_id
         )
 
-    # Filtre par emplacement
+    # Filtre par emplacement (inclut les sous-emplacements récursivement)
     if emplacement_id:
         if emplacement_id == "null":
             # Filtre articles sans emplacement
             query = query.filter(models.Article.emplacement_id.is_(None))
         else:
-            query = query.filter(models.Article.emplacement_id == emplacement_id)
+            # Récupérer l'emplacement + tous ses descendants
+            all_ids = _get_all_children_emplacement_ids(db, emplacement_id)
+            query = query.filter(models.Article.emplacement_id.in_(all_ids))
 
     # Filtre stock bas
     if stock_bas:
