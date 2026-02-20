@@ -1,6 +1,6 @@
 {
   "name": "inventaire-frontend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Interface web pour l'application de gestion d'inventaire",
   "type": "module",
   "scripts": {
@@ -16,12 +16,15 @@
     "@tanstack/react-query": "^5.17.19",
     "axios": "^1.6.5",
     "date-fns": "^3.0.6",
+    "dexie": "^4.3.0",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.309.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.1",
-    "react-toastify": "^11.0.5"
+    "react-toastify": "^11.0.5",
+    "vite-plugin-pwa": "^1.2.0",
+    "workbox-window": "^7.4.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.5",

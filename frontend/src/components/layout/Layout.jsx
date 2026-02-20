@@ -6,6 +6,7 @@
  */
 
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import SyncButton from '../common/SyncButton'
 import {
   LayoutDashboard,
   Package,
@@ -173,6 +174,9 @@ function Layout({ children }) {
               )}
             </div>
           </div>
+
+          {/* Synchronisation hors-ligne */}
+          <SyncButton />
 
           {/* Toggle thème */}
           <button

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Ce fichier fournit des conseils à Claude Code (claude.ai/code) lors du travail sur le code de ce dépôt.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Vue d'ensemble du projet
 
@@ -8,8 +8,8 @@ Application full-stack de gestion d'inventaire avec :
 - **Backend** : FastAPI + SQLAlchemy + SQLite (100% complet)
 - **Frontend** : React 18 + Vite + React Query (100% complet)
 - **Langue** : Français (commentaires de code, UI, documentation)
-- **Version actuelle** : v1.9.16 (Correctifs UX mobile + dark mode + suppression mouvements)
-- **Prochaine version** : v1.7.0 (Dashboard Analytique Avancé) - Voir [docs/ROADMAP.md](docs/ROADMAP.md)
+- **Version actuelle** : v2.0.0 (PWA — mode hors-ligne, installation mobile, file d'attente offline)
+- **Roadmap** : Voir [docs/ROADMAP.md](docs/ROADMAP.md)
 
 ## Commandes de développement
 
@@ -28,9 +28,15 @@ cd backend
 venv\Scripts\activate
 uvicorn app.main:app --reload  # Démarre sur http://localhost:8000
 
-# Exécuter les tests
+# Exécuter les tests (génère rapport HTML dans backend/htmlcov/)
 cd backend
 pytest
+
+# Exécuter un seul fichier de test
+pytest tests/test_crud_articles.py -v
+
+# Exécuter un seul test
+pytest tests/test_crud_articles.py::test_create_article -v
 
 # Voir la documentation de l'API
 # Après démarrage : http://localhost:8000/docs (Swagger UI)
@@ -52,6 +58,18 @@ npm run build
 
 # Linter le code
 npm run lint
+
+# Exécuter les tests (Vitest)
+npm run test
+
+# Exécuter les tests avec interface graphique
+npm run test:ui
+
+# Rapport de couverture
+npm run test:coverage
+
+# Exécuter un seul fichier de test
+npx vitest run src/test/pages/Articles.test.jsx
 ```
 
 ## Workflow Git et CI/CD
@@ -158,19 +176,27 @@ SECRET_KEY=<généré avec openssl rand -hex 32>
 backend/app/
 ├── main.py           # App FastAPI, config CORS, enregistrement des routers
 ├── database.py       # Moteur SQLAlchemy, gestion sessions, init_db()
-├── models.py         # Modèles ORM SQLAlchemy (User, Categorie, Article, Mouvement, Tag)
+├── models.py         # Modèles ORM SQLAlchemy (User, Categorie, Article, Mouvement, Tag, Fournisseur, Emplacement, Commande)
 ├── schemas.py        # Schémas Pydantic pour validation et sérialisation
 ├── crud.py           # Opérations CRUD sur la base de données
 ├── auth.py           # Fonctions JWT (create_token, verify_token, get_current_user)
+├── permissions.py    # Rôles, permissions par défaut, require_permission()
 ├── routers/          # Gestionnaires de routes FastAPI
-│   ├── auth.py       # Endpoints d'authentification (/register, /login, /me)
-│   ├── categories.py # Endpoints des catégories
-│   ├── articles.py   # Endpoints des articles (avec recherche/filtres)
-│   ├── mouvements.py # Endpoints des mouvements de stock
-│   ├── rapports.py   # Endpoints des rapports et exports
-│   └── tags.py       # Endpoints des tags
+│   ├── auth.py       # /register, /login, /me
+│   ├── users.py      # Gestion utilisateurs (admin)
+│   ├── categories.py # /racines, /tree, /{id}/children
+│   ├── articles.py   # Avec recherche/filtres/tags
+│   ├── mouvements.py # Historique mouvements de stock
+│   ├── tags.py       # CRUD tags + association articles
+│   ├── fournisseurs.py # CRUD fournisseurs
+│   ├── emplacements.py # CRUD emplacements (plan atelier)
+│   ├── commandes.py  # CRUD commandes fournisseurs
+│   ├── photos.py     # Upload/gestion photos articles (préfixe /api/articles)
+│   └── rapports.py   # Statistiques + exports CSV/PDF
 └── services/
-    └── export_service.py  # Génération exports CSV et PDF (ReportLab)
+    ├── export_service.py  # Génération exports CSV et PDF (ReportLab)
+    ├── photo_service.py   # Gestion upload et stockage photos
+    └── qrcode_service.py  # Génération QR codes articles
 ```
 
 **Patterns architecturaux clés :**
@@ -214,36 +240,59 @@ frontend/src/
 │   └── AuthContext.jsx         # Contexte React pour l'état d'authentification global
 ├── components/
 │   ├── layout/
-│   │   └── Layout.jsx          # Navigation sidebar, wrapper de page, bouton déconnexion
+│   │   └── Layout.jsx          # Navigation sidebar, wrapper de page, bottom nav mobile
 │   ├── common/
 │   │   ├── Modal.jsx           # Composant modal réutilisable
 │   │   ├── Loader.jsx          # Composant loader animé réutilisable
 │   │   ├── Pagination.jsx      # Composant pagination réutilisable
-│   │   └── ProtectedRoute.jsx  # HOC pour protéger les routes (redirect si non connecté)
+│   │   └── ProtectedRoute.jsx  # HOC pour protéger les routes
 │   ├── articles/
-│   │   └── ArticleForm.jsx     # Formulaire création/édition article
+│   │   └── ArticleForm.jsx     # Formulaire création/édition article (avec tags, catégorie cascadée)
 │   ├── categories/
 │   │   └── CategorieForm.jsx   # Formulaire création/édition catégorie
+│   ├── emplacements/           # Composants plan atelier
+│   ├── fournisseurs/           # Composants fournisseurs
 │   ├── tags/
 │   │   └── TagInput.jsx        # Sélecteur de tags avec création inline
 │   └── mouvements/
 │       └── MouvementForm.jsx   # Formulaire mouvement de stock
 ├── pages/
-│   ├── Login.jsx       # Page de connexion
-│   ├── Register.jsx    # Page d'inscription (mono-utilisateur)
-│   ├── Dashboard.jsx   # Stats, recherche globale, création rapide, alertes
-│   ├── Articles.jsx    # Liste articles avec recherche/filtres/tags
-│   ├── Mouvements.jsx  # Historique des mouvements
-│   └── Rapports.jsx    # Rapports et boutons d'export
-├── services/          # Fonctions client API (Axios)
-│   ├── api.js         # Instance axios avec intercepteurs JWT
-│   ├── authService.js # Login, register, getCurrentUser, logout
+│   ├── Login.jsx           # Page de connexion
+│   ├── Register.jsx        # Page d'inscription
+│   ├── Dashboard.jsx       # Stats, recherche globale, création rapide, alertes stock bas
+│   ├── Articles.jsx        # Liste articles avec recherche/filtres/tags/pagination
+│   ├── Categories.jsx      # Arbre catégories hiérarchique
+│   ├── Tags.jsx            # Gestion des tags
+│   ├── Mouvements.jsx      # Historique des mouvements
+│   ├── Fournisseurs.jsx    # Gestion des fournisseurs
+│   ├── Emplacements.jsx    # Gestion des emplacements
+│   ├── PlanAtelier.jsx     # Vue plan d'atelier (emplacements visuels)
+│   ├── Commandes.jsx       # Liste des commandes fournisseurs
+│   ├── NouvelleCommande.jsx # Formulaire nouvelle commande
+│   ├── ScanQRCode.jsx      # Scan QR code pour accès rapide article
+│   ├── Rapports.jsx        # Rapports et boutons d'export
+│   └── Users.jsx           # Gestion utilisateurs (admin uniquement)
+├── services/              # Fonctions client API (Axios)
+│   ├── api.js             # Instance axios avec intercepteurs JWT
+│   ├── authService.js
 │   ├── articleService.js
 │   ├── categorieService.js
 │   ├── mouvementService.js
+│   ├── fournisseurService.js
+│   ├── emplacementService.js
+│   ├── commandeService.js
+│   ├── photoService.js
+│   ├── storageService.js  # Gestion localStorage (thème, préférences)
 │   ├── rapportService.js
-│   └── tagService.js
-└── hooks/             # Hooks React personnalisés (actuellement minimal)
+│   ├── tagService.js
+│   └── userService.js
+├── hooks/
+│   └── usePermissions.js  # Hook de vérification permissions (hasPermission, isAdmin, canCreate…)
+└── test/                  # Tests Vitest + Testing Library
+    ├── components/        # Tests des composants
+    ├── contexts/          # Tests des contextes
+    ├── hooks/             # Tests des hooks
+    └── pages/             # Tests des pages
 ```
 
 **Patterns frontend clés :**
@@ -362,6 +411,37 @@ Tous les endpoints sont préfixés par `/api/`
 - POST /{tag_id}/articles/{article_id} - Associe un tag à un article
 - DELETE /{tag_id}/articles/{article_id} - Retire un tag d'un article
 
+**Fournisseurs** (`/api/fournisseurs`)
+- GET / - Liste tous les fournisseurs
+- POST / - Crée un fournisseur
+- PUT /{id} - Modifie un fournisseur
+- DELETE /{id} - Supprime un fournisseur
+
+**Emplacements** (`/api/emplacements`)
+- GET / - Liste tous les emplacements
+- POST / - Crée un emplacement
+- PUT /{id} - Modifie un emplacement
+- DELETE /{id} - Supprime un emplacement
+
+**Commandes** (`/api/commandes`)
+- GET / - Liste les commandes fournisseurs
+- POST / - Crée une commande
+- PUT /{id} - Modifie une commande
+- DELETE /{id} - Supprime une commande
+
+**Photos** (`/api/articles/{article_id}/photos`)
+- GET / - Liste les photos d'un article
+- POST / - Upload une photo (multipart/form-data)
+- DELETE /{photo_id} - Supprime une photo
+
+**Utilisateurs** (`/api/users`) - Admin uniquement
+- GET / - Liste tous les utilisateurs
+- POST / - Crée un utilisateur
+- PUT /{id}/role - Change le rôle d'un utilisateur
+- PUT /{id}/permissions - Modifie les permissions custom
+- POST /{id}/deactivate - Désactive un compte
+- POST /{id}/reactivate - Réactive un compte
+
 **Rapports** (`/api/rapports`)
 - GET /statistiques - Statistiques globales (total articles, valeur, catégories, nombre stock bas)
 - GET /stock-bas - Articles en dessous du seuil quantite_min
@@ -422,6 +502,8 @@ Consommables
   - Compteur de sous-catégories affiché
 - **Page Articles** : Filtre avec `<optgroup>` pour structure claire
 
+**Fichiers à ignorer** : `backend/app/main.py.bak`, `main-cors-fix.py`, `main-nas.py` sont des variantes de sauvegarde — le fichier actif est `main.py`.
+
 **Points d'attention** :
 - Toujours utiliser `/tree` pour affichage hiérarchique (pas `/` qui retourne structure plate)
 - Charger sous-catégories dynamiquement avec `getSousCategories(parentId)`
@@ -436,6 +518,16 @@ Consommables
 ## Statut actuel
 
 ### Complet ✅
+- **PWA & Mode hors-ligne (v2.0.0)** :
+  - `vite-plugin-pwa` + Workbox — service worker généré automatiquement au build
+  - `manifest.json` + 9 tailles d'icônes — installable sur iOS/Android/desktop
+  - Cache Workbox `NetworkFirst` pour toutes les routes GET `/api/*` (fallback 24h)
+  - File d'attente IndexedDB via **Dexie.js** (`offlineQueue.js`) pour POST/PUT/DELETE hors-ligne
+  - `syncService.js` — replay automatique à la reconnexion + invalidation React Query
+  - `SyncButton` dans la sidebar — badge compteur + sync manuelle
+  - `OfflineBanner` — bannière visible dès que `navigator.onLine === false`
+  - Mouvements hors-ligne : toast informatif + sync au retour en ligne
+  - **Important** : le SW n'est actif qu'en **build de prod** (`npm run build && npm run preview`)
 - API backend entièrement fonctionnelle (tous CRUD, rapports, exports)
 - Modèles de base de données avec relations et contraintes appropriées
 - Pages frontend affichent les données correctement
@@ -546,10 +638,6 @@ Consommables
   - z-index modal relevé à 1050 (au-dessus du bottom nav à 1000)
   - `white-space: normal` au breakpoint 576px (supprime scroll horizontal)
 
-### Incomplet ⚠️
-- Aucune fonctionnalité majeure manquante
-
-**Prochaine version planifiée** : v1.7.0 - Dashboard Analytique Avancé
 **Roadmap complète** : Voir [docs/ROADMAP.md](docs/ROADMAP.md) pour toutes les versions planifiées
 
 ## Tâches courantes

@@ -2,10 +2,13 @@
  * Configuration Axios pour les appels API.
  *
  * Centralise la configuration HTTP et les intercepteurs.
+ * En mode hors-ligne, les requêtes d'écriture (POST/PUT/DELETE)
+ * sont placées dans la file d'attente IndexedDB au lieu d'échouer.
  */
 
 import axios from 'axios'
 import { getToken, removeToken } from './storageService'
+import { enqueueOperation } from './offlineQueue'
 
 // Obtenir l'URL de l'API depuis la config runtime (Docker) ou depuis Vite (dev)
 const getApiUrl = () => {
@@ -63,8 +66,41 @@ api.interceptors.response.use(
   (response) => {
     return response
   },
-  (error) => {
-    // Gestion globale des erreurs
+  async (error) => {
+    const method = error.config?.method?.toUpperCase()
+    const isWriteOperation = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)
+    // Les routes d'auth ne sont jamais mises en file d'attente (login/register nécessitent le réseau)
+    const isAuthRoute = error.config?.url?.includes('/auth/')
+
+    /**
+     * Tente de parser les données de la requête en JSON.
+     * Le login envoie du form-urlencoded (pas du JSON) → on retourne null dans ce cas.
+     */
+    const parseRequestData = (data) => {
+      if (!data) return null
+      if (typeof data === 'object') return data
+      try {
+        return JSON.parse(data)
+      } catch {
+        return null // form-urlencoded ou autre format non-JSON : non queuable
+      }
+    }
+
+    // Hors-ligne : mise en file d'attente des opérations d'écriture (hors auth)
+    if (!navigator.onLine && isWriteOperation && error.config && !isAuthRoute) {
+      await enqueueOperation(method, error.config.url, parseRequestData(error.config.data))
+
+      // Retourner une réponse mock marquée comme "queued" pour ne pas casser l'UI
+      return Promise.resolve({
+        data: { __queued: true, method, url: error.config.url },
+        status: 202,
+        statusText: 'Queued',
+        headers: {},
+        config: error.config,
+      })
+    }
+
+    // Gestion globale des erreurs réseau
     if (error.response) {
       // Erreur HTTP (4xx, 5xx)
       const message = error.response.data?.detail || error.response.data?.message || 'Une erreur est survenue'
@@ -72,23 +108,29 @@ api.interceptors.response.use(
 
       // Gérer le cas du token invalide ou expiré
       if (error.response.status === 401) {
-        // Token invalide ou expiré : déconnecter l'utilisateur
         removeToken()
-        // Rediriger vers la page de connexion si on n'y est pas déjà
         if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
           window.location.href = '/login'
         }
       }
 
-      // Garder la structure de l'erreur pour que les composants puissent accéder à error.response
       return Promise.reject(error)
     } else if (error.request) {
-      // Pas de réponse du serveur
+      // Pas de réponse du serveur (réseau coupé mais navigator.onLine encore true)
+      if (isWriteOperation && error.config && !isAuthRoute) {
+        await enqueueOperation(method, error.config.url, parseRequestData(error.config.data))
+        return Promise.resolve({
+          data: { __queued: true, method, url: error.config.url },
+          status: 202,
+          statusText: 'Queued',
+          headers: {},
+          config: error.config,
+        })
+      }
       console.error('Pas de réponse du serveur')
-      error.message = 'Impossible de contacter le serveur. Vérifiez que le backend est démarré.'
+      error.message = 'Impossible de contacter le serveur. Vérifiez votre connexion.'
       return Promise.reject(error)
     } else {
-      // Erreur de configuration de la requête
       console.error('Erreur:', error.message)
       return Promise.reject(error)
     }

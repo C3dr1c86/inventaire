@@ -10,6 +10,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/common/ProtectedRoute'
 import Layout from './components/layout/Layout'
+import OfflineBanner from './components/common/OfflineBanner'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -41,6 +42,8 @@ function App() {
         pauseOnHover
         theme="light"
       />
+
+      <OfflineBanner />
 
       <Routes>
         {/* Routes publiques */}

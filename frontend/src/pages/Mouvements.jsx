@@ -34,7 +34,15 @@ function Mouvements() {
   // Mutation pour créer un mouvement
   const createMutation = useMutation({
     mutationFn: createMouvement,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Réponse mock de l'intercepteur offline : opération mise en file d'attente
+      if (data?.__queued) {
+        setIsModalOpen(false)
+        toast.info('Hors-ligne — mouvement enregistré localement, il sera synchronisé à la reconnexion.', {
+          autoClose: 5000,
+        })
+        return
+      }
       queryClient.invalidateQueries(['mouvements'])
       queryClient.invalidateQueries(['articles'])
       queryClient.invalidateQueries(['statistiques'])
