@@ -888,7 +888,7 @@ function ArticleForm({ article, onSubmit, onCancel, isSubmitting }) {
 
       {/* Message informatif en mode création */}
       {!article?.id && (
-        <div className="info-message" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#e7f3ff', borderRadius: '8px', border: '1px solid #b3d9ff' }}>
+        <div className="alert alert-info" style={{ marginTop: '1rem' }}>
           <span style={{ fontSize: '1rem' }}>ℹ️</span> <strong>Astuce :</strong> Vous pourrez ajouter des photos après avoir créé l'article.
         </div>
       )}

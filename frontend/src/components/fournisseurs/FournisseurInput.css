@@ -22,8 +22,8 @@
   border: 2px solid transparent;
   transition: all 0.2s ease;
   white-space: nowrap;
-  background-color: #e0e0e0;
-  color: #666;
+  background-color: var(--color-gray-100);
+  color: var(--color-text-secondary);
   cursor: pointer;
 }
 
@@ -42,8 +42,8 @@
 }
 
 .fournisseur-badge.selected {
-  background-color: #007bff;
-  color: #fff;
+  background-color: var(--color-primary-500);
+  color: var(--color-text-inverse);
   font-weight: 600;
 }
 

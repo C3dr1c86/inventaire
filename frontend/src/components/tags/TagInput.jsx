@@ -48,8 +48,8 @@ function TagInput({ selectedTags = [], onChange, disabled = false }) {
               type="button"
               className={`tag-badge ${isSelected ? 'selected' : ''}`}
               style={{
-                backgroundColor: isSelected ? (tag.couleur || '#3498db') : '#e0e0e0',
-                color: isSelected ? '#fff' : '#666',
+                backgroundColor: isSelected ? (tag.couleur || '#3498db') : undefined,
+                color: isSelected ? '#fff' : undefined,
                 cursor: disabled ? 'not-allowed' : 'pointer'
               }}
               onClick={() => handleToggleTag(tag.id)}
