@@ -163,61 +163,74 @@
    ============================================================================ */
 
 [data-theme="dark"] {
-  /* Couleurs primaires adaptées */
-  --color-primary-500: #4a9eda;
-  --color-primary-600: #3b8ecf;
-  --color-primary-50:  rgba(74, 158, 218, 0.1);
-  --color-primary-100: rgba(74, 158, 218, 0.2);
+  /* Primaire — bleu vif et saturé */
+  --color-primary-500: #60a5fa;
+  --color-primary-600: #3b82f6;
+  --color-primary-400: #93c5fd;
+  --color-primary-300: #bfdbfe;
+  --color-primary-50:  rgba(96, 165, 250, 0.12);
+  --color-primary-100: rgba(96, 165, 250, 0.22);
 
-  /* Couleurs d'état adaptées */
-  --color-success:       #6ee36e;
-  --color-success-light: rgba(44, 160, 44, 0.2);
-  --color-success-dark:  #4cc44c;
+  /* Couleurs d'état — vives et lisibles */
+  --color-success:       #4ade80;
+  --color-success-light: rgba(74, 222, 128, 0.15);
+  --color-success-dark:  #22c55e;
 
-  --color-warning:       #ffd060;
-  --color-warning-light: rgba(255, 152, 0, 0.2);
-  --color-warning-dark:  #e6bb00;
+  --color-warning:       #fbbf24;
+  --color-warning-light: rgba(251, 191, 36, 0.15);
+  --color-warning-dark:  #f59e0b;
 
-  --color-danger:        #ff7b7b;
-  --color-danger-light:  rgba(214, 39, 40, 0.2);
-  --color-danger-dark:   #e05555;
+  --color-danger:        #f87171;
+  --color-danger-light:  rgba(248, 113, 113, 0.15);
+  --color-danger-dark:   #ef4444;
 
-  --color-info:          #6bdce8;
-  --color-info-light:    rgba(23, 162, 184, 0.2);
-  --color-info-dark:     #4ac8d6;
+  --color-info:          #38bdf8;
+  --color-info-light:    rgba(56, 189, 248, 0.15);
+  --color-info-dark:     #0ea5e9;
 
-  /* Fonds */
-  --color-bg-app:    #0f172a;
-  --color-bg-card:   #1e293b;
-  --color-bg-header: #0f172a;
+  /* Fonds — tons bleu nuit distincts */
+  --color-bg-app:       #0b1120;
+  --color-bg-card:      #151e2e;
+  --color-bg-secondary: #1a2540;
+  --color-bg-header:    #0b1120;
+  --color-bg-primary:   #151e2e;
 
-  /* Neutres inversés */
-  --color-gray-50:  #263347;
-  --color-gray-100: #2d3f55;
-  --color-gray-200: #334155;
-  --color-gray-300: #475569;
-  --color-gray-400: #64748b;
-  --color-gray-500: #94a3b8;
-  --color-gray-600: #b0bec5;
-  --color-gray-700: #cfd8dc;
-  --color-gray-800: #e2e8f0;
-  --color-gray-900: #f1f5f9;
+  /* Neutres — nuances bleues (pas grises) */
+  --color-gray-50:  #192236;
+  --color-gray-100: #1e2b40;
+  --color-gray-200: #243350;
+  --color-gray-300: #2e4066;
+  --color-gray-400: #4a6080;
+  --color-gray-500: #6b82a0;
+  --color-gray-600: #8fa6c2;
+  --color-gray-700: #b8ccde;
+  --color-gray-800: #d8e6f0;
+  --color-gray-900: #eef4fa;
 
-  /* Textes */
-  --color-text-primary:   #e2e8f0;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted:     #64748b;
+  /* Textes — blanc chaud, bonne lisibilité */
+  --color-text-primary:   #f0f6ff;
+  --color-text-secondary: #8fa6c2;
+  --color-text-muted:     #4a6080;
+  --color-text-inverse:   #ffffff;
+  --color-text-link:      #60a5fa;
 
-  /* Bordures */
-  --color-border:       #334155;
-  --color-border-light: #263347;
-  --color-border-focus: #4a9eda;
+  /* Bordures — légèrement bleues, pas grises */
+  --color-border:       #243350;
+  --color-border-light: #192236;
+  --color-border-focus: #60a5fa;
+
+  /* Sidebar — teinte bleue pour les états actifs */
+  --color-bg-sidebar:          #0e1726;
+  --color-sidebar-bg-active:   rgba(96, 165, 250, 0.18);
+  --color-sidebar-bg-hover:    rgba(96, 165, 250, 0.09);
+  --color-sidebar-border:      rgba(96, 165, 250, 0.12);
+  --color-sidebar-text-active: #ffffff;
 
   /* Ombres renforcées */
-  --shadow-xs:   0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-base: 0 4px 6px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
-  --shadow-md:   0 8px 16px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
-  --shadow-lg:   0 16px 32px rgba(0, 0, 0, 0.6), 0 8px 16px rgba(0, 0, 0, 0.4);
-  --shadow-xl:   0 24px 48px rgba(0, 0, 0, 0.7), 0 12px 24px rgba(0, 0, 0, 0.5);
+  --shadow-xs:   0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.6), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-base: 0 4px 6px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-md:   0 8px 16px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg:   0 16px 32px rgba(0, 0, 0, 0.7), 0 8px 16px rgba(0, 0, 0, 0.5);
+  --shadow-xl:   0 24px 48px rgba(0, 0, 0, 0.8), 0 12px 24px rgba(0, 0, 0, 0.6);
 }

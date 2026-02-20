@@ -1760,8 +1760,6 @@
    SCAN QR CODE — Interface de scan
    ============================================================================ */
 .scan-container {
-  max-width: 600px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);

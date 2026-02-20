@@ -1,0 +1,58 @@
+version: '3.8'
+
+# Docker Compose pour test local (build depuis les sources)
+# Usage : docker compose -f docker-compose.local.yml up --build
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: inventaire_backend_local
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=sqlite:///./database/inventaire.db
+      - SECRET_KEY=local-test-secret-key-changeme
+      - CORS_ORIGINS=http://localhost,http://localhost:80
+    volumes:
+      - backend_data_local:/app/database
+      - backend_exports_local:/app/exports
+      - backend_uploads_local:/app/uploads
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - inventaire_local_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: inventaire_frontend_local
+    restart: unless-stopped
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - inventaire_local_network
+
+volumes:
+  backend_data_local:
+    driver: local
+  backend_exports_local:
+    driver: local
+  backend_uploads_local:
+    driver: local
+
+networks:
+  inventaire_local_network:
+    driver: bridge

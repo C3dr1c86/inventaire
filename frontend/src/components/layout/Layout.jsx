@@ -54,9 +54,9 @@ function Layout({ children }) {
   const [collapsed, setCollapsed] = useState(false)
   const { user, role, hasPermission, logoutUser } = useAuth()
 
-  // Thème clair/sombre persisté dans localStorage
+  // Thème clair/sombre persisté dans localStorage (dark par défaut)
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('theme') || 'light'
+    return localStorage.getItem('theme') || 'dark'
   })
 
   useEffect(() => {
