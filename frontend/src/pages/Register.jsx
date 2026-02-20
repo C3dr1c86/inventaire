@@ -190,9 +190,8 @@ function Register() {
 
           <button
             type="submit"
-            className="btn btn-primary"
+            className="btn btn-primary btn-block"
             disabled={isSubmitting}
-            style={{ width: '100%' }}
           >
             {isSubmitting ? 'Création du compte...' : 'Créer mon compte'}
           </button>

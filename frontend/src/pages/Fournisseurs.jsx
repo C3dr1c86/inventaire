@@ -11,7 +11,6 @@ import { getFournisseurs, deleteFournisseur, createFournisseur, updateFournisseu
 import { Plus, Edit2, Trash2, Truck } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import FournisseurForm from '../components/fournisseurs/FournisseurForm'
-import Loader from '../components/common/Loader'
 import { usePermissions } from '../hooks/usePermissions'
 
 function Fournisseurs() {
@@ -102,53 +101,58 @@ function Fournisseurs() {
 
   if (isLoading) {
     return (
-      <div className="page-container">
-        <Loader />
+      <div className="loading-page">
+        <div className="spinner-lg" />
+        <span>Chargement des fournisseurs...</span>
       </div>
     )
   }
 
   return (
-    <div className="page-container">
+    <div className="page-content">
       {/* Header */}
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            <Truck size={32} />
+            <Truck size={28} />
             Fournisseurs
           </h1>
           <p className="page-subtitle">
             Gérez vos fournisseurs et leurs coordonnées
           </p>
         </div>
-        {canCreate('fournisseurs') && (
-          <button
-            onClick={handleCreate}
-            className="btn btn-primary"
-            style={{ gap: '0.5rem' }}
-          >
-            <Plus size={20} />
-            Nouveau fournisseur
-          </button>
-        )}
+        <div className="page-actions">
+          {canCreate('fournisseurs') && (
+            <button
+              onClick={handleCreate}
+              className="btn btn-primary"
+              aria-label="Créer un nouveau fournisseur"
+            >
+              <Plus size={18} />
+              Nouveau fournisseur
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Liste des fournisseurs */}
       {fournisseurs && fournisseurs.length === 0 ? (
         <div className="empty-state">
-          <Truck size={64} />
-          <h2>Aucun fournisseur</h2>
-          <p>Créez votre premier fournisseur pour commencer à gérer vos relations commerciales</p>
+          <Truck size={56} className="empty-state-icon" />
+          <h2 className="empty-state-title">Aucun fournisseur</h2>
+          <p className="empty-state-description">
+            Créez votre premier fournisseur pour commencer à gérer vos relations commerciales
+          </p>
           {canCreate('fournisseurs') && (
             <button onClick={handleCreate} className="btn btn-primary">
-              <Plus size={20} />
+              <Plus size={18} />
               Créer un fournisseur
             </button>
           )}
         </div>
       ) : (
         <div className="card">
-          <div className="table-responsive">
+          <div className="table-wrapper">
             <table className="table">
               <thead>
                 <tr>
@@ -163,40 +167,36 @@ function Fournisseurs() {
               <tbody>
                 {fournisseurs?.map((fournisseur) => (
                   <tr key={fournisseur.id}>
-                    <td style={{ fontWeight: '500' }}>{fournisseur.nom}</td>
-                    <td>
+                    <td data-label="Nom">
+                      <strong>{fournisseur.nom}</strong>
+                    </td>
+                    <td data-label="Contact">
                       {fournisseur.contact || (
-                        <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                          -
-                        </span>
+                        <span className="text-muted">-</span>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Email">
                       {fournisseur.email ? (
                         <a href={`mailto:${fournisseur.email}`} className="link">
                           {fournisseur.email}
                         </a>
                       ) : (
-                        <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                          -
-                        </span>
+                        <span className="text-muted">-</span>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Téléphone">
                       {fournisseur.telephone ? (
                         <a href={`tel:${fournisseur.telephone}`} className="link">
                           {fournisseur.telephone}
                         </a>
                       ) : (
-                        <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                          -
-                        </span>
+                        <span className="text-muted">-</span>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Créé le">
                       {new Date(fournisseur.created_at).toLocaleDateString('fr-FR')}
                     </td>
-                    <td>
+                    <td data-label="Actions">
                       <div className="action-buttons">
                         {canUpdate('fournisseurs') && (
                           <button
@@ -254,30 +254,30 @@ function Fournisseurs() {
         onClose={() => setDeleteConfirm(null)}
         title="Confirmer la suppression"
       >
-        <div style={{ padding: '1rem 0' }}>
+        <div className="modal-body">
           <p>
             Êtes-vous sûr de vouloir supprimer le fournisseur{' '}
             <strong>{deleteConfirm?.nom}</strong> ?
           </p>
-          <p style={{ color: 'var(--danger)', marginTop: '1rem' }}>
+          <div className="alert alert-warning" style={{ marginTop: 'var(--space-4)' }}>
             ⚠️ Cette action échouera si le fournisseur est associé à des articles.
-          </p>
-          <div className="modal-actions" style={{ marginTop: '2rem' }}>
-            <button
-              onClick={() => setDeleteConfirm(null)}
-              className="btn btn-secondary"
-              disabled={deleteMutation.isPending}
-            >
-              Annuler
-            </button>
-            <button
-              onClick={confirmDelete}
-              className="btn btn-danger"
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
-            </button>
           </div>
+        </div>
+        <div className="modal-footer">
+          <button
+            onClick={() => setDeleteConfirm(null)}
+            className="btn btn-secondary"
+            disabled={deleteMutation.isPending}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={confirmDelete}
+            className="btn btn-danger"
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
+          </button>
         </div>
       </Modal>
     </div>

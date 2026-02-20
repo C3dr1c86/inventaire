@@ -60,22 +60,17 @@ function Rapports() {
   const handleExport = async (type, format) => {
     try {
       setExportLoading(true)
-
-      // Exports pour les nouveaux types
       if (type === 'fournisseurs') {
         await exportFournisseurs(format)
       } else if (type === 'tags') {
         await exportTags(format)
       } else if (type === 'emplacements') {
         await exportEmplacementsData(format)
-      }
-      // Exports existants (articles, mouvements, stock-bas, inventaire)
-      else if (format === 'csv') {
+      } else if (format === 'csv') {
         await exportCSV(type)
       } else {
         await exportPDF(type)
       }
-
       toast.success(`Export ${format.toUpperCase()} généré avec succès`)
     } catch (error) {
       toast.error(`Erreur lors de l'export : ${error.response?.data?.detail || error.message}`)
@@ -86,13 +81,9 @@ function Rapports() {
 
   // Gérer la sélection d'articles pour codes-barres
   const handleToggleArticle = (articleId) => {
-    setSelectedArticles(prev => {
-      if (prev.includes(articleId)) {
-        return prev.filter(id => id !== articleId)
-      } else {
-        return [...prev, articleId]
-      }
-    })
+    setSelectedArticles(prev =>
+      prev.includes(articleId) ? prev.filter(id => id !== articleId) : [...prev, articleId]
+    )
   }
 
   const handleSelectAll = () => {
@@ -109,7 +100,6 @@ function Rapports() {
       toast.error('Veuillez sélectionner au moins un article')
       return
     }
-
     try {
       setExportLoading(true)
       await exportBarcodesPDF(selectedArticles)
@@ -126,7 +116,6 @@ function Rapports() {
       toast.error('Veuillez sélectionner au moins un article')
       return
     }
-
     try {
       setExportLoading(true)
       await exportEtiquettesDymo(selectedArticles)
@@ -140,13 +129,9 @@ function Rapports() {
 
   // Gérer la sélection d'emplacements pour QR codes
   const handleToggleEmplacement = (emplacementId) => {
-    setSelectedEmplacements(prev => {
-      if (prev.includes(emplacementId)) {
-        return prev.filter(id => id !== emplacementId)
-      } else {
-        return [...prev, emplacementId]
-      }
-    })
+    setSelectedEmplacements(prev =>
+      prev.includes(emplacementId) ? prev.filter(id => id !== emplacementId) : [...prev, emplacementId]
+    )
   }
 
   const handleSelectAllEmplacements = () => {
@@ -162,7 +147,6 @@ function Rapports() {
       toast.error('Veuillez sélectionner au moins un emplacement')
       return
     }
-
     try {
       setExportLoading(true)
       await exportEmplacementsQRCodesPDF(selectedEmplacements)
@@ -176,49 +160,59 @@ function Rapports() {
 
   if (stockBasLoading || valeurLoading) {
     return (
-      <div>
-        <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>Rapports</h1>
-        <div className="loader"></div>
+      <div className="loading-page">
+        <div className="spinner-lg" />
+        <span>Chargement des rapports...</span>
       </div>
     )
   }
 
   return (
-    <div>
-      <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>Rapports</h1>
+    <div className="page-content">
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Rapports</h1>
+          <p className="page-subtitle">Statistiques et exports de vos données</p>
+        </div>
+      </div>
 
       {/* Valeur totale du stock */}
       <div className="card">
-        <h2 className="card-header">Valeur Totale du Stock</h2>
+        <div className="card-header">
+          <span className="card-title">Valeur Totale du Stock</span>
+        </div>
         <div className="card-body">
-          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--success)', marginBottom: '1rem' }}>
+          <div className="rapports-value-display">
             {valeurTotale?.valeur_totale.toFixed(2)} €
           </div>
-          <p style={{ color: '#6c757d' }}>
+          <p className="text-muted">
             Basé sur {valeurTotale?.nombre_articles} article(s)
           </p>
 
           {valeurTotale?.details_par_categorie && valeurTotale.details_par_categorie.length > 0 && (
-            <div style={{ marginTop: '1.5rem' }}>
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Détails par catégorie</h3>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Catégorie</th>
-                    <th>Nombre d'articles</th>
-                    <th>Valeur totale</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {valeurTotale.details_par_categorie.map((detail, index) => (
-                    <tr key={index}>
-                      <td><strong>{detail.categorie}</strong></td>
-                      <td>{detail.nombre_articles}</td>
-                      <td><strong>{detail.valeur.toFixed(2)} €</strong></td>
+            <div className="rapports-value-section">
+              <h3 className="rapports-section-title">Détails par catégorie</h3>
+              <div className="table-wrapper">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Catégorie</th>
+                      <th>Nombre d'articles</th>
+                      <th>Valeur totale</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {valeurTotale.details_par_categorie.map((detail, index) => (
+                      <tr key={index}>
+                        <td><strong>{detail.categorie}</strong></td>
+                        <td>{detail.nombre_articles}</td>
+                        <td><strong>{detail.valeur.toFixed(2)} €</strong></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -226,9 +220,9 @@ function Rapports() {
 
       {/* Section étiquettes personnalisées */}
       <div className="card">
-        <h2 className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>
-            <Barcode size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
+        <div className="card-header">
+          <span className="card-title">
+            <Barcode size={18} />
             Étiquettes Personnalisées
           </span>
           <button
@@ -237,21 +231,20 @@ function Rapports() {
           >
             {showBarcodeSection ? 'Masquer' : 'Afficher'}
           </button>
-        </h2>
+        </div>
 
         {showBarcodeSection && (
           <div className="card-body">
             {/* Toggle type d'étiquettes */}
-            <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <div className="label-toggle">
               <button
                 className={`btn ${labelType === 'articles' ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => {
                   setLabelType('articles')
                   setSelectedArticles([])
                 }}
-                style={{ gap: '0.5rem', minWidth: '180px' }}
               >
-                <Barcode size={18} />
+                <Barcode size={16} />
                 Articles (Codes-barres)
               </button>
               <button
@@ -260,214 +253,171 @@ function Rapports() {
                   setLabelType('emplacements')
                   setSelectedEmplacements([])
                 }}
-                style={{ gap: '0.5rem', minWidth: '180px' }}
               >
-                <QrCode size={18} />
+                <QrCode size={16} />
                 Emplacements (QR codes)
               </button>
             </div>
 
-            <p style={{ marginBottom: '1rem' }}>
+            <p className="text-muted">
               {labelType === 'articles'
                 ? 'Sélectionnez les articles pour lesquels générer des codes-barres à imprimer.'
                 : 'Sélectionnez les emplacements pour lesquels générer des QR codes à imprimer.'}
             </p>
 
-            {/* Affichage selon le type */}
+            {/* Affichage selon le type — Articles */}
             {labelType === 'articles' && articlesData?.items ? (
               <>
-                <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <button
-                    className="btn btn-sm btn-secondary"
-                    onClick={handleSelectAll}
-                  >
+                <div className="selection-controls">
+                  <button className="btn btn-sm btn-secondary" onClick={handleSelectAll}>
                     {selectedArticles.length === articlesData.items.filter(a => a.sku).length
                       ? 'Tout désélectionner'
                       : 'Tout sélectionner'}
                   </button>
-                  <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>
+                  <span className="selection-count">
                     {selectedArticles.length} article(s) sélectionné(s)
                   </span>
                 </div>
 
-                <div style={{
-                  maxHeight: '400px',
-                  overflowY: 'auto',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--border-radius)',
-                  padding: '1rem'
-                }}>
+                <div className="selection-scroll">
                   {articlesData.items.length === 0 ? (
-                    <p style={{ textAlign: 'center', color: '#6c757d' }}>
+                    <p className="text-muted" style={{ textAlign: 'center' }}>
                       Aucun article disponible
                     </p>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div className="selection-list">
                       {articlesData.items.map(article => (
                         <label
                           key={article.id}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.75rem',
-                            padding: '0.75rem',
-                            borderRadius: '6px',
-                            border: '1px solid #e0e0e0',
-                            backgroundColor: selectedArticles.includes(article.id) ? '#f0f8ff' : '#fff',
-                            cursor: article.sku ? 'pointer' : 'not-allowed',
-                            opacity: article.sku ? 1 : 0.5
-                          }}
+                          className={`selection-item${selectedArticles.includes(article.id) ? ' selected' : ''}${!article.sku ? ' disabled' : ''}`}
                         >
                           <input
                             type="checkbox"
                             checked={selectedArticles.includes(article.id)}
                             onChange={() => handleToggleArticle(article.id)}
                             disabled={!article.sku}
-                            style={{ cursor: article.sku ? 'pointer' : 'not-allowed' }}
                           />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: '500' }}>{article.nom}</div>
-                            <div style={{ fontSize: '0.875rem', color: '#6c757d' }}>
-                              SKU: {article.sku || <em>Pas de SKU</em>} |
-                              {' '}Qté: {article.quantite} |
-                              {' '}{article.categorie?.nom || 'Sans catégorie'}
+                          <div className="selection-item-info">
+                            <div className="selection-item-name">{article.nom}</div>
+                            <div className="selection-item-meta">
+                              SKU: {article.sku || <em>Pas de SKU</em>} &nbsp;·&nbsp;
+                              Qté: {article.quantite} &nbsp;·&nbsp;
+                              {article.categorie?.nom || 'Sans catégorie'}
                             </div>
                           </div>
-                          {selectedArticles.includes(article.id) && (
-                            <CheckSquare size={20} style={{ color: '#007bff' }} />
-                          )}
-                          {!selectedArticles.includes(article.id) && article.sku && (
-                            <Square size={20} style={{ color: '#6c757d' }} />
-                          )}
+                          {selectedArticles.includes(article.id)
+                            ? <CheckSquare size={18} className="selection-check-icon" />
+                            : article.sku
+                              ? <Square size={18} className="selection-uncheck-icon" />
+                              : null
+                          }
                         </label>
                       ))}
                     </div>
                   )}
                 </div>
 
-                <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                <div className="export-actions">
                   <button
                     className="btn btn-secondary"
                     onClick={handleExportDymo}
                     disabled={selectedArticles.length === 0 || exportLoading}
-                    style={{ gap: '0.5rem' }}
                     title="Exporter un CSV compatible DYMO Label Software"
                   >
-                    <Download size={18} />
+                    <Download size={16} />
                     {exportLoading ? 'Génération...' : `CSV DYMO (${selectedArticles.length})`}
                   </button>
                   <button
                     className="btn btn-primary"
                     onClick={handleExportBarcodes}
                     disabled={selectedArticles.length === 0 || exportLoading}
-                    style={{ gap: '0.5rem' }}
                   >
-                    <Barcode size={18} />
+                    <Barcode size={16} />
                     {exportLoading ? 'Génération...' : `Générer PDF (${selectedArticles.length})`}
                   </button>
                 </div>
 
-                <p style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '1rem', fontStyle: 'italic' }}>
+                <p className="export-hint">
                   💡 Le PDF contiendra 12 étiquettes par page (2 colonnes × 6 lignes) prêtes à découper
                   &nbsp;·&nbsp; Le CSV DYMO est importable directement dans DYMO Connect / DYMO Label Software
                 </p>
               </>
             ) : labelType === 'emplacements' && emplacementsData ? (
               <>
-                <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <button
-                    className="btn btn-sm btn-secondary"
-                    onClick={handleSelectAllEmplacements}
-                  >
+                <div className="selection-controls">
+                  <button className="btn btn-sm btn-secondary" onClick={handleSelectAllEmplacements}>
                     {selectedEmplacements.length === emplacementsData.length
                       ? 'Tout désélectionner'
                       : 'Tout sélectionner'}
                   </button>
-                  <span style={{ color: '#6c757d', fontSize: '0.875rem' }}>
+                  <span className="selection-count">
                     {selectedEmplacements.length} emplacement(s) sélectionné(s)
                   </span>
                 </div>
 
-                <div style={{
-                  maxHeight: '400px',
-                  overflowY: 'auto',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--border-radius)',
-                  padding: '1rem'
-                }}>
+                <div className="selection-scroll">
                   {emplacementsData.length === 0 ? (
-                    <p style={{ textAlign: 'center', color: '#6c757d' }}>
+                    <p className="text-muted" style={{ textAlign: 'center' }}>
                       Aucun emplacement disponible
                     </p>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div className="selection-list">
                       {emplacementsData.map(emplacement => (
                         <label
                           key={emplacement.id}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.75rem',
-                            padding: '0.75rem',
-                            borderRadius: '6px',
-                            border: '1px solid #e0e0e0',
-                            backgroundColor: selectedEmplacements.includes(emplacement.id) ? '#f0f8ff' : '#fff',
-                            cursor: 'pointer'
-                          }}
+                          className={`selection-item${selectedEmplacements.includes(emplacement.id) ? ' selected' : ''}`}
                         >
                           <input
                             type="checkbox"
                             checked={selectedEmplacements.includes(emplacement.id)}
                             onChange={() => handleToggleEmplacement(emplacement.id)}
-                            style={{ cursor: 'pointer' }}
                           />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div className="selection-item-info">
+                            <div className="selection-item-name">
                               {emplacement.niveau === 0 && '🏢'}
                               {emplacement.niveau === 1 && '📚'}
                               {emplacement.niveau === 2 && '📦'}
-                              {emplacement.code}
+                              {' '}{emplacement.code}
                             </div>
-                            <div style={{ fontSize: '0.875rem', color: '#6c757d' }}>
+                            <div className="selection-item-meta">
                               {emplacement.code_complet && emplacement.code_complet !== emplacement.code && (
-                                <span>{emplacement.code_complet} | </span>
+                                <span>{emplacement.code_complet} &nbsp;·&nbsp; </span>
                               )}
                               {emplacement.description || <em>Pas de description</em>}
                               {emplacement.capacite_max !== null && (
-                                <span> | Capacité: {emplacement.quantite_utilisee}/{emplacement.capacite_max}</span>
+                                <span> &nbsp;·&nbsp; Capacité: {emplacement.quantite_utilisee}/{emplacement.capacite_max}</span>
                               )}
                             </div>
                           </div>
-                          {selectedEmplacements.includes(emplacement.id) && (
-                            <CheckSquare size={20} style={{ color: '#007bff' }} />
-                          )}
-                          {!selectedEmplacements.includes(emplacement.id) && (
-                            <Square size={20} style={{ color: '#6c757d' }} />
-                          )}
+                          {selectedEmplacements.includes(emplacement.id)
+                            ? <CheckSquare size={18} className="selection-check-icon" />
+                            : <Square size={18} className="selection-uncheck-icon" />
+                          }
                         </label>
                       ))}
                     </div>
                   )}
                 </div>
 
-                <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <div className="export-actions">
                   <button
                     className="btn btn-primary"
                     onClick={handleExportQRCodes}
                     disabled={selectedEmplacements.length === 0 || exportLoading}
-                    style={{ gap: '0.5rem' }}
                   >
-                    <QrCode size={18} />
+                    <QrCode size={16} />
                     {exportLoading ? 'Génération...' : `Générer PDF (${selectedEmplacements.length})`}
                   </button>
                 </div>
 
-                <p style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '1rem', fontStyle: 'italic' }}>
+                <p className="export-hint">
                   💡 Le PDF contiendra 6 étiquettes par page (2 colonnes × 3 lignes) prêtes à découper
                 </p>
               </>
             ) : (
-              <div className="loader"></div>
+              <div className="loading-page" style={{ minHeight: '120px' }}>
+                <div className="spinner-sm" />
+              </div>
             )}
           </div>
         )}
@@ -475,46 +425,48 @@ function Rapports() {
 
       {/* Articles en stock bas */}
       <div className="card">
-        <h2 className="card-header">
-          <AlertTriangle size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
-          Articles en Stock Bas
-        </h2>
+        <div className="card-header">
+          <span className="card-title">
+            <AlertTriangle size={18} />
+            Articles en Stock Bas
+          </span>
+        </div>
         <div className="card-body">
           {stockBas && stockBas.articles && stockBas.articles.length > 0 ? (
             <>
-              <p style={{ marginBottom: '1rem', color: '#856404' }}>
+              <div className="alert alert-warning">
                 <strong>{stockBas.total}</strong> article(s) ont un stock inférieur au seuil minimum.
-              </p>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Article</th>
-                    <th>SKU</th>
-                    <th>Stock actuel</th>
-                    <th>Stock minimum</th>
-                    <th>Écart</th>
-                    <th>Catégorie</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stockBas.articles.map((article) => (
-                    <tr key={article.id}>
-                      <td><strong>{article.nom}</strong></td>
-                      <td>{article.sku || '-'}</td>
-                      <td>
-                        <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>
-                          {article.quantite}
-                        </span>
-                      </td>
-                      <td>{article.quantite_min}</td>
-                      <td style={{ color: 'var(--danger)' }}>
-                        {article.quantite - article.quantite_min}
-                      </td>
-                      <td>{article.categorie?.nom || 'Sans catégorie'}</td>
+              </div>
+              <div className="table-wrapper">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Article</th>
+                      <th>SKU</th>
+                      <th>Stock actuel</th>
+                      <th>Stock minimum</th>
+                      <th>Écart</th>
+                      <th>Catégorie</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {stockBas.articles.map((article) => (
+                      <tr key={article.id}>
+                        <td data-label="Article"><strong>{article.nom}</strong></td>
+                        <td data-label="SKU">{article.sku || '-'}</td>
+                        <td data-label="Stock actuel" className="cell-danger">
+                          {article.quantite}
+                        </td>
+                        <td data-label="Stock minimum">{article.quantite_min}</td>
+                        <td data-label="Écart" className="cell-danger">
+                          {article.quantite - article.quantite_min}
+                        </td>
+                        <td data-label="Catégorie">{article.categorie?.nom || 'Sans catégorie'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </>
           ) : (
             <div className="alert alert-success">
@@ -526,212 +478,211 @@ function Rapports() {
 
       {/* Section exports */}
       <div className="card">
-        <h2 className="card-header">
-          <Download size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />
-          Exports
-        </h2>
+        <div className="card-header">
+          <span className="card-title">
+            <Download size={18} />
+            Exports
+          </span>
+        </div>
         <div className="card-body">
-          <p style={{ marginBottom: '1.5rem' }}>
+          <p className="text-muted">
             Téléchargez vos données au format CSV ou PDF.
           </p>
 
-          <table className="table" style={{ marginTop: '1rem' }}>
-            <thead>
-              <tr>
-                <th style={{ width: '30%' }}>Type de données</th>
-                <th style={{ width: '40%' }}>Description</th>
-                <th style={{ width: '30%' }}>Formats disponibles</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Articles */}
-              <tr>
-                <td><strong>📦 Articles</strong></td>
-                <td>Liste complète des articles</td>
-                <td>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => handleExport('articles', 'csv')}
-                      disabled={exportLoading}
-                      style={{ minWidth: '90px' }}
-                    >
-                      <Download size={14} />
-                      CSV
-                    </button>
-                  </div>
-                </td>
-              </tr>
+          <div className="table-wrapper" style={{ marginTop: 'var(--space-4)' }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Type de données</th>
+                  <th>Description</th>
+                  <th>Formats disponibles</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Articles */}
+                <tr>
+                  <td><strong>📦 Articles</strong></td>
+                  <td>Liste complète des articles</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleExport('articles', 'csv')}
+                        disabled={exportLoading}
+                      >
+                        <Download size={13} />
+                        CSV
+                      </button>
+                    </div>
+                  </td>
+                </tr>
 
-              {/* Mouvements */}
-              <tr>
-                <td><strong>📋 Mouvements</strong></td>
-                <td>Historique des mouvements de stock</td>
-                <td>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => handleExport('mouvements', 'csv')}
-                      disabled={exportLoading}
-                      style={{ minWidth: '90px' }}
-                    >
-                      <Download size={14} />
-                      CSV
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                {/* Mouvements */}
+                <tr>
+                  <td><strong>📋 Mouvements</strong></td>
+                  <td>Historique des mouvements de stock</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleExport('mouvements', 'csv')}
+                        disabled={exportLoading}
+                      >
+                        <Download size={13} />
+                        CSV
+                      </button>
+                    </div>
+                  </td>
+                </tr>
 
-              {/* Inventaire */}
-              <tr>
-                <td><strong>📊 Inventaire complet</strong></td>
-                <td>Rapport complet de l'inventaire</td>
-                <td>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={() => handleExport('inventaire', 'pdf')}
-                      disabled={exportLoading}
-                      style={{ minWidth: '90px' }}
-                    >
-                      <FileText size={14} />
-                      PDF
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                {/* Inventaire */}
+                <tr>
+                  <td><strong>📊 Inventaire complet</strong></td>
+                  <td>Rapport complet de l'inventaire</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleExport('inventaire', 'pdf')}
+                        disabled={exportLoading}
+                      >
+                        <FileText size={13} />
+                        PDF
+                      </button>
+                    </div>
+                  </td>
+                </tr>
 
-              {/* Stock bas */}
-              <tr>
-                <td><strong><AlertTriangle size={16} style={{ display: 'inline', marginRight: '0.25rem', color: '#dc3545' }} />Stock bas</strong></td>
-                <td>Alerte des articles en stock bas</td>
-                <td>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleExport('stock-bas', 'pdf')}
-                      disabled={exportLoading}
-                      style={{ minWidth: '90px' }}
-                    >
-                      <FileText size={14} />
-                      PDF
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                {/* Stock bas */}
+                <tr>
+                  <td>
+                    <strong>
+                      <AlertTriangle size={14} className="icon-danger" />
+                      {' '}Stock bas
+                    </strong>
+                  </td>
+                  <td>Alerte des articles en stock bas</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleExport('stock-bas', 'pdf')}
+                        disabled={exportLoading}
+                      >
+                        <FileText size={13} />
+                        PDF
+                      </button>
+                    </div>
+                  </td>
+                </tr>
 
-              {/* Ligne séparateur */}
-              <tr style={{ backgroundColor: '#f8f9fa' }}>
-                <td colSpan={3} style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.875rem', color: '#6c757d', padding: '0.5rem' }}>
-                  📚 Données de référence
-                </td>
-              </tr>
+                {/* Séparateur */}
+                <tr className="table-separator-row">
+                  <td colSpan={3} className="table-separator-td">
+                    📚 Données de référence
+                  </td>
+                </tr>
 
-              {/* Fournisseurs */}
-              <tr>
-                <td>
-                  <strong>
-                    <Truck size={16} style={{ display: 'inline', marginRight: '0.25rem', color: '#6f42c1' }} />
-                    Fournisseurs
-                  </strong>
-                </td>
-                <td>Liste complète des fournisseurs</td>
-                <td>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => handleExport('fournisseurs', 'csv')}
-                      disabled={exportLoading}
-                      style={{ minWidth: '90px' }}
-                    >
-                      <Download size={14} />
-                      CSV
-                    </button>
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={() => handleExport('fournisseurs', 'pdf')}
-                      disabled={exportLoading}
-                      style={{ minWidth: '90px' }}
-                    >
-                      <FileText size={14} />
-                      PDF
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                {/* Fournisseurs */}
+                <tr>
+                  <td>
+                    <strong>
+                      <Truck size={14} className="icon-purple" />
+                      {' '}Fournisseurs
+                    </strong>
+                  </td>
+                  <td>Liste complète des fournisseurs</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleExport('fournisseurs', 'csv')}
+                        disabled={exportLoading}
+                      >
+                        <Download size={13} />
+                        CSV
+                      </button>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleExport('fournisseurs', 'pdf')}
+                        disabled={exportLoading}
+                      >
+                        <FileText size={13} />
+                        PDF
+                      </button>
+                    </div>
+                  </td>
+                </tr>
 
-              {/* Tags */}
-              <tr>
-                <td>
-                  <strong>
-                    <TagIcon size={16} style={{ display: 'inline', marginRight: '0.25rem', color: '#fd7e14' }} />
-                    Tags
-                  </strong>
-                </td>
-                <td>Liste complète des tags</td>
-                <td>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => handleExport('tags', 'csv')}
-                      disabled={exportLoading}
-                      style={{ minWidth: '90px' }}
-                    >
-                      <Download size={14} />
-                      CSV
-                    </button>
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={() => handleExport('tags', 'pdf')}
-                      disabled={exportLoading}
-                      style={{ minWidth: '90px' }}
-                    >
-                      <FileText size={14} />
-                      PDF
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                {/* Tags */}
+                <tr>
+                  <td>
+                    <strong>
+                      <TagIcon size={14} className="icon-warning" />
+                      {' '}Tags
+                    </strong>
+                  </td>
+                  <td>Liste complète des tags</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleExport('tags', 'csv')}
+                        disabled={exportLoading}
+                      >
+                        <Download size={13} />
+                        CSV
+                      </button>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleExport('tags', 'pdf')}
+                        disabled={exportLoading}
+                      >
+                        <FileText size={13} />
+                        PDF
+                      </button>
+                    </div>
+                  </td>
+                </tr>
 
-              {/* Emplacements */}
-              <tr>
-                <td>
-                  <strong>
-                    <MapPin size={16} style={{ display: 'inline', marginRight: '0.25rem', color: '#17a2b8' }} />
-                    Emplacements
-                  </strong>
-                </td>
-                <td>Liste complète des emplacements</td>
-                <td>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => handleExport('emplacements', 'csv')}
-                      disabled={exportLoading}
-                      style={{ minWidth: '90px' }}
-                    >
-                      <Download size={14} />
-                      CSV
-                    </button>
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={() => handleExport('emplacements', 'pdf')}
-                      disabled={exportLoading}
-                      style={{ minWidth: '90px' }}
-                    >
-                      <FileText size={14} />
-                      PDF
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                {/* Emplacements */}
+                <tr>
+                  <td>
+                    <strong>
+                      <MapPin size={14} className="icon-info" />
+                      {' '}Emplacements
+                    </strong>
+                  </td>
+                  <td>Liste complète des emplacements</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => handleExport('emplacements', 'csv')}
+                        disabled={exportLoading}
+                      >
+                        <Download size={13} />
+                        CSV
+                      </button>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleExport('emplacements', 'pdf')}
+                        disabled={exportLoading}
+                      >
+                        <FileText size={13} />
+                        PDF
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
           {exportLoading && (
-            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-              <div className="loader"></div>
-              <p>Génération de l'export en cours...</p>
+            <div className="loading-page" style={{ minHeight: '80px' }}>
+              <div className="spinner-sm" />
+              <span className="text-muted">Génération de l'export en cours...</span>
             </div>
           )}
         </div>

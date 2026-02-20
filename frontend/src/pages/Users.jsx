@@ -10,7 +10,6 @@ import { toast } from 'react-toastify'
 import { getUsers, createUser, updateUserRole, updateUserPermissions, deactivateUser, reactivateUser } from '../services/userService'
 import { Users as UsersIcon, Plus, UserCog, Shield, UserX, UserCheck, CheckCircle, XCircle } from 'lucide-react'
 import Modal from '../components/common/Modal'
-import Loader from '../components/common/Loader'
 
 function Users() {
   const queryClient = useQueryClient()
@@ -141,14 +140,6 @@ function Users() {
     }
   }
 
-  // Couleurs des badges de rôles
-  const roleBadgeColors = {
-    admin: '#8b5cf6',          // Violet
-    gestionnaire: '#3b82f6',    // Bleu
-    technicien: '#10b981',      // Vert
-    consultation: '#6b7280'     // Gris
-  }
-
   // Permissions disponibles
   const availablePermissions = [
     { label: 'Articles - Créer', value: 'articles:create' },
@@ -177,33 +168,43 @@ function Users() {
     { label: 'Utilisateurs - Supprimer', value: 'users:delete' }
   ]
 
-  if (isLoading) return <Loader />
+  if (isLoading) {
+    return (
+      <div className="loading-page">
+        <div className="spinner-lg" />
+        <span>Chargement des utilisateurs...</span>
+      </div>
+    )
+  }
 
   return (
-    <div>
-      <div className="flex-between" style={{ marginBottom: '2rem' }}>
+    <div className="page-content">
+      {/* Header */}
+      <div className="page-header">
         <div>
           <h1 className="page-title">
-            <UsersIcon size={32} />
+            <UsersIcon size={28} />
             Utilisateurs
           </h1>
           <p className="page-subtitle">
             Gérez les comptes utilisateurs et leurs permissions
           </p>
         </div>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="btn btn-primary"
-          style={{ gap: '0.5rem' }}
-        >
-          <Plus size={20} />
-          Nouvel utilisateur
-        </button>
+        <div className="page-actions">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="btn btn-primary"
+            aria-label="Créer un nouvel utilisateur"
+          >
+            <Plus size={18} />
+            Nouvel utilisateur
+          </button>
+        </div>
       </div>
 
       {/* Liste des utilisateurs */}
       <div className="card">
-        <div className="table-responsive">
+        <div className="table-wrapper">
           <table className="table">
             <thead>
               <tr>
@@ -223,28 +224,19 @@ function Users() {
                   </td>
                   <td data-label="Email">{user.email}</td>
                   <td data-label="Rôle">
-                    <span style={{
-                      display: 'inline-block',
-                      padding: '0.25rem 0.5rem',
-                      fontSize: '0.875rem',
-                      borderRadius: '0.25rem',
-                      backgroundColor: roleBadgeColors[user.role] || '#6b7280',
-                      color: '#fff',
-                      fontWeight: 500,
-                      textTransform: 'capitalize'
-                    }}>
+                    <span className={`role-badge role-badge-${user.role}`}>
                       {user.role}
                     </span>
                   </td>
                   <td data-label="Statut">
                     {user.is_active ? (
-                      <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <CheckCircle size={16} />
+                      <span className="user-status active">
+                        <CheckCircle size={15} />
                         Actif
                       </span>
                     ) : (
-                      <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <XCircle size={16} />
+                      <span className="user-status inactive">
+                        <XCircle size={15} />
                         Inactif
                       </span>
                     )}
@@ -258,14 +250,15 @@ function Users() {
                         onClick={() => handleOpenRoleModal(user)}
                         className="btn btn-sm btn-secondary"
                         title="Changer le rôle"
+                        aria-label="Changer le rôle"
                       >
                         <UserCog size={14} />
                       </button>
                       <button
                         onClick={() => handleOpenPermissionsModal(user)}
-                        className="btn btn-sm"
-                        style={{ backgroundColor: '#8b5cf6', color: '#fff' }}
+                        className="btn btn-sm btn-purple"
                         title="Permissions custom"
+                        aria-label="Gérer les permissions"
                       >
                         <Shield size={14} />
                       </button>
@@ -274,6 +267,7 @@ function Users() {
                           onClick={() => handleDeactivate(user)}
                           className="btn btn-sm btn-danger"
                           title="Désactiver"
+                          aria-label="Désactiver l'utilisateur"
                         >
                           <UserX size={14} />
                         </button>
@@ -282,6 +276,7 @@ function Users() {
                           onClick={() => handleReactivate(user)}
                           className="btn btn-sm btn-success"
                           title="Réactiver"
+                          aria-label="Réactiver l'utilisateur"
                         >
                           <UserCheck size={14} />
                         </button>
@@ -303,57 +298,59 @@ function Users() {
           title="Nouvel utilisateur"
         >
           <form onSubmit={handleCreateUser}>
-            <div className="form-group">
-              <label>Nom d&apos;utilisateur *</label>
-              <input
-                type="text"
-                className="form-control"
-                value={newUser.username}
-                onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-                required
-                minLength={3}
-              />
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label required">Nom d&apos;utilisateur</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={newUser.username}
+                  onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+                  required
+                  minLength={3}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label required">Email</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label required">Mot de passe</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  required
+                  minLength={8}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Rôle</label>
+                <select
+                  className="form-control form-select"
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                >
+                  <option value="consultation">Consultation</option>
+                  <option value="technicien">Technicien</option>
+                  <option value="gestionnaire">Gestionnaire</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
             </div>
-            <div className="form-group">
-              <label>Email *</label>
-              <input
-                type="email"
-                className="form-control"
-                value={newUser.email}
-                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Mot de passe *</label>
-              <input
-                type="password"
-                className="form-control"
-                value={newUser.password}
-                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                required
-                minLength={8}
-              />
-            </div>
-            <div className="form-group">
-              <label>Rôle</label>
-              <select
-                className="form-control"
-                value={newUser.role}
-                onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-              >
-                <option value="consultation">Consultation</option>
-                <option value="technicien">Technicien</option>
-                <option value="gestionnaire">Gestionnaire</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            <div className="form-actions">
-              <button type="submit" className="btn btn-primary" disabled={createMutation.isLoading}>
-                {createMutation.isLoading ? 'Création...' : 'Créer'}
-              </button>
+            <div className="modal-footer">
               <button type="button" className="btn btn-secondary" onClick={() => setIsCreateModalOpen(false)}>
                 Annuler
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Création...' : 'Créer'}
               </button>
             </div>
           </form>
@@ -365,35 +362,37 @@ function Users() {
         <Modal
           isOpen={true}
           onClose={() => setIsRoleModalOpen(false)}
-          title={`Changer le rôle - ${selectedUser.username}`}
+          title={`Changer le rôle — ${selectedUser.username}`}
         >
-          <p style={{ marginBottom: '1rem', color: '#6b7280' }}>
-            Rôle actuel : <strong style={{ color: roleBadgeColors[selectedUser.role] }}>{selectedUser.role}</strong>
-          </p>
-          <div className="form-group">
-            <label>Nouveau rôle</label>
-            <select
-              className="form-control"
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-            >
-              <option value="consultation">Consultation</option>
-              <option value="technicien">Technicien</option>
-              <option value="gestionnaire">Gestionnaire</option>
-              <option value="admin">Admin</option>
-            </select>
+          <div className="modal-body">
+            <p className="text-muted">
+              Rôle actuel : <span className={`role-badge role-badge-${selectedUser.role}`}>{selectedUser.role}</span>
+            </p>
+            <div className="form-group" style={{ marginTop: 'var(--space-4)' }}>
+              <label className="form-label">Nouveau rôle</label>
+              <select
+                className="form-control form-select"
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+              >
+                <option value="consultation">Consultation</option>
+                <option value="technicien">Technicien</option>
+                <option value="gestionnaire">Gestionnaire</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
           </div>
-          <div className="form-actions">
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={() => setIsRoleModalOpen(false)}>
+              Annuler
+            </button>
             <button
               type="button"
               className="btn btn-primary"
               onClick={handleChangeRole}
-              disabled={changeRoleMutation.isLoading}
+              disabled={changeRoleMutation.isPending}
             >
-              {changeRoleMutation.isLoading ? 'Modification...' : 'Modifier'}
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={() => setIsRoleModalOpen(false)}>
-              Annuler
+              {changeRoleMutation.isPending ? 'Modification...' : 'Modifier'}
             </button>
           </div>
         </Modal>
@@ -404,34 +403,36 @@ function Users() {
         <Modal
           isOpen={true}
           onClose={() => setIsPermissionsModalOpen(false)}
-          title={`Permissions custom - ${selectedUser.username}`}
+          title={`Permissions custom — ${selectedUser.username}`}
         >
-          <p style={{ marginBottom: '1rem', color: '#6b7280' }}>
-            Rôle : <strong>{selectedUser.role}</strong> - Cochez les permissions additionnelles
-          </p>
-          <div style={{ maxHeight: '400px', overflowY: 'auto', marginBottom: '1rem' }}>
-            {availablePermissions.map(perm => (
-              <label key={perm.value} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <input
-                  type="checkbox"
-                  checked={selectedPermissions.includes(perm.value)}
-                  onChange={() => togglePermission(perm.value)}
-                />
-                {perm.label}
-              </label>
-            ))}
+          <div className="modal-body">
+            <p className="text-muted">
+              Rôle : <strong>{selectedUser.role}</strong> — Cochez les permissions additionnelles
+            </p>
+            <div className="permissions-list">
+              {availablePermissions.map(perm => (
+                <label key={perm.value} className="perm-item">
+                  <input
+                    type="checkbox"
+                    checked={selectedPermissions.includes(perm.value)}
+                    onChange={() => togglePermission(perm.value)}
+                  />
+                  {perm.label}
+                </label>
+              ))}
+            </div>
           </div>
-          <div className="form-actions">
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={() => setIsPermissionsModalOpen(false)}>
+              Annuler
+            </button>
             <button
               type="button"
               className="btn btn-primary"
               onClick={handleUpdatePermissions}
-              disabled={updatePermissionsMutation.isLoading}
+              disabled={updatePermissionsMutation.isPending}
             >
-              {updatePermissionsMutation.isLoading ? 'Enregistrement...' : 'Enregistrer'}
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={() => setIsPermissionsModalOpen(false)}>
-              Annuler
+              {updatePermissionsMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
             </button>
           </div>
         </Modal>

@@ -622,6 +622,26 @@
   user-select: none;
 }
 
+/* Boutons de navigation (Précédent/Suivant) — largeur auto */
+.pagination-btn.pagination-nav {
+  width: auto;
+  padding: 0 var(--space-3);
+  gap: var(--space-1);
+}
+
+/* Wrapper des numéros de page */
+.pagination-numbers {
+  display: flex;
+  gap: var(--space-1);
+}
+
+/* Infos de page */
+.pagination-info {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-left: var(--space-3);
+}
+
 @media (max-width: 576px) {
   .pagination-info-row { flex-direction: column; align-items: center; }
   .pagination-btn, .pagination-btn { min-height: 44px; min-width: 44px; }
@@ -1328,4 +1348,586 @@
 [data-theme="dark"] .form-control,
 [data-theme="dark"] .search-input {
   background: var(--color-gray-50);
+}
+
+/* ============================================================================
+   UTILITAIRES — Couleurs de texte
+   ============================================================================ */
+.text-muted {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.text-danger  { color: var(--color-danger); }
+.text-warning { color: var(--color-warning); }
+.text-success { color: var(--color-success); }
+.text-primary { color: var(--color-primary); }
+
+/* Couleurs pour les icônes */
+.icon-danger  { color: var(--color-danger); }
+.icon-warning { color: var(--color-warning); }
+.icon-success { color: var(--color-success); }
+.icon-purple  { color: #8b5cf6; }
+.icon-info    { color: var(--color-info, var(--color-primary)); }
+
+/* ============================================================================
+   BOUTONS — Variantes supplémentaires
+   ============================================================================ */
+.btn-block {
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-purple {
+  background: #8b5cf6;
+  color: white;
+  border: 1px solid #7c3aed;
+}
+
+.btn-purple:hover {
+  background: #7c3aed;
+  color: white;
+}
+
+/* ============================================================================
+   PROGRESS — Indicateur de remplissage
+   ============================================================================ */
+.fill-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.progress-label {
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
+.progress-bar.low    { background-color: var(--color-success); }
+.progress-bar.medium { background-color: var(--color-warning); }
+.progress-bar.high   { background-color: var(--color-danger); }
+
+/* ============================================================================
+   QR CODE — Modal de visualisation
+   ============================================================================ */
+.qr-modal-body {
+  text-align: center;
+  padding: var(--space-4);
+}
+
+.qr-modal-info {
+  margin-bottom: var(--space-4);
+}
+
+.qr-code-container {
+  background-color: #fff; /* blanc obligatoire pour la lisibilité du QR code */
+  padding: var(--space-8);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  margin-bottom: var(--space-6);
+  min-width: 300px;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-modal-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-4);
+}
+
+/* ============================================================================
+   PLAN ATELIER — Arbre hiérarchique des emplacements
+   ============================================================================ */
+.plan-zone-wrapper {
+  margin-bottom: var(--space-6);
+  border-left: 4px solid var(--color-primary);
+  padding-left: var(--space-4);
+}
+
+.plan-zone-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+  gap: var(--space-3);
+}
+
+.plan-zone-header.clickable {
+  cursor: pointer;
+}
+
+.plan-zone-header.clickable:hover {
+  background-color: var(--color-gray-100);
+}
+
+.plan-zone-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
+}
+
+.plan-zone-icon   { color: var(--color-primary); flex-shrink: 0; }
+.plan-etagere-icon { color: var(--color-danger);  flex-shrink: 0; }
+.plan-boite-icon  { color: var(--color-info, var(--color-primary-400)); flex-shrink: 0; }
+.plan-chevron     { color: var(--color-primary); flex-shrink: 0; }
+
+.plan-zone-title    { margin: 0; font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); }
+.plan-etagere-title { margin: 0; font-size: var(--font-size-base); font-weight: 600; }
+.plan-boite-title   { margin: 0; font-size: var(--font-size-sm); font-weight: 600; }
+
+.plan-item-description {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.plan-item-count {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.plan-item-capacity {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.plan-item-capacity-count {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.plan-etagere-wrapper {
+  margin-left: var(--space-8);
+  margin-bottom: var(--space-2);
+}
+
+.plan-etagere-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  background-color: var(--color-bg-primary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  gap: var(--space-3);
+}
+
+.plan-boite-wrapper {
+  margin-left: var(--space-8);
+  margin-top: var(--space-2);
+}
+
+.plan-boite-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  gap: var(--space-2);
+}
+
+/* ============================================================================
+   UTILISATEURS — Badges de rôle et statut
+   ============================================================================ */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: capitalize;
+}
+
+.role-badge-admin        { background: #ede9fe; color: #6d28d9; }
+.role-badge-gestionnaire { background: #dbeafe; color: #1d4ed8; }
+.role-badge-technicien   { background: #d1fae5; color: #065f46; }
+.role-badge-consultation { background: var(--color-gray-100); color: var(--color-text-secondary); }
+
+.user-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+
+.user-status.active   { color: var(--color-success); }
+.user-status.inactive { color: var(--color-text-secondary); }
+
+/* ============================================================================
+   UTILISATEURS — Modal permissions
+   ============================================================================ */
+.permissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.perm-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.perm-item:hover {
+  background: var(--color-bg-secondary);
+}
+
+.perm-item input[type="checkbox"] {
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   RAPPORTS — Affichage de la valeur totale
+   ============================================================================ */
+.rapports-value-display {
+  font-size: 2rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-success);
+  margin: var(--space-2) 0;
+}
+
+.rapports-section-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-3);
+}
+
+.rapports-value-section {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+/* ============================================================================
+   RAPPORTS — Sélection et export
+   ============================================================================ */
+.label-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.selection-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.selection-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.selection-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border);
+  transition: background 0.15s ease;
+}
+
+.selection-item:last-child { border-bottom: none; }
+
+.selection-item:hover:not(.disabled) {
+  background: var(--color-bg-secondary);
+}
+
+.selection-item.selected {
+  background: var(--color-primary-50, #eff6ff);
+}
+
+.selection-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.selection-item-info { flex: 1; min-width: 0; }
+.selection-item-name { font-weight: var(--font-weight-medium); }
+.selection-item-meta { font-size: var(--font-size-sm); color: var(--color-text-secondary); }
+
+.selection-check-icon   { color: var(--color-primary); flex-shrink: 0; }
+.selection-uncheck-icon { color: var(--color-border); flex-shrink: 0; }
+
+.selection-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+}
+
+.selection-count {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.export-hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-2);
+}
+
+.table-separator-row td {
+  padding: var(--space-1) !important;
+  background: var(--color-bg-secondary) !important;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+}
+
+/* ============================================================================
+   NOUVELLE COMMANDE — Formulaire d'ajout de ligne
+   ============================================================================ */
+.cmd-ligne-grid {
+  display: grid;
+  grid-template-columns: 3fr 1fr 1.5fr auto;
+  gap: var(--space-4);
+  align-items: end;
+}
+
+.cmd-qty-input {
+  width: 100px;
+  min-width: 80px;
+}
+
+.cmd-price-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cmd-total-row td {
+  border-top: 2px solid var(--color-border);
+  font-weight: var(--font-weight-bold);
+}
+
+.cmd-total-value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-success);
+}
+
+.form-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+/* ============================================================================
+   SCAN QR CODE — Interface de scan
+   ============================================================================ */
+.scan-container {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.scan-mode-btns {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.scan-mode-btns .btn {
+  flex: 1;
+}
+
+.scan-reader-input {
+  font-family: monospace, monospace;
+  font-size: var(--font-size-lg);
+  border-width: 2px;
+  border-color: var(--color-primary);
+}
+
+.scan-submit-btn {
+  width: 100%;
+  margin-top: var(--space-4);
+}
+
+.scan-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.scan-info-section {
+  margin-bottom: var(--space-4);
+}
+
+.scan-info-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+  font-weight: var(--font-weight-semibold);
+}
+
+.scan-info-value {
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.scan-info-value-lg {
+  font-size: var(--font-size-2xl, 1.5rem);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+}
+
+.scan-photo-wrapper {
+  display: inline-block;
+  max-width: 300px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.scan-photo-wrapper img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.scan-result-actions {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: var(--space-8);
+}
+
+/* Loader inline (dans une carte) */
+.loading-card {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-8);
+}
+
+/* ============================================================================
+   DARK MODE — Ajustements des nouveaux composants
+   ============================================================================ */
+[data-theme="dark"] .plan-zone-header {
+  background-color: var(--color-gray-50);
+}
+
+[data-theme="dark"] .plan-zone-header.clickable:hover {
+  background-color: var(--color-gray-100);
+}
+
+[data-theme="dark"] .plan-etagere-row {
+  background-color: var(--color-bg-primary);
+}
+
+[data-theme="dark"] .plan-boite-row {
+  background-color: var(--color-gray-50);
+}
+
+[data-theme="dark"] .selection-item.selected {
+  background: var(--color-gray-100);
+}
+
+[data-theme="dark"] .selection-controls {
+  background: var(--color-gray-50);
+}
+
+[data-theme="dark"] .qr-code-container {
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .scan-reader-input {
+  background: var(--color-gray-50);
+}
+
+/* Responsive — plan atelier */
+@media (max-width: 768px) {
+  .cmd-ligne-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .plan-etagere-wrapper {
+    margin-left: var(--space-4);
+  }
+
+  .plan-boite-wrapper {
+    margin-left: var(--space-4);
+  }
+}
+
+@media (max-width: 576px) {
+  .cmd-ligne-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .scan-mode-btns {
+    flex-direction: column;
+  }
+
+  .scan-result-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .form-actions-row {
+    flex-direction: column;
+  }
+
+  .plan-zone-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .plan-etagere-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .plan-boite-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

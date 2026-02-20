@@ -64,21 +64,10 @@ function Mouvements() {
     }
   })
 
-  const handleCreateClick = () => {
-    setIsModalOpen(true)
-  }
-
-  const handleFormSubmit = (formData) => {
-    createMutation.mutate(formData)
-  }
-
-  const handleModalClose = () => {
-    setIsModalOpen(false)
-  }
-
-  const handleDeleteClick = (mouvement) => {
-    setDeleteConfirm(mouvement)
-  }
+  const handleCreateClick = () => setIsModalOpen(true)
+  const handleFormSubmit = (formData) => createMutation.mutate(formData)
+  const handleModalClose = () => setIsModalOpen(false)
+  const handleDeleteClick = (mouvement) => setDeleteConfirm(mouvement)
 
   const handleDeleteConfirm = () => {
     if (deleteConfirm) {
@@ -86,23 +75,20 @@ function Mouvements() {
     }
   }
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page)
-  }
+  const handlePageChange = (page) => setCurrentPage(page)
 
   if (isLoading) {
     return (
-      <div>
-        <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>Mouvements de Stock</h1>
-        <div className="loader"></div>
+      <div className="loading-page">
+        <div className="spinner-lg" />
+        <span>Chargement des mouvements...</span>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div>
-        <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>Mouvements de Stock</h1>
+      <div className="page-content">
         <div className="alert alert-danger">
           Erreur lors du chargement des mouvements : {error.message}
         </div>
@@ -113,94 +99,111 @@ function Mouvements() {
   const mouvements = data?.items || []
 
   return (
-    <div>
-      <div className="flex-between" style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem' }}>Mouvements de Stock</h1>
-        {canCreate('mouvements') && (
-          <button className="btn btn-primary" onClick={handleCreateClick}>
-            <Plus size={18} />
-            Nouveau mouvement
-          </button>
-        )}
+    <div className="page-content">
+      {/* Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Mouvements de Stock</h1>
+          <p className="page-subtitle">
+            Historique des entrées et sorties ({data?.total || 0} mouvement{(data?.total || 0) > 1 ? 's' : ''})
+          </p>
+        </div>
+        <div className="page-actions">
+          {canCreate('mouvements') && (
+            <button className="btn btn-primary" onClick={handleCreateClick}>
+              <Plus size={18} />
+              Nouveau mouvement
+            </button>
+          )}
+        </div>
       </div>
-
-
 
       {/* Historique des mouvements */}
       <div className="card">
-        <h2 className="card-header">
-          Historique des mouvements ({data?.total || 0})
-        </h2>
-
         {mouvements.length === 0 ? (
-          <div className="card-body text-center">
-            <p>Aucun mouvement enregistré.</p>
+          <div className="empty-state">
+            <ArrowUp size={56} className="empty-state-icon" />
+            <h2 className="empty-state-title">Aucun mouvement</h2>
+            <p className="empty-state-description">Aucun mouvement de stock enregistré.</p>
+            {canCreate('mouvements') && (
+              <button className="btn btn-primary" onClick={handleCreateClick}>
+                <Plus size={18} />
+                Enregistrer un mouvement
+              </button>
+            )}
           </div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Article</th>
-                <th>Quantité</th>
-                <th>Avant</th>
-                <th>Après</th>
-                <th>Motif</th>
-                {canDelete('mouvements') && <th>Actions</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {mouvements.map((mouvement) => (
-                <tr key={mouvement.id}>
-                  <td data-label="Date">
-                    {format(new Date(mouvement.created_at), 'dd/MM/yyyy HH:mm')}
-                  </td>
-                  <td data-label="Type">
-                    {mouvement.type === 'ENTREE' ? (
-                      <span className="badge badge-success">
-                        <ArrowUp size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
-                        Entrée
-                      </span>
-                    ) : (
-                      <span className="badge badge-danger">
-                        <ArrowDown size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
-                        Sortie
-                      </span>
-                    )}
-                  </td>
-                  <td data-label="Article">
-                    <strong>{mouvement.article?.nom || 'N/A'}</strong>
-                  </td>
-                  <td data-label="Quantité"><strong>{mouvement.quantite}</strong></td>
-                  <td data-label="Avant">{mouvement.quantite_avant}</td>
-                  <td data-label="Après">{mouvement.quantite_apres}</td>
-                  <td data-label="Motif">{mouvement.motif || '-'}</td>
-                  {canDelete('mouvements') && (
-                    <td data-label="Actions">
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDeleteClick(mouvement)}
-                        title="Supprimer ce mouvement"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+          <>
+            <div className="table-wrapper">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Article</th>
+                    <th>Quantité</th>
+                    <th>Avant</th>
+                    <th>Après</th>
+                    <th>Motif</th>
+                    {canDelete('mouvements') && <th>Actions</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {mouvements.map((mouvement) => (
+                    <tr key={mouvement.id}>
+                      <td data-label="Date">
+                        {format(new Date(mouvement.created_at), 'dd/MM/yyyy HH:mm')}
+                      </td>
+                      <td data-label="Type">
+                        {mouvement.type === 'ENTREE' ? (
+                          <span className="badge badge-success">
+                            <ArrowUp size={11} />
+                            Entrée
+                          </span>
+                        ) : (
+                          <span className="badge badge-danger">
+                            <ArrowDown size={11} />
+                            Sortie
+                          </span>
+                        )}
+                      </td>
+                      <td data-label="Article">
+                        <strong>{mouvement.article?.nom || 'N/A'}</strong>
+                      </td>
+                      <td data-label="Quantité"><strong>{mouvement.quantite}</strong></td>
+                      <td data-label="Avant">{mouvement.quantite_avant}</td>
+                      <td data-label="Après">{mouvement.quantite_apres}</td>
+                      <td data-label="Motif">{mouvement.motif || '-'}</td>
+                      {canDelete('mouvements') && (
+                        <td data-label="Actions">
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDeleteClick(mouvement)}
+                            title="Supprimer ce mouvement"
+                            aria-label="Supprimer ce mouvement"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-        {/* Pagination */}
-        {mouvements.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalItems={data?.total || 0}
-            itemsPerPage={itemsPerPage}
-            onPageChange={handlePageChange}
-          />
+            {/* Pagination */}
+            {mouvements.length > 0 && (
+              <div className="card-footer">
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={data?.total || 0}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -226,30 +229,21 @@ function Mouvements() {
         size="small"
       >
         {deleteConfirm && (
-          <div>
-            <p>
-              Supprimer le mouvement{' '}
-              <strong>
-                {deleteConfirm.type === 'ENTREE' ? 'Entrée' : 'Sortie'} de {deleteConfirm.quantite} unité(s)
-              </strong>{' '}
-              pour <strong>{deleteConfirm.article?.nom || 'N/A'}</strong> ?
-            </p>
-            <div
-              style={{
-                background: '#fff3cd',
-                border: '1px solid #ffc107',
-                borderRadius: '6px',
-                padding: '0.75rem 1rem',
-                marginTop: '1rem',
-                marginBottom: '1rem',
-                fontSize: '0.875rem',
-                color: '#856404'
-              }}
-            >
-              ⚠️ Le stock de l&apos;article ne sera <strong>PAS</strong> mis à jour.
-              Vérifiez et corrigez le stock manuellement si nécessaire.
+          <>
+            <div className="modal-body">
+              <p>
+                Supprimer le mouvement{' '}
+                <strong>
+                  {deleteConfirm.type === 'ENTREE' ? 'Entrée' : 'Sortie'} de {deleteConfirm.quantite} unité(s)
+                </strong>{' '}
+                pour <strong>{deleteConfirm.article?.nom || 'N/A'}</strong> ?
+              </p>
+              <div className="alert alert-warning" style={{ marginTop: 'var(--space-4)' }}>
+                ⚠️ Le stock de l&apos;article ne sera <strong>PAS</strong> mis à jour.
+                Vérifiez et corrigez le stock manuellement si nécessaire.
+              </div>
             </div>
-            <div className="form-actions">
+            <div className="modal-footer">
               <button
                 className="btn btn-secondary"
                 onClick={() => setDeleteConfirm(null)}
@@ -265,7 +259,7 @@ function Mouvements() {
                 {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
               </button>
             </div>
-          </div>
+          </>
         )}
       </Modal>
     </div>

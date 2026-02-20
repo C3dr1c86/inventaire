@@ -5,7 +5,7 @@
  * avec indicateurs de remplissage et génération de QR codes.
  */
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -20,7 +20,6 @@ import api from '../services/api'
 import { Plus, Edit2, Trash2, MapPin, QrCode, Download, Warehouse } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import EmplacementForm from '../components/emplacements/EmplacementForm'
-import Loader from '../components/common/Loader'
 import { usePermissions } from '../hooks/usePermissions'
 
 function Emplacements() {
@@ -106,7 +105,6 @@ function Emplacements() {
       }
       loadQRCode()
     } else {
-      // Nettoyer l'URL du blob quand le modal se ferme
       if (qrcodeUrl) {
         window.URL.revokeObjectURL(qrcodeUrl)
         setQrcodeUrl(null)
@@ -156,32 +154,24 @@ function Emplacements() {
     }
   }
 
-  // Fonction pour calculer la couleur de la barre de remplissage
-  const getBarColor = (pourcentage) => {
-    if (pourcentage > 90) return '#dc3545' // Rouge
-    if (pourcentage > 70) return '#ffc107' // Jaune/Orange
-    return '#28a745' // Vert
-  }
-
   // Rendu de l'indicateur de remplissage
   const renderIndicateurRemplissage = (emplacement) => {
     if (emplacement.capacite_max === null || emplacement.capacite_max === 0) {
-      return <span className="text-muted-italic">Illimité</span>
+      return <span className="text-muted">Illimité</span>
     }
 
     const pourcentage = emplacement.pourcentage_remplissage
+    const barClass = pourcentage > 90 ? 'high' : pourcentage > 70 ? 'medium' : 'low'
 
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="fill-indicator">
         <div className="progress-track">
-          <div style={{
-            width: `${Math.min(pourcentage, 100)}%`,
-            height: '100%',
-            backgroundColor: getBarColor(pourcentage),
-            transition: 'width 0.3s ease'
-          }} />
+          <div
+            className={`progress-bar ${barClass}`}
+            style={{ width: `${Math.min(pourcentage, 100)}%` }}
+          />
         </div>
-        <span style={{ fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
+        <span className="progress-label">
           {emplacement.quantite_utilisee} / {emplacement.capacite_max} ({pourcentage.toFixed(0)}%)
         </span>
       </div>
@@ -190,14 +180,15 @@ function Emplacements() {
 
   if (isLoading) {
     return (
-      <div className="page-container">
-        <Loader />
+      <div className="loading-page">
+        <div className="spinner-lg" />
+        <span>Chargement...</span>
       </div>
     )
   }
 
   return (
-    <div className="page-container">
+    <div className="page-content">
       {/* Header */}
       <div className="page-header">
         <div>
@@ -209,22 +200,17 @@ function Emplacements() {
             Gérez les emplacements de stockage dans votre atelier (Zones → Étagères → Boîtes)
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div className="page-actions">
           <button
             onClick={() => navigate('/plan-atelier')}
             className="btn btn-secondary"
-            style={{ gap: '0.5rem' }}
             title="Vue d'ensemble des emplacements"
           >
             <Warehouse size={20} />
             Plan d'atelier
           </button>
           {canCreate('emplacements') && (
-            <button
-              onClick={handleCreate}
-              className="btn btn-primary"
-              style={{ gap: '0.5rem' }}
-            >
+            <button onClick={handleCreate} className="btn btn-primary">
               <Plus size={20} />
               Nouvel emplacement
             </button>
@@ -235,9 +221,11 @@ function Emplacements() {
       {/* Liste des emplacements */}
       {emplacementsTree && emplacementsTree.length === 0 ? (
         <div className="empty-state">
-          <MapPin size={64} />
-          <h2>Aucun emplacement</h2>
-          <p>Créez votre premier bâtiment/zone pour commencer à organiser votre atelier</p>
+          <MapPin size={64} className="empty-state-icon" />
+          <p className="empty-state-title">Aucun emplacement</p>
+          <p className="empty-state-description">
+            Créez votre premier bâtiment/zone pour commencer à organiser votre atelier
+          </p>
           {canCreate('emplacements') && (
             <button onClick={handleCreate} className="btn btn-primary">
               <Plus size={20} />
@@ -247,7 +235,7 @@ function Emplacements() {
         </div>
       ) : (
         <div className="card">
-          <div className="table-responsive">
+          <div className="table-wrapper">
             <table className="table">
               <thead>
                 <tr>
@@ -259,7 +247,7 @@ function Emplacements() {
               </thead>
               <tbody>
                 {emplacementsTree?.map((zone) => (
-                  <React.Fragment key={zone.id}>
+                  <Fragment key={zone.id}>
                     {/* ZONE (Niveau 0) */}
                     <tr className="emplacement-zone-row">
                       <td data-label="Code">
@@ -271,7 +259,7 @@ function Emplacements() {
                         )}
                       </td>
                       <td data-label="Description">
-                        {zone.description || <span className="text-muted-italic">Aucune description</span>}
+                        {zone.description || <span className="text-muted">Aucune description</span>}
                       </td>
                       <td data-label="Capacité">{renderIndicateurRemplissage(zone)}</td>
                       <td data-label="Actions">
@@ -281,7 +269,7 @@ function Emplacements() {
                               <Edit2 size={14} />
                             </button>
                           )}
-                          <button onClick={() => handleQRCodeClick(zone)} className="btn btn-sm btn-info" title="Voir QR Code">
+                          <button onClick={() => handleQRCodeClick(zone)} className="btn btn-sm btn-ghost" title="Voir QR Code">
                             <QrCode size={14} />
                           </button>
                           {canDelete('emplacements') && (
@@ -295,7 +283,7 @@ function Emplacements() {
 
                     {/* ÉTAGÈRES (Niveau 1) */}
                     {zone.children?.map((etagere) => (
-                      <React.Fragment key={etagere.id}>
+                      <Fragment key={etagere.id}>
                         <tr className="emplacement-etagere-row">
                           <td data-label="Code" className="emplacement-niveau-1">
                             ↳ 📚 {etagere.code}
@@ -306,7 +294,7 @@ function Emplacements() {
                             )}
                           </td>
                           <td data-label="Description">
-                            {etagere.description || <span className="text-muted-italic">Aucune description</span>}
+                            {etagere.description || <span className="text-muted">Aucune description</span>}
                           </td>
                           <td data-label="Capacité">{renderIndicateurRemplissage(etagere)}</td>
                           <td data-label="Actions">
@@ -316,7 +304,7 @@ function Emplacements() {
                                   <Edit2 size={14} />
                                 </button>
                               )}
-                              <button onClick={() => handleQRCodeClick(etagere)} className="btn btn-sm btn-info" title="Voir QR Code">
+                              <button onClick={() => handleQRCodeClick(etagere)} className="btn btn-sm btn-ghost" title="Voir QR Code">
                                 <QrCode size={14} />
                               </button>
                               {canDelete('emplacements') && (
@@ -335,7 +323,7 @@ function Emplacements() {
                               ↳ 📦 {boite.code}
                             </td>
                             <td data-label="Description">
-                              {boite.description || <span className="text-muted-italic">Aucune description</span>}
+                              {boite.description || <span className="text-muted">Aucune description</span>}
                             </td>
                             <td data-label="Capacité">{renderIndicateurRemplissage(boite)}</td>
                             <td data-label="Actions">
@@ -345,7 +333,7 @@ function Emplacements() {
                                     <Edit2 size={14} />
                                   </button>
                                 )}
-                                <button onClick={() => handleQRCodeClick(boite)} className="btn btn-sm btn-info" title="Voir QR Code">
+                                <button onClick={() => handleQRCodeClick(boite)} className="btn btn-sm btn-ghost" title="Voir QR Code">
                                   <QrCode size={14} />
                                 </button>
                                 {canDelete('emplacements') && (
@@ -357,9 +345,9 @@ function Emplacements() {
                             </td>
                           </tr>
                         ))}
-                      </React.Fragment>
+                      </Fragment>
                     ))}
-                  </React.Fragment>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
@@ -393,30 +381,30 @@ function Emplacements() {
         onClose={() => setDeleteConfirm(null)}
         title="Confirmer la suppression"
       >
-        <div style={{ padding: '1rem 0' }}>
+        <div className="modal-body">
           <p>
             Êtes-vous sûr de vouloir supprimer l'emplacement{' '}
             <strong>{deleteConfirm?.code}</strong> ?
           </p>
-          <p style={{ color: 'var(--danger)', marginTop: '1rem' }}>
+          <p className="alert-warning">
             ⚠️ Attention : Cette action est bloquée si l'emplacement contient des sous-emplacements ou des articles.
           </p>
-          <div className="modal-actions" style={{ marginTop: '2rem' }}>
-            <button
-              onClick={() => setDeleteConfirm(null)}
-              className="btn btn-secondary"
-              disabled={deleteMutation.isPending}
-            >
-              Annuler
-            </button>
-            <button
-              onClick={confirmDelete}
-              className="btn btn-danger"
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
-            </button>
-          </div>
+        </div>
+        <div className="modal-footer">
+          <button
+            onClick={() => setDeleteConfirm(null)}
+            className="btn btn-secondary"
+            disabled={deleteMutation.isPending}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={confirmDelete}
+            className="btn btn-danger"
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
+          </button>
         </div>
       </Modal>
 
@@ -428,30 +416,17 @@ function Emplacements() {
         size="medium"
       >
         {qrcodeEmplacement && (
-          <div style={{ textAlign: 'center', padding: '1rem' }}>
-            <div style={{ marginBottom: '1rem' }}>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                Emplacement : <code style={{ fontSize: '1rem', fontWeight: 'bold' }}>{qrcodeEmplacement.code_complet || qrcodeEmplacement.code}</code>
+          <div className="qr-modal-body">
+            <div className="qr-modal-info">
+              <p className="text-muted">
+                Emplacement : <code>{qrcodeEmplacement.code_complet || qrcodeEmplacement.code}</code>
               </p>
               {qrcodeEmplacement.description && (
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                  {qrcodeEmplacement.description}
-                </p>
+                <p className="text-muted">{qrcodeEmplacement.description}</p>
               )}
             </div>
 
-            <div style={{
-              backgroundColor: '#fff',
-              padding: '2rem',
-              borderRadius: '8px',
-              border: '1px solid #e0e0e0',
-              marginBottom: '1.5rem',
-              minWidth: '300px',
-              minHeight: '300px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
+            <div className="qr-code-container">
               {qrcodeUrl ? (
                 <img
                   src={qrcodeUrl}
@@ -459,15 +434,14 @@ function Emplacements() {
                   style={{ maxWidth: '300px', height: 'auto' }}
                 />
               ) : (
-                <p style={{ color: 'var(--text-secondary)' }}>Chargement du QR code...</p>
+                <p className="text-muted">Chargement du QR code...</p>
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <div className="action-buttons">
               <button
                 onClick={() => handleDownloadQRCode(qrcodeEmplacement)}
                 className="btn btn-primary"
-                style={{ gap: '0.5rem' }}
               >
                 <Download size={18} />
                 Télécharger
@@ -480,7 +454,7 @@ function Emplacements() {
               </button>
             </div>
 
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '1rem' }}>
+            <p className="qr-modal-hint">
               💡 Imprimez ce QR code pour identifier rapidement cet emplacement
             </p>
           </div>

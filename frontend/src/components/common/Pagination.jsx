@@ -36,28 +36,23 @@ function Pagination({ currentPage, totalItems, itemsPerPage, onPageChange }) {
     const maxPagesToShow = 5
 
     if (totalPages <= maxPagesToShow) {
-      // Afficher toutes les pages si moins de maxPagesToShow
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i)
       }
     } else {
-      // Afficher avec ellipses
       if (currentPage <= 3) {
-        // Au début
         for (let i = 1; i <= 4; i++) {
           pages.push(i)
         }
         pages.push('...')
         pages.push(totalPages)
       } else if (currentPage >= totalPages - 2) {
-        // À la fin
         pages.push(1)
         pages.push('...')
         for (let i = totalPages - 3; i <= totalPages; i++) {
           pages.push(i)
         }
       } else {
-        // Au milieu
         pages.push(1)
         pages.push('...')
         pages.push(currentPage - 1)
@@ -76,7 +71,7 @@ function Pagination({ currentPage, totalItems, itemsPerPage, onPageChange }) {
   return (
     <div className="pagination">
       <button
-        className="pagination-btn"
+        className="pagination-btn pagination-nav"
         onClick={handlePrevious}
         disabled={currentPage === 1}
         title="Page précédente"
@@ -98,7 +93,7 @@ function Pagination({ currentPage, totalItems, itemsPerPage, onPageChange }) {
           return (
             <button
               key={page}
-              className={`pagination-number ${currentPage === page ? 'active' : ''}`}
+              className={`pagination-btn pagination-page${currentPage === page ? ' active' : ''}`}
               onClick={() => handlePageClick(page)}
             >
               {page}
@@ -108,7 +103,7 @@ function Pagination({ currentPage, totalItems, itemsPerPage, onPageChange }) {
       </div>
 
       <button
-        className="pagination-btn"
+        className="pagination-btn pagination-nav"
         onClick={handleNext}
         disabled={currentPage === totalPages}
         title="Page suivante"

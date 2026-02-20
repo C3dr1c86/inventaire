@@ -11,7 +11,6 @@ import { getTags, deleteTag, createTag, updateTag } from '../services/tagService
 import { Plus, Edit2, Trash2, Tag } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import TagForm from '../components/tags/TagForm'
-import Loader from '../components/common/Loader'
 import { usePermissions } from '../hooks/usePermissions'
 
 function Tags() {
@@ -101,53 +100,58 @@ function Tags() {
 
   if (isLoading) {
     return (
-      <div className="page-container">
-        <Loader />
+      <div className="loading-page">
+        <div className="spinner-lg" />
+        <span>Chargement des tags...</span>
       </div>
     )
   }
 
   return (
-    <div className="page-container">
+    <div className="page-content">
       {/* Header */}
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            <Tag size={32} />
+            <Tag size={28} />
             Tags
           </h1>
           <p className="page-subtitle">
             Gérez les tags pour identifier et classer vos articles
           </p>
         </div>
-        {canCreate('tags') && (
-          <button
-            onClick={handleCreate}
-            className="btn btn-primary"
-            style={{ gap: '0.5rem' }}
-          >
-            <Plus size={20} />
-            Nouveau tag
-          </button>
-        )}
+        <div className="page-actions">
+          {canCreate('tags') && (
+            <button
+              onClick={handleCreate}
+              className="btn btn-primary"
+              aria-label="Créer un nouveau tag"
+            >
+              <Plus size={18} />
+              Nouveau tag
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Liste des tags */}
       {tags && tags.length === 0 ? (
         <div className="empty-state">
-          <Tag size={64} />
-          <h2>Aucun tag</h2>
-          <p>Créez votre premier tag pour identifier et classer vos articles</p>
+          <Tag size={56} className="empty-state-icon" />
+          <h2 className="empty-state-title">Aucun tag</h2>
+          <p className="empty-state-description">
+            Créez votre premier tag pour identifier et classer vos articles
+          </p>
           {canCreate('tags') && (
             <button onClick={handleCreate} className="btn btn-primary">
-              <Plus size={20} />
+              <Plus size={18} />
               Créer un tag
             </button>
           )}
         </div>
       ) : (
         <div className="card">
-          <div className="table-responsive">
+          <div className="table-wrapper">
             <table className="table">
               <thead>
                 <tr>
@@ -163,32 +167,30 @@ function Tags() {
               <tbody>
                 {tags?.map((tag) => (
                   <tr key={tag.id}>
-                    <td>{tag.id}</td>
-                    <td>
+                    <td data-label="ID">{tag.id}</td>
+                    <td data-label="Nom">
                       <strong>{tag.nom}</strong>
                     </td>
-                    <td>
-                      <code style={{ fontSize: '0.875rem' }}>{tag.couleur}</code>
+                    <td data-label="Couleur">
+                      <code className="sku-code">{tag.couleur}</code>
                     </td>
-                    <td>
+                    <td data-label="Aperçu">
                       <span
-                        className="tag-badge"
+                        className="tag-pill"
                         style={{ backgroundColor: tag.couleur }}
                       >
                         {tag.nom}
                       </span>
                     </td>
-                    <td>
+                    <td data-label="Description">
                       {tag.description || (
-                        <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                          Aucune description
-                        </span>
+                        <span className="text-muted">Aucune description</span>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Créé le">
                       {new Date(tag.created_at).toLocaleDateString('fr-FR')}
                     </td>
-                    <td>
+                    <td data-label="Actions">
                       <div className="action-buttons">
                         {canUpdate('tags') && (
                           <button
@@ -246,33 +248,33 @@ function Tags() {
         onClose={() => setDeleteConfirm(null)}
         title="Confirmer la suppression"
       >
-        <div style={{ padding: '1rem 0' }}>
+        <div className="modal-body">
           <p>
             Êtes-vous sûr de vouloir supprimer le tag{' '}
-            <span className="tag-badge" style={{ backgroundColor: deleteConfirm?.couleur }}>
+            <span className="tag-pill" style={{ backgroundColor: deleteConfirm?.couleur }}>
               {deleteConfirm?.nom}
             </span>{' '}
             ?
           </p>
-          <p style={{ color: 'var(--warning)', marginTop: '1rem' }}>
+          <div className="alert alert-warning" style={{ marginTop: 'var(--space-4)' }}>
             ⚠️ Ce tag sera retiré de tous les articles associés.
-          </p>
-          <div className="modal-actions" style={{ marginTop: '2rem' }}>
-            <button
-              onClick={() => setDeleteConfirm(null)}
-              className="btn btn-secondary"
-              disabled={deleteMutation.isPending}
-            >
-              Annuler
-            </button>
-            <button
-              onClick={confirmDelete}
-              className="btn btn-danger"
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
-            </button>
           </div>
+        </div>
+        <div className="modal-footer">
+          <button
+            onClick={() => setDeleteConfirm(null)}
+            className="btn btn-secondary"
+            disabled={deleteMutation.isPending}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={confirmDelete}
+            className="btn btn-danger"
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
+          </button>
         </div>
       </Modal>
     </div>

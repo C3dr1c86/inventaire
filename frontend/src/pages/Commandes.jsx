@@ -24,10 +24,23 @@ import {
   downloadPDF
 } from '../services/commandeService'
 import { getFournisseurs } from '../services/fournisseurService'
-import Loader from '../components/common/Loader'
 import Pagination from '../components/common/Pagination'
 import Modal from '../components/common/Modal'
 import { usePermissions } from '../hooks/usePermissions'
+
+// Map statut → classe badge charte
+const STATUT_BADGE = {
+  BROUILLON: 'badge badge-neutral',
+  ENVOYEE:   'badge badge-primary',
+  RECUE:     'badge badge-success',
+  ANNULEE:   'badge badge-danger'
+}
+const STATUT_LABEL = {
+  BROUILLON: 'Brouillon',
+  ENVOYEE:   'Envoyée',
+  RECUE:     'Reçue',
+  ANNULEE:   'Annulée'
+}
 
 const Commandes = () => {
   const navigate = useNavigate()
@@ -73,8 +86,7 @@ const Commandes = () => {
       setCommandeToDelete(null)
     },
     onError: (error) => {
-      const message = error.response?.data?.detail || 'Erreur lors de la suppression'
-      toast.error(message)
+      toast.error(error.response?.data?.detail || 'Erreur lors de la suppression')
     }
   })
 
@@ -89,39 +101,25 @@ const Commandes = () => {
       // Ouvrir un brouillon email pré-rempli si le fournisseur a un email
       if (data.fournisseur?.email) {
         const subject = `Commande N°${data.numero_commande}`
-
         let body = `Bonjour,\n\n`
         body += `Veuillez trouver ci-dessous notre commande N°${data.numero_commande}.\n\n`
-        body += `Détail de la commande :\n`
-        body += `${'─'.repeat(50)}\n`
-
+        body += `Détail de la commande :\n${'─'.repeat(50)}\n`
         data.lignes.forEach(ligne => {
           body += `• ${ligne.article.nom} : ${ligne.quantite_commandee} unité(s) à ${parseFloat(ligne.prix_unitaire).toFixed(2)} € = ${parseFloat(ligne.montant_ligne).toFixed(2)} €\n`
         })
-
-        body += `${'─'.repeat(50)}\n`
-        body += `TOTAL TTC : ${parseFloat(data.montant_total).toFixed(2)} €\n`
-
+        body += `${'─'.repeat(50)}\nTOTAL TTC : ${parseFloat(data.montant_total).toFixed(2)} €\n`
         if (data.date_reception_prevue) {
-          const dateRecep = new Date(data.date_reception_prevue).toLocaleDateString('fr-FR')
-          body += `\nDate de réception souhaitée : ${dateRecep}\n`
+          body += `\nDate de réception souhaitée : ${new Date(data.date_reception_prevue).toLocaleDateString('fr-FR')}\n`
         }
-
-        if (data.notes) {
-          body += `\nNotes : ${data.notes}\n`
-        }
-
+        if (data.notes) body += `\nNotes : ${data.notes}\n`
         body += `\nCordialement,`
-
-        const mailtoUrl = `mailto:${data.fournisseur.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-        window.open(mailtoUrl, '_blank')
+        window.open(`mailto:${data.fournisseur.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank')
       } else {
         toast.warning('Le fournisseur n\'a pas d\'adresse email configurée — aucun brouillon email ouvert.')
       }
     },
     onError: (error) => {
-      const message = error.response?.data?.detail || 'Erreur lors de l\'envoi'
-      toast.error(message)
+      toast.error(error.response?.data?.detail || 'Erreur lors de l\'envoi')
     }
   })
 
@@ -130,13 +128,12 @@ const Commandes = () => {
     mutationFn: recevoirCommande,
     onSuccess: () => {
       queryClient.invalidateQueries(['commandes'])
-      queryClient.invalidateQueries(['articles']) // Rafraîchir les articles (stock mis à jour)
+      queryClient.invalidateQueries(['articles'])
       toast.success('Commande réceptionnée avec succès. Stock mis à jour.')
       setShowActionModal(false)
     },
     onError: (error) => {
-      const message = error.response?.data?.detail || 'Erreur lors de la réception'
-      toast.error(message)
+      toast.error(error.response?.data?.detail || 'Erreur lors de la réception')
     }
   })
 
@@ -149,15 +146,14 @@ const Commandes = () => {
       setShowActionModal(false)
     },
     onError: (error) => {
-      const message = error.response?.data?.detail || 'Erreur lors de l\'annulation'
-      toast.error(message)
+      toast.error(error.response?.data?.detail || 'Erreur lors de l\'annulation')
     }
   })
 
   // Gestionnaires d'événements
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }))
-    setPage(1) // Réinitialiser à la page 1 lors du changement de filtre
+    setPage(1)
   }
 
   const handleResetFilters = () => {
@@ -183,19 +179,11 @@ const Commandes = () => {
 
   const handleActionConfirm = () => {
     const { type, commande } = actionData
-
     switch (type) {
-      case 'envoyer':
-        envoyerMutation.mutate(commande.id)
-        break
-      case 'recevoir':
-        recevoirMutation.mutate(commande.id)
-        break
-      case 'annuler':
-        annulerMutation.mutate(commande.id)
-        break
-      default:
-        break
+      case 'envoyer': envoyerMutation.mutate(commande.id); break
+      case 'recevoir': recevoirMutation.mutate(commande.id); break
+      case 'annuler': annulerMutation.mutate(commande.id); break
+      default: break
     }
   }
 
@@ -203,74 +191,36 @@ const Commandes = () => {
     try {
       downloadPDF(commande.id, commande.numero_commande)
       toast.success('Téléchargement du PDF en cours...')
-    } catch (error) {
+    } catch {
       toast.error('Erreur lors du téléchargement du PDF')
     }
   }
 
-  const handleNewCommande = () => {
-    navigate('/commandes/nouvelle')
-  }
-
-  // Helper pour obtenir le badge de statut
-  const getStatutBadge = (statut) => {
-    const styles = {
-      BROUILLON: { bg: '#6c757d', text: 'Brouillon' },
-      ENVOYEE: { bg: '#007bff', text: 'Envoyée' },
-      RECUE: { bg: '#28a745', text: 'Reçue' },
-      ANNULEE: { bg: '#dc3545', text: 'Annulée' }
+  const getActionMessage = () => {
+    const { type, commande } = actionData
+    switch (type) {
+      case 'envoyer': return `Envoyer la commande N°${commande?.numero_commande} au fournisseur ?`
+      case 'recevoir': return `Réceptionner la commande N°${commande?.numero_commande} ? Le stock sera automatiquement mis à jour.`
+      case 'annuler': return `Annuler la commande N°${commande?.numero_commande} ? Cette action est irréversible.`
+      default: return ''
     }
-
-    const style = styles[statut] || { bg: '#6c757d', text: statut }
-
-    return (
-      <span
-        style={{
-          backgroundColor: style.bg,
-          color: 'white',
-          padding: '0.25rem 0.75rem',
-          borderRadius: '12px',
-          fontSize: '0.875rem',
-          fontWeight: '500'
-        }}
-      >
-        {style.text}
-      </span>
-    )
   }
 
   const formatDateTime = (dateString) => {
     if (!dateString) return '-'
-    const date = new Date(dateString)
-    return date.toLocaleString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleString('fr-FR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
     })
   }
 
-  // Helper pour obtenir le message de confirmation
-  const getActionMessage = () => {
-    const { type, commande } = actionData
-
-    switch (type) {
-      case 'envoyer':
-        return `Envoyer la commande N°${commande?.numero_commande} au fournisseur ?`
-      case 'recevoir':
-        return `Réceptionner la commande N°${commande?.numero_commande} ? Le stock sera automatiquement mis à jour.`
-      case 'annuler':
-        return `Annuler la commande N°${commande?.numero_commande} ? Cette action est irréversible.`
-      default:
-        return ''
-    }
-  }
+  const isActionPending = envoyerMutation.isPending || recevoirMutation.isPending || annulerMutation.isPending
 
   if (isLoading) {
     return (
-      <div className="page-container">
-        <Loader />
+      <div className="loading-page">
+        <div className="spinner-lg" />
+        <span>Chargement des commandes...</span>
       </div>
     )
   }
@@ -280,96 +230,100 @@ const Commandes = () => {
   const totalPages = Math.ceil(totalCommandes / itemsPerPage)
 
   return (
-    <div className="page-container">
+    <div className="page-content">
+      {/* Header */}
       <div className="page-header">
         <div>
-          <h1>Commandes Fournisseurs</h1>
-          <p>Gestion des commandes et réception de stock</p>
+          <h1 className="page-title">Commandes Fournisseurs</h1>
+          <p className="page-subtitle">Gestion des commandes et réception de stock</p>
         </div>
-        {canCreate('commandes') && (
-          <button onClick={handleNewCommande} className="btn btn-primary">
-            <Plus size={20} />
-            Nouvelle commande
-          </button>
-        )}
+        <div className="page-actions">
+          {canCreate('commandes') && (
+            <button onClick={() => navigate('/commandes/nouvelle')} className="btn btn-primary">
+              <Plus size={18} />
+              Nouvelle commande
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filtres */}
-      <div className="card" style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-          <Filter size={20} style={{ color: '#6c757d' }} />
-          <h3 style={{ margin: 0 }}>Filtres</h3>
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">
+            <Filter size={16} />
+            Filtres
+          </span>
+          {(filters.statut || filters.fournisseur_id) && (
+            <span className="text-muted">
+              {totalCommandes} commande{totalCommandes > 1 ? 's' : ''} trouvée{totalCommandes > 1 ? 's' : ''}
+            </span>
+          )}
         </div>
+        <div className="card-body">
+          <div className="filters-bar">
+            {/* Filtre statut */}
+            <div className="filter-item">
+              <label htmlFor="filter-statut" className="form-label">Statut</label>
+              <select
+                id="filter-statut"
+                value={filters.statut}
+                onChange={(e) => handleFilterChange('statut', e.target.value)}
+                className="form-control form-select"
+              >
+                <option value="">Tous les statuts</option>
+                <option value="BROUILLON">Brouillon</option>
+                <option value="ENVOYEE">Envoyée</option>
+                <option value="RECUE">Reçue</option>
+                <option value="ANNULEE">Annulée</option>
+              </select>
+            </div>
 
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          {/* Filtre statut */}
-          <div style={{ flex: '1 1 200px' }}>
-            <label htmlFor="filter-statut">Statut</label>
-            <select
-              id="filter-statut"
-              value={filters.statut}
-              onChange={(e) => handleFilterChange('statut', e.target.value)}
-              className="form-control"
-            >
-              <option value="">Tous les statuts</option>
-              <option value="BROUILLON">Brouillon</option>
-              <option value="ENVOYEE">Envoyée</option>
-              <option value="RECUE">Reçue</option>
-              <option value="ANNULEE">Annulée</option>
-            </select>
-          </div>
+            {/* Filtre fournisseur */}
+            <div className="filter-item">
+              <label htmlFor="filter-fournisseur" className="form-label">Fournisseur</label>
+              <select
+                id="filter-fournisseur"
+                value={filters.fournisseur_id}
+                onChange={(e) => handleFilterChange('fournisseur_id', e.target.value)}
+                className="form-control form-select"
+              >
+                <option value="">Tous les fournisseurs</option>
+                {fournisseurs?.map(fournisseur => (
+                  <option key={fournisseur.id} value={fournisseur.id}>
+                    {fournisseur.nom}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* Filtre fournisseur */}
-          <div style={{ flex: '1 1 200px' }}>
-            <label htmlFor="filter-fournisseur">Fournisseur</label>
-            <select
-              id="filter-fournisseur"
-              value={filters.fournisseur_id}
-              onChange={(e) => handleFilterChange('fournisseur_id', e.target.value)}
-              className="form-control"
-            >
-              <option value="">Tous les fournisseurs</option>
-              {fournisseurs?.map(fournisseur => (
-                <option key={fournisseur.id} value={fournisseur.id}>
-                  {fournisseur.nom}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Bouton réinitialiser */}
-          <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'flex-end' }}>
-            <button
-              onClick={handleResetFilters}
-              className="btn btn-secondary"
-              disabled={!filters.statut && !filters.fournisseur_id}
-            >
-              Réinitialiser
-            </button>
+            {/* Bouton réinitialiser */}
+            <div className="filter-item" style={{ maxWidth: 'fit-content', alignSelf: 'flex-end' }}>
+              <button
+                onClick={handleResetFilters}
+                className="btn btn-secondary"
+                disabled={!filters.statut && !filters.fournisseur_id}
+              >
+                Réinitialiser
+              </button>
+            </div>
           </div>
         </div>
-
-        {/* Résumé des filtres actifs */}
-        {(filters.statut || filters.fournisseur_id) && (
-          <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6c757d' }}>
-            {totalCommandes} commande{totalCommandes > 1 ? 's' : ''} trouvée{totalCommandes > 1 ? 's' : ''}
-          </div>
-        )}
       </div>
 
       {/* Tableau des commandes */}
       {commandes.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-          <FileText size={48} style={{ color: '#dee2e6', margin: '0 auto 1rem' }} />
-          <h3>Aucune commande</h3>
-          <p style={{ color: '#6c757d', marginBottom: '1.5rem' }}>
+        <div className="empty-state">
+          <FileText size={56} className="empty-state-icon" />
+          <h2 className="empty-state-title">Aucune commande</h2>
+          <p className="empty-state-description">
             {filters.statut || filters.fournisseur_id
               ? 'Aucune commande ne correspond aux filtres sélectionnés'
               : 'Créez votre première commande fournisseur'}
           </p>
           {!filters.statut && !filters.fournisseur_id && canCreate('commandes') && (
-            <button onClick={handleNewCommande} className="btn btn-primary">
-              <Plus size={20} />
+            <button onClick={() => navigate('/commandes/nouvelle')} className="btn btn-primary">
+              <Plus size={18} />
               Nouvelle commande
             </button>
           )}
@@ -377,7 +331,7 @@ const Commandes = () => {
       ) : (
         <>
           <div className="card">
-            <div className="table-responsive">
+            <div className="table-wrapper">
               <table className="table">
                 <thead>
                   <tr>
@@ -396,20 +350,25 @@ const Commandes = () => {
                         <strong>{commande.numero_commande}</strong>
                       </td>
                       <td data-label="Fournisseur">{commande.fournisseur.nom}</td>
-                      <td data-label="Statut">{getStatutBadge(commande.statut)}</td>
+                      <td data-label="Statut">
+                        <span className={STATUT_BADGE[commande.statut] || 'badge badge-neutral'}>
+                          {STATUT_LABEL[commande.statut] || commande.statut}
+                        </span>
+                      </td>
                       <td data-label="Date commande">{formatDateTime(commande.date_commande)}</td>
                       <td data-label="Montant TTC">
                         <strong>{parseFloat(commande.montant_total).toFixed(2)} €</strong>
                       </td>
                       <td data-label="Actions">
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <div className="action-buttons">
                           {/* Bouton PDF */}
                           <button
                             onClick={() => handleDownloadPDF(commande)}
                             className="btn btn-sm btn-secondary"
                             title="Télécharger PDF"
+                            aria-label="Télécharger PDF"
                           >
-                            <Download size={16} />
+                            <Download size={14} />
                           </button>
 
                           {/* Bouton Envoyer (seulement pour BROUILLON) */}
@@ -418,8 +377,9 @@ const Commandes = () => {
                               onClick={() => handleActionClick('envoyer', commande)}
                               className="btn btn-sm btn-primary"
                               title="Envoyer la commande"
+                              aria-label="Envoyer la commande"
                             >
-                              <Send size={16} />
+                              <Send size={14} />
                             </button>
                           )}
 
@@ -429,30 +389,33 @@ const Commandes = () => {
                               onClick={() => handleActionClick('recevoir', commande)}
                               className="btn btn-sm btn-success"
                               title="Réceptionner la commande"
+                              aria-label="Réceptionner la commande"
                             >
-                              <Package size={16} />
+                              <Package size={14} />
                             </button>
                           )}
 
-                          {/* Bouton Annuler (seulement pour BROUILLON et ENVOYEE) */}
+                          {/* Bouton Annuler (pour BROUILLON et ENVOYEE) */}
                           {(commande.statut === 'BROUILLON' || commande.statut === 'ENVOYEE') && canUpdate('commandes') && (
                             <button
                               onClick={() => handleActionClick('annuler', commande)}
                               className="btn btn-sm btn-danger"
                               title="Annuler la commande"
+                              aria-label="Annuler la commande"
                             >
-                              <XCircle size={16} />
+                              <XCircle size={14} />
                             </button>
                           )}
 
-                          {/* Bouton Supprimer : BROUILLON pour tous, toutes commandes pour admin */}
+                          {/* Bouton Supprimer */}
                           {(commande.statut === 'BROUILLON' || isAdmin) && canDelete('commandes') && (
                             <button
                               onClick={() => handleDeleteClick(commande)}
                               className="btn btn-sm btn-danger"
                               title={isAdmin && commande.statut !== 'BROUILLON' ? 'Supprimer (admin)' : 'Supprimer la commande'}
+                              aria-label="Supprimer la commande"
                             >
-                              <Trash2 size={16} />
+                              <Trash2 size={14} />
                             </button>
                           )}
                         </div>
@@ -462,16 +425,18 @@ const Commandes = () => {
                 </tbody>
               </table>
             </div>
-          </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-            />
-          )}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="card-footer">
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                />
+              </div>
+            )}
+          </div>
         </>
       )}
 
@@ -481,14 +446,16 @@ const Commandes = () => {
         onClose={() => setShowDeleteModal(false)}
         title="Confirmer la suppression"
       >
-        <p>
-          Êtes-vous sûr de vouloir supprimer la commande{' '}
-          <strong>N°{commandeToDelete?.numero_commande}</strong> ?
-        </p>
-        <p style={{ color: '#dc3545', fontSize: '0.875rem' }}>
-          Cette action est irréversible.
-        </p>
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+        <div className="modal-body">
+          <p>
+            Êtes-vous sûr de vouloir supprimer la commande{' '}
+            <strong>N°{commandeToDelete?.numero_commande}</strong> ?
+          </p>
+          <div className="alert alert-danger" style={{ marginTop: 'var(--space-4)' }}>
+            Cette action est irréversible.
+          </div>
+        </div>
+        <div className="modal-footer">
           <button
             onClick={() => setShowDeleteModal(false)}
             className="btn btn-secondary"
@@ -512,30 +479,19 @@ const Commandes = () => {
         onClose={() => setShowActionModal(false)}
         title="Confirmer l'action"
       >
-        <p>{getActionMessage()}</p>
-        {actionData.type === 'recevoir' && (
-          <div
-            style={{
-              backgroundColor: '#d1ecf1',
-              color: '#0c5460',
-              padding: '0.75rem',
-              borderRadius: '4px',
-              marginTop: '1rem',
-              fontSize: '0.875rem'
-            }}
-          >
-            ℹ️ Le stock des articles sera automatiquement incrémenté et des mouvements ENTREE seront créés.
-          </div>
-        )}
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+        <div className="modal-body">
+          <p>{getActionMessage()}</p>
+          {actionData.type === 'recevoir' && (
+            <div className="alert alert-info" style={{ marginTop: 'var(--space-4)' }}>
+              ℹ️ Le stock des articles sera automatiquement incrémenté et des mouvements ENTREE seront créés.
+            </div>
+          )}
+        </div>
+        <div className="modal-footer">
           <button
             onClick={() => setShowActionModal(false)}
             className="btn btn-secondary"
-            disabled={
-              envoyerMutation.isPending ||
-              recevoirMutation.isPending ||
-              annulerMutation.isPending
-            }
+            disabled={isActionPending}
           >
             Annuler
           </button>
@@ -548,17 +504,9 @@ const Commandes = () => {
                   ? 'btn-success'
                   : 'btn-primary'
             }`}
-            disabled={
-              envoyerMutation.isPending ||
-              recevoirMutation.isPending ||
-              annulerMutation.isPending
-            }
+            disabled={isActionPending}
           >
-            {(envoyerMutation.isPending ||
-              recevoirMutation.isPending ||
-              annulerMutation.isPending)
-              ? 'Traitement...'
-              : 'Confirmer'}
+            {isActionPending ? 'Traitement...' : 'Confirmer'}
           </button>
         </div>
       </Modal>

@@ -11,7 +11,6 @@ import { getCategoriesTree, deleteCategorie, createCategorie, updateCategorie } 
 import { Plus, Edit2, Trash2, Layers } from 'lucide-react'
 import Modal from '../components/common/Modal'
 import CategorieForm from '../components/categories/CategorieForm'
-import Loader from '../components/common/Loader'
 import { usePermissions } from '../hooks/usePermissions'
 
 function Categories() {
@@ -109,53 +108,58 @@ function Categories() {
 
   if (isLoading) {
     return (
-      <div className="page-container">
-        <Loader />
+      <div className="loading-page">
+        <div className="spinner-lg" />
+        <span>Chargement des catégories...</span>
       </div>
     )
   }
 
   return (
-    <div className="page-container">
+    <div className="page-content">
       {/* Header */}
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            <Layers size={32} />
+            <Layers size={28} />
             Catégories
           </h1>
           <p className="page-subtitle">
             Gérez les catégories pour organiser vos articles
           </p>
         </div>
-        {canCreate('categories') && (
-          <button
-            onClick={handleCreate}
-            className="btn btn-primary"
-            style={{ gap: '0.5rem' }}
-          >
-            <Plus size={20} />
-            Nouvelle catégorie
-          </button>
-        )}
+        <div className="page-actions">
+          {canCreate('categories') && (
+            <button
+              onClick={handleCreate}
+              className="btn btn-primary"
+              aria-label="Créer une nouvelle catégorie"
+            >
+              <Plus size={18} />
+              Nouvelle catégorie
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Liste des catégories */}
       {categoriesTree && categoriesTree.length === 0 ? (
         <div className="empty-state">
-          <Layers size={64} />
-          <h2>Aucune catégorie</h2>
-          <p>Créez votre première catégorie pour commencer à organiser vos articles</p>
+          <Layers size={56} className="empty-state-icon" />
+          <h2 className="empty-state-title">Aucune catégorie</h2>
+          <p className="empty-state-description">
+            Créez votre première catégorie pour commencer à organiser vos articles
+          </p>
           {canCreate('categories') && (
             <button onClick={handleCreate} className="btn btn-primary">
-              <Plus size={20} />
+              <Plus size={18} />
               Créer une catégorie
             </button>
           )}
         </div>
       ) : (
         <div className="card">
-          <div className="table-responsive">
+          <div className="table-wrapper">
             <table className="table">
               <thead>
                 <tr>
@@ -180,7 +184,7 @@ function Categories() {
                       </td>
                       <td data-label="Description">
                         {categorie.description || (
-                          <span className="text-muted-italic">Aucune description</span>
+                          <span className="text-muted">Aucune description</span>
                         )}
                       </td>
                       <td data-label="Créée le">
@@ -193,6 +197,7 @@ function Categories() {
                               onClick={() => handleEdit(categorie)}
                               className="btn btn-sm btn-secondary"
                               title="Modifier la catégorie"
+                              aria-label="Modifier la catégorie"
                             >
                               <Edit2 size={14} />
                             </button>
@@ -202,6 +207,7 @@ function Categories() {
                               onClick={() => handleDelete(categorie)}
                               className="btn btn-sm btn-danger"
                               title="Supprimer la catégorie"
+                              aria-label="Supprimer la catégorie"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -218,7 +224,7 @@ function Categories() {
                         </td>
                         <td data-label="Description">
                           {sousCategorie.description || (
-                            <span className="text-muted-italic">Aucune description</span>
+                            <span className="text-muted">Aucune description</span>
                           )}
                         </td>
                         <td data-label="Créée le">
@@ -231,6 +237,7 @@ function Categories() {
                                 onClick={() => handleEdit(sousCategorie)}
                                 className="btn btn-sm btn-secondary"
                                 title="Modifier la sous-catégorie"
+                                aria-label="Modifier la sous-catégorie"
                               >
                                 <Edit2 size={14} />
                               </button>
@@ -240,6 +247,7 @@ function Categories() {
                                 onClick={() => handleDelete(sousCategorie)}
                                 className="btn btn-sm btn-danger"
                                 title="Supprimer la sous-catégorie"
+                                aria-label="Supprimer la sous-catégorie"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -282,30 +290,30 @@ function Categories() {
         onClose={() => setDeleteConfirm(null)}
         title="Confirmer la suppression"
       >
-        <div style={{ padding: '1rem 0' }}>
+        <div className="modal-body">
           <p>
             Êtes-vous sûr de vouloir supprimer la catégorie{' '}
             <strong>{deleteConfirm?.nom}</strong> ?
           </p>
-          <p style={{ color: 'var(--danger)', marginTop: '1rem' }}>
+          <div className="alert alert-warning" style={{ marginTop: 'var(--space-4)' }}>
             ⚠️ Attention : Les articles de cette catégorie seront reclassés en "Sans catégorie".
-          </p>
-          <div className="modal-actions" style={{ marginTop: '2rem' }}>
-            <button
-              onClick={() => setDeleteConfirm(null)}
-              className="btn btn-secondary"
-              disabled={deleteMutation.isPending}
-            >
-              Annuler
-            </button>
-            <button
-              onClick={confirmDelete}
-              className="btn btn-danger"
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
-            </button>
           </div>
+        </div>
+        <div className="modal-footer">
+          <button
+            onClick={() => setDeleteConfirm(null)}
+            className="btn btn-secondary"
+            disabled={deleteMutation.isPending}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={confirmDelete}
+            className="btn btn-danger"
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? 'Suppression...' : 'Supprimer'}
+          </button>
         </div>
       </Modal>
     </div>

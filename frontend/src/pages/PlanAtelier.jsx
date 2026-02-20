@@ -7,8 +7,8 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { getEmplacementsTree } from '../services/emplacementService'
-import Loader from '../components/common/Loader'
+import { getEmplacementsTree, downloadQRCode } from '../services/emplacementService'
+import { toast } from 'react-toastify'
 import {
   MapPin,
   Search,
@@ -21,8 +21,6 @@ import {
   Box,
   AlertCircle
 } from 'lucide-react'
-import { downloadQRCode } from '../services/emplacementService'
-import { toast } from 'react-toastify'
 
 function PlanAtelier() {
   const navigate = useNavigate()
@@ -73,11 +71,9 @@ function PlanAtelier() {
     const term = searchTerm.toLowerCase()
 
     return emplacementsTree.filter(zone => {
-      // Vérifier si la zone correspond
       const zoneMatch = zone.code.toLowerCase().includes(term) ||
                        (zone.description && zone.description.toLowerCase().includes(term))
 
-      // Vérifier si une étagère ou boîte correspond
       const childrenMatch = zone.children?.some(etagere => {
         const etagereMatch = etagere.code.toLowerCase().includes(term) ||
                             (etagere.description && etagere.description.toLowerCase().includes(term))
@@ -116,12 +112,12 @@ function PlanAtelier() {
     setExpandedZones({})
   }
 
-  // Obtenir la couleur du badge selon le % de remplissage
-  const getBadgeColor = (pourcentage) => {
-    if (!pourcentage || pourcentage === 0) return '#6c757d' // Gris si pas de capacité
-    if (pourcentage >= 90) return '#dc3545' // Rouge si > 90%
-    if (pourcentage >= 70) return '#ffc107' // Orange si > 70%
-    return '#28a745' // Vert si < 70%
+  // Obtenir la classe de badge selon le % de remplissage
+  const getRemplissageBadgeClass = (pourcentage) => {
+    if (!pourcentage || pourcentage === 0) return 'badge badge-neutral'
+    if (pourcentage >= 90) return 'badge badge-danger'
+    if (pourcentage >= 70) return 'badge badge-warning'
+    return 'badge badge-success'
   }
 
   // Télécharger le QR code
@@ -137,84 +133,80 @@ function PlanAtelier() {
 
   if (isLoading) {
     return (
-      <div className="page-container">
-        <Loader />
+      <div className="loading-page">
+        <div className="spinner-lg" />
+        <span>Chargement...</span>
       </div>
     )
   }
 
   return (
-    <div className="page-container">
+    <div className="page-content">
       {/* En-tête */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
-          <MapPin size={32} style={{ display: 'inline', marginRight: '0.5rem', verticalAlign: 'middle' }} />
-          Plan d'atelier
-        </h1>
-        <p style={{ color: '#6c757d', margin: 0 }}>
-          Visualisez l'organisation de votre atelier et localisez vos articles
-        </p>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">
+            <MapPin size={32} />
+            Plan d'atelier
+          </h1>
+          <p className="page-subtitle">
+            Visualisez l'organisation de votre atelier et localisez vos articles
+          </p>
+        </div>
       </div>
 
       {/* Statistiques globales */}
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-        <div className="stat-card" style={{ background: 'linear-gradient(135deg, #17a2b8, #138496)' }}>
-          <div className="stat-value">{stats.zones}</div>
-          <div className="stat-label">
-            <Warehouse size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
-            Zone{stats.zones > 1 ? 's' : ''}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-card-icon info">
+            <Warehouse size={24} />
           </div>
+          <div className="stat-card-value">{stats.zones}</div>
+          <div className="stat-card-label">Zone{stats.zones > 1 ? 's' : ''}</div>
         </div>
 
-        <div className="stat-card" style={{ background: 'linear-gradient(135deg, #28a745, #1e7e34)' }}>
-          <div className="stat-value">{stats.etageres}</div>
-          <div className="stat-label">
-            <Layers size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
-            Étagère{stats.etageres > 1 ? 's' : ''}
+        <div className="stat-card">
+          <div className="stat-card-icon success">
+            <Layers size={24} />
           </div>
+          <div className="stat-card-value">{stats.etageres}</div>
+          <div className="stat-card-label">Étagère{stats.etageres > 1 ? 's' : ''}</div>
         </div>
 
-        <div className="stat-card" style={{ background: 'linear-gradient(135deg, #ffc107, #e0a800)' }}>
-          <div className="stat-value">{stats.boites}</div>
-          <div className="stat-label">
-            <Box size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
-            Boîte{stats.boites > 1 ? 's' : ''}
+        <div className="stat-card">
+          <div className="stat-card-icon warning">
+            <Box size={24} />
           </div>
+          <div className="stat-card-value">{stats.boites}</div>
+          <div className="stat-card-label">Boîte{stats.boites > 1 ? 's' : ''}</div>
         </div>
 
-        <div className="stat-card" style={{ background: 'linear-gradient(135deg, #007bff, #0056b3)' }}>
-          <div className="stat-value">{stats.articles}</div>
-          <div className="stat-label">
-            <Package size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
-            Article{stats.articles > 1 ? 's' : ''} stocké{stats.articles > 1 ? 's' : ''}
+        <div className="stat-card">
+          <div className="stat-card-icon primary">
+            <Package size={24} />
           </div>
+          <div className="stat-card-value">{stats.articles}</div>
+          <div className="stat-card-label">Article{stats.articles > 1 ? 's' : ''} stocké{stats.articles > 1 ? 's' : ''}</div>
         </div>
       </div>
 
       {/* Barre de recherche et actions */}
-      <div className="card" style={{ marginBottom: '2rem' }}>
+      <div className="card">
         <div className="card-body">
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* Recherche */}
-            <div style={{ flex: 1, minWidth: '250px', position: 'relative' }}>
-              <Search size={20} style={{
-                position: 'absolute',
-                left: '0.75rem',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#6c757d'
-              }} />
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Rechercher un emplacement..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ paddingLeft: '2.5rem' }}
-              />
+          <div className="filters-bar">
+            <div className="search-bar" style={{ flex: 1, minWidth: '250px' }}>
+              <div className="search-input-wrapper">
+                <Search size={20} />
+                <input
+                  type="text"
+                  className="form-control search-input"
+                  placeholder="Rechercher un emplacement..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
 
-            {/* Boutons Développer/Réduire */}
             <button className="btn btn-secondary btn-sm" onClick={expandAll}>
               <ChevronDown size={16} />
               Tout développer
@@ -231,51 +223,38 @@ function PlanAtelier() {
       <div className="card">
         <div className="card-body">
           {!filteredTree || filteredTree.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#6c757d' }}>
-              <AlertCircle size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-              <h3>Aucun emplacement trouvé</h3>
-              <p>
-                {searchTerm ?
-                  `Aucun résultat pour "${searchTerm}"` :
-                  "Créez votre premier emplacement pour commencer à organiser votre atelier"
-                }
+            <div className="empty-state">
+              <AlertCircle size={48} className="empty-state-icon" />
+              <p className="empty-state-title">Aucun emplacement trouvé</p>
+              <p className="empty-state-description">
+                {searchTerm
+                  ? `Aucun résultat pour "${searchTerm}"`
+                  : 'Créez votre premier emplacement pour commencer à organiser votre atelier'}
               </p>
             </div>
           ) : (
             <div>
               {filteredTree.map((zone) => (
-                <div key={zone.id} style={{ marginBottom: '1.5rem', borderLeft: '4px solid #667eea', paddingLeft: '1rem' }}>
+                <div key={zone.id} className="plan-zone-wrapper">
                   {/* ZONE (Niveau 0) */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '1rem',
-                    backgroundColor: '#f8f9fa',
-                    borderRadius: '8px',
-                    marginBottom: '0.75rem',
-                    cursor: zone.children?.length > 0 ? 'pointer' : 'default'
-                  }}
-                  onClick={() => zone.children?.length > 0 && toggleZone(zone.id)}
+                  <div
+                    className={`plan-zone-header${zone.children?.length > 0 ? ' clickable' : ''}`}
+                    onClick={() => zone.children?.length > 0 && toggleZone(zone.id)}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                    <div className="plan-zone-content">
                       {zone.children?.length > 0 && (
-                        expandedZones[zone.id] ?
-                          <ChevronDown size={20} style={{ color: '#667eea' }} /> :
-                          <ChevronRight size={20} style={{ color: '#667eea' }} />
+                        expandedZones[zone.id]
+                          ? <ChevronDown size={20} className="plan-chevron" />
+                          : <ChevronRight size={20} className="plan-chevron" />
                       )}
-                      <Warehouse size={24} style={{ color: '#667eea' }} />
+                      <Warehouse size={24} className="plan-zone-icon" />
                       <div style={{ flex: 1 }}>
-                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 'bold' }}>
-                          {zone.code}
-                        </h3>
+                        <h3 className="plan-zone-title">{zone.code}</h3>
                         {zone.description && (
-                          <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: '#6c757d' }}>
-                            {zone.description}
-                          </p>
+                          <p className="plan-item-description">{zone.description}</p>
                         )}
                         {zone.children?.length > 0 && (
-                          <p style={{ margin: '0.25rem 0 0', fontSize: '0.75rem', color: '#6c757d' }}>
+                          <p className="plan-item-count">
                             {zone.children.length} étagère{zone.children.length > 1 ? 's' : ''}
                           </p>
                         )}
@@ -283,19 +262,11 @@ function PlanAtelier() {
 
                       {/* Badge de remplissage */}
                       {zone.capacite_max && (
-                        <div style={{ textAlign: 'right' }}>
-                          <span style={{
-                            display: 'inline-block',
-                            padding: '0.25rem 0.75rem',
-                            borderRadius: '12px',
-                            fontSize: '0.75rem',
-                            fontWeight: 'bold',
-                            backgroundColor: getBadgeColor(zone.pourcentage_remplissage),
-                            color: 'white'
-                          }}>
+                        <div className="plan-item-capacity">
+                          <span className={getRemplissageBadgeClass(zone.pourcentage_remplissage)}>
                             {zone.pourcentage_remplissage?.toFixed(0)}%
                           </span>
-                          <p style={{ margin: '0.25rem 0 0', fontSize: '0.75rem', color: '#6c757d' }}>
+                          <p className="plan-item-capacity-count">
                             {zone.quantite_utilisee} / {zone.capacite_max}
                           </p>
                         </div>
@@ -303,23 +274,17 @@ function PlanAtelier() {
                     </div>
 
                     {/* Actions Zone */}
-                    <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+                    <div className="action-buttons">
                       <button
                         className="btn btn-sm btn-secondary"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDownloadQR(zone)
-                        }}
+                        onClick={(e) => { e.stopPropagation(); handleDownloadQR(zone) }}
                         title="Télécharger QR code"
                       >
                         <QrCode size={16} />
                       </button>
                       <button
                         className="btn btn-sm btn-primary"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleViewArticles(zone.id)
-                        }}
+                        onClick={(e) => { e.stopPropagation(); handleViewArticles(zone.id) }}
                         title="Voir les articles"
                       >
                         <Package size={16} />
@@ -329,29 +294,17 @@ function PlanAtelier() {
 
                   {/* ÉTAGÈRES (Niveau 1) - Affichées si zone développée */}
                   {expandedZones[zone.id] && zone.children?.map((etagere) => (
-                    <div key={etagere.id} style={{ marginLeft: '2rem', marginBottom: '0.5rem' }}>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '0.75rem',
-                        backgroundColor: '#fff',
-                        borderRadius: '6px',
-                        border: '1px solid #e9ecef'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-                          <Layers size={20} style={{ color: '#f5576c' }} />
+                    <div key={etagere.id} className="plan-etagere-wrapper">
+                      <div className="plan-etagere-row">
+                        <div className="plan-zone-content">
+                          <Layers size={20} className="plan-etagere-icon" />
                           <div style={{ flex: 1 }}>
-                            <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>
-                              {etagere.code}
-                            </h4>
+                            <h4 className="plan-etagere-title">{etagere.code}</h4>
                             {etagere.description && (
-                              <p style={{ margin: '0.25rem 0 0', fontSize: '0.75rem', color: '#6c757d' }}>
-                                {etagere.description}
-                              </p>
+                              <p className="plan-item-description">{etagere.description}</p>
                             )}
                             {etagere.children?.length > 0 && (
-                              <p style={{ margin: '0.25rem 0 0', fontSize: '0.7rem', color: '#6c757d' }}>
+                              <p className="plan-item-count">
                                 {etagere.children.length} boîte{etagere.children.length > 1 ? 's' : ''}
                               </p>
                             )}
@@ -359,19 +312,11 @@ function PlanAtelier() {
 
                           {/* Badge de remplissage étagère */}
                           {etagere.capacite_max && (
-                            <div style={{ textAlign: 'right' }}>
-                              <span style={{
-                                display: 'inline-block',
-                                padding: '0.2rem 0.6rem',
-                                borderRadius: '10px',
-                                fontSize: '0.7rem',
-                                fontWeight: 'bold',
-                                backgroundColor: getBadgeColor(etagere.pourcentage_remplissage),
-                                color: 'white'
-                              }}>
+                            <div className="plan-item-capacity">
+                              <span className={getRemplissageBadgeClass(etagere.pourcentage_remplissage)}>
                                 {etagere.pourcentage_remplissage?.toFixed(0)}%
                               </span>
-                              <p style={{ margin: '0.2rem 0 0', fontSize: '0.7rem', color: '#6c757d' }}>
+                              <p className="plan-item-capacity-count">
                                 {etagere.quantite_utilisee} / {etagere.capacite_max}
                               </p>
                             </div>
@@ -379,7 +324,7 @@ function PlanAtelier() {
                         </div>
 
                         {/* Actions Étagère */}
-                        <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+                        <div className="action-buttons">
                           <button
                             className="btn btn-sm btn-secondary"
                             onClick={() => handleDownloadQR(etagere)}
@@ -399,44 +344,24 @@ function PlanAtelier() {
 
                       {/* BOÎTES (Niveau 2) */}
                       {etagere.children?.map((boite) => (
-                        <div key={boite.id} style={{ marginLeft: '2rem', marginTop: '0.5rem' }}>
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '0.5rem',
-                            backgroundColor: '#fafafa',
-                            borderRadius: '4px',
-                            border: '1px solid #e9ecef'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                              <Box size={18} style={{ color: '#00f2fe' }} />
+                        <div key={boite.id} className="plan-boite-wrapper">
+                          <div className="plan-boite-row">
+                            <div className="plan-zone-content">
+                              <Box size={18} className="plan-boite-icon" />
                               <div style={{ flex: 1 }}>
-                                <h5 style={{ margin: 0, fontSize: '0.875rem', fontWeight: '600' }}>
-                                  {boite.code}
-                                </h5>
+                                <h5 className="plan-boite-title">{boite.code}</h5>
                                 {boite.description && (
-                                  <p style={{ margin: '0.25rem 0 0', fontSize: '0.7rem', color: '#6c757d' }}>
-                                    {boite.description}
-                                  </p>
+                                  <p className="plan-item-description">{boite.description}</p>
                                 )}
                               </div>
 
                               {/* Badge de remplissage boîte */}
                               {boite.capacite_max && (
-                                <div style={{ textAlign: 'right' }}>
-                                  <span style={{
-                                    display: 'inline-block',
-                                    padding: '0.15rem 0.5rem',
-                                    borderRadius: '8px',
-                                    fontSize: '0.65rem',
-                                    fontWeight: 'bold',
-                                    backgroundColor: getBadgeColor(boite.pourcentage_remplissage),
-                                    color: 'white'
-                                  }}>
+                                <div className="plan-item-capacity">
+                                  <span className={getRemplissageBadgeClass(boite.pourcentage_remplissage)}>
                                     {boite.pourcentage_remplissage?.toFixed(0)}%
                                   </span>
-                                  <p style={{ margin: '0.2rem 0 0', fontSize: '0.65rem', color: '#6c757d' }}>
+                                  <p className="plan-item-capacity-count">
                                     {boite.quantite_utilisee} / {boite.capacite_max}
                                   </p>
                                 </div>
@@ -444,12 +369,11 @@ function PlanAtelier() {
                             </div>
 
                             {/* Actions Boîte */}
-                            <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '0.5rem' }}>
+                            <div className="action-buttons">
                               <button
                                 className="btn btn-sm btn-secondary"
                                 onClick={() => handleDownloadQR(boite)}
                                 title="Télécharger QR code"
-                                style={{ padding: '0.25rem 0.5rem' }}
                               >
                                 <QrCode size={12} />
                               </button>
@@ -457,7 +381,6 @@ function PlanAtelier() {
                                 className="btn btn-sm btn-primary"
                                 onClick={() => handleViewArticles(boite.id)}
                                 title="Voir les articles"
-                                style={{ padding: '0.25rem 0.5rem' }}
                               >
                                 <Package size={12} />
                               </button>
