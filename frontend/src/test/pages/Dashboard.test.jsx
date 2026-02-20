@@ -101,7 +101,8 @@ describe('Dashboard', () => {
   it('affiche le titre Dashboard', async () => {
     renderWithProviders(<Dashboard />)
 
-    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    // Le composant affiche un spinner pendant le chargement — attendre que le titre apparaisse
+    expect(await screen.findByText('Tableau de bord')).toBeInTheDocument()
   })
 
   it.skip('affiche les statistiques après chargement', async () => {
