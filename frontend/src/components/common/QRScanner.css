@@ -78,7 +78,7 @@
 }
 
 .qr-scanner-inactive {
-  display: none;
+  display: none !important; /* override les styles inline injectés par html5-qrcode */
 }
 
 .qr-scanner-active {

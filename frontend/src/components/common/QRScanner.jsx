@@ -63,8 +63,12 @@ const QRScanner = ({ onScan, onError, onClose }) => {
         if (cancelled || hasScanned) return
         hasScanned = true // verrouiller immédiatement pour les frames suivantes
         scanner.stop().catch(() => {})
-        setIsScanning(false)
-        onScanRef.current(decodedText)
+        // Effacer les styles inline injectés par html5-qrcode (sinon ils
+        // écrasent la classe qr-scanner-inactive et la div reste visible)
+        const el = document.getElementById('qr-reader')
+        if (el) el.setAttribute('style', '')
+        onScanRef.current(decodedText) // handleScan en premier
+        setIsScanning(false)           // batché avec les setState de handleScan
       },
       () => {
         // Erreur de frame normale (pas encore de QR code dans le champ)

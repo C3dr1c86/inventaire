@@ -5,7 +5,6 @@
  */
 
 import { useState, useRef, useEffect } from 'react'
-import { flushSync } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import QRScanner from '../components/common/QRScanner'
@@ -132,22 +131,16 @@ function ScanQRCode() {
           return
         }
 
-        // flushSync force React à rendre synchronement depuis un callback caméra
-        // (le batching asynchrone de React 18 peut bloquer le rendu sur mobile)
-        flushSync(() => {
-          setScanType('emplacement')
-          setEmplacementId(id)
-          setArticleSku(null)
-          setShowScanner(false)
-        })
+        setScanType('emplacement')
+        setEmplacementId(id)
+        setArticleSku(null)
+        setShowScanner(false)
         toast.success('📍 QR code d\'emplacement scanné !')
       } else {
-        flushSync(() => {
-          setScanType('article')
-          setArticleSku(cleanText)
-          setEmplacementId(null)
-          setShowScanner(false)
-        })
+        setScanType('article')
+        setArticleSku(cleanText)
+        setEmplacementId(null)
+        setShowScanner(false)
         toast.success('📦 Code-barres d\'article scanné !')
       }
     } catch (error) {
