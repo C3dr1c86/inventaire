@@ -188,6 +188,29 @@ export const exportEtiquettesDymo = async (articleIds) => {
 }
 
 /**
+ * Exporte les emplacements sélectionnés au format CSV compatible DYMO Label Software.
+ * Colonnes : Code, Description, Code_QR, Niveau, Parent
+ * @param {number[]} emplacementIds - Liste des IDs d'emplacements sélectionnés
+ * @returns {Promise<void>}
+ */
+export const exportEtiquettesDymoEmplacements = async (emplacementIds) => {
+  const response = await api.post('/rapports/export/etiquettes-dymo-emplacements', {
+    emplacement_ids: emplacementIds
+  }, {
+    responseType: 'blob'
+  })
+
+  const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `etiquettes_dymo_emplacements_${new Date().toISOString().split('T')[0]}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
+/**
  * Exporte les emplacements en CSV ou PDF (données, pas QR codes)
  * @param {string} format - Format d'export ('csv' ou 'pdf')
  * @returns {Promise<void>}

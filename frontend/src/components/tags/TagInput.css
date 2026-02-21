@@ -26,6 +26,11 @@
   color: var(--color-text-secondary);
 }
 
+[data-theme="dark"] .tag-badge {
+  background-color: var(--color-gray-400);
+  color: var(--color-gray-800);
+}
+
 .tag-badge:not(.create-new) {
   border: none;
 }

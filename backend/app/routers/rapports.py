@@ -511,6 +511,73 @@ def export_etiquettes_dymo(
     )
 
 
+@router.post("/export/etiquettes-dymo-emplacements")
+def export_etiquettes_dymo_emplacements(
+    request: QRCodesExportRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Exporte les emplacements sélectionnés au format CSV compatible DYMO Label Software.
+
+    Colonnes : Code, Description, Code_QR, Niveau, Parent
+    Encodage UTF-8 avec BOM pour compatibilité Excel et DYMO Connect.
+    """
+    import csv
+    import io
+    from sqlalchemy.orm import joinedload
+
+    if not request.emplacement_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Aucun emplacement sélectionné"
+        )
+
+    emplacements = (
+        db.query(models.Emplacement)
+        .options(joinedload(models.Emplacement.parent))
+        .filter(models.Emplacement.id.in_(request.emplacement_ids))
+        .all()
+    )
+
+    if not emplacements:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Aucun emplacement trouvé pour les IDs fournis",
+        )
+
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=";", quoting=csv.QUOTE_ALL)
+    writer.writerow(["Code", "Description", "Code_QR", "Niveau", "Parent"])
+
+    niveaux = {0: "Zone", 1: "Étagère", 2: "Boîte"}
+
+    for emp in emplacements:
+        code_qr = emp.code_complet if hasattr(emp, "code_complet") and emp.code_complet else emp.code
+        niveau_label = niveaux.get(emp.niveau, str(emp.niveau)) if hasattr(emp, "niveau") else ""
+        parent_code = emp.parent.code if emp.parent else ""
+
+        writer.writerow([
+            emp.code,
+            emp.description or "",
+            code_qr,
+            niveau_label,
+            parent_code,
+        ])
+
+    csv_bytes = ("\ufeff" + output.getvalue()).encode("utf-8")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"etiquettes_dymo_emplacements_{timestamp}.csv"
+
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Type": "text/csv; charset=utf-8",
+        },
+    )
+
+
 @router.get("/export/emplacements-{format}")
 def export_emplacements_data(
     format: str,

@@ -15,7 +15,8 @@ import {
   exportFournisseurs,
   exportTags,
   exportEmplacementsData,
-  exportEtiquettesDymo
+  exportEtiquettesDymo,
+  exportEtiquettesDymoEmplacements
 } from '../services/rapportService'
 import { getArticles } from '../services/articleService'
 import { getEmplacements } from '../services/emplacementService'
@@ -120,6 +121,22 @@ function Rapports() {
       setExportLoading(true)
       await exportEtiquettesDymo(selectedArticles)
       toast.success(`CSV DYMO généré avec ${selectedArticles.length} article(s)`)
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erreur lors de la génération du CSV DYMO')
+    } finally {
+      setExportLoading(false)
+    }
+  }
+
+  const handleExportDymoEmplacements = async () => {
+    if (selectedEmplacements.length === 0) {
+      toast.error('Veuillez sélectionner au moins un emplacement')
+      return
+    }
+    try {
+      setExportLoading(true)
+      await exportEtiquettesDymoEmplacements(selectedEmplacements)
+      toast.success(`CSV DYMO généré avec ${selectedEmplacements.length} emplacement(s)`)
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erreur lors de la génération du CSV DYMO')
     } finally {
@@ -401,6 +418,15 @@ function Rapports() {
 
                 <div className="export-actions">
                   <button
+                    className="btn btn-secondary"
+                    onClick={handleExportDymoEmplacements}
+                    disabled={selectedEmplacements.length === 0 || exportLoading}
+                    title="Exporter un CSV compatible DYMO Label Software"
+                  >
+                    <Download size={16} />
+                    {exportLoading ? 'Génération...' : `CSV DYMO (${selectedEmplacements.length})`}
+                  </button>
+                  <button
                     className="btn btn-primary"
                     onClick={handleExportQRCodes}
                     disabled={selectedEmplacements.length === 0 || exportLoading}
@@ -412,6 +438,7 @@ function Rapports() {
 
                 <p className="export-hint">
                   💡 Le PDF contiendra 6 étiquettes par page (2 colonnes × 3 lignes) prêtes à découper
+                  &nbsp;·&nbsp; Le CSV DYMO est importable directement dans DYMO Connect / DYMO Label Software
                 </p>
               </>
             ) : (
