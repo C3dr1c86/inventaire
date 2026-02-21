@@ -529,7 +529,8 @@ def export_etiquettes_dymo_emplacements(
 
     if not request.emplacement_ids:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Aucun emplacement sélectionné"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Aucun emplacement sélectionné",
         )
 
     emplacements = (
@@ -552,17 +553,25 @@ def export_etiquettes_dymo_emplacements(
     niveaux = {0: "Zone", 1: "Étagère", 2: "Boîte"}
 
     for emp in emplacements:
-        code_qr = emp.code_complet if hasattr(emp, "code_complet") and emp.code_complet else emp.code
-        niveau_label = niveaux.get(emp.niveau, str(emp.niveau)) if hasattr(emp, "niveau") else ""
+        code_qr = (
+            emp.code_complet
+            if hasattr(emp, "code_complet") and emp.code_complet
+            else emp.code
+        )
+        niveau_label = (
+            niveaux.get(emp.niveau, str(emp.niveau)) if hasattr(emp, "niveau") else ""
+        )
         parent_code = emp.parent.code if emp.parent else ""
 
-        writer.writerow([
-            emp.code,
-            emp.description or "",
-            code_qr,
-            niveau_label,
-            parent_code,
-        ])
+        writer.writerow(
+            [
+                emp.code,
+                emp.description or "",
+                code_qr,
+                niveau_label,
+                parent_code,
+            ]
+        )
 
     csv_bytes = ("\ufeff" + output.getvalue()).encode("utf-8")
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
