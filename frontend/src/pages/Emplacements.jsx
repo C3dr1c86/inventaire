@@ -169,7 +169,9 @@ function Emplacements() {
       return str
     }
 
-    const rows = [['Code', 'Description', 'Niveau', 'Parent', 'Capacité max', 'Quantité utilisée', '% remplissage']]
+    // QR_Code contient exactement le même contenu que le QR code généré par le backend :
+    // "emplacement:{id}:{code}" — à utiliser dans Dymo Connect comme source de données QR
+    const rows = [['Code', 'Description', 'Niveau', 'Parent', 'Capacité max', 'Quantité utilisée', '% remplissage', 'QR_Code']]
 
     emplacementsTree.forEach((zone) => {
       rows.push([
@@ -179,7 +181,8 @@ function Emplacements() {
         '',
         escapeCSV(zone.capacite_max ?? ''),
         escapeCSV(zone.quantite_utilisee ?? 0),
-        zone.capacite_max ? escapeCSV(zone.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité'
+        zone.capacite_max ? escapeCSV(zone.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité',
+        `emplacement:${zone.id}:${zone.code}`
       ])
 
       zone.children?.forEach((etagere) => {
@@ -190,7 +193,8 @@ function Emplacements() {
           escapeCSV(zone.code),
           escapeCSV(etagere.capacite_max ?? ''),
           escapeCSV(etagere.quantite_utilisee ?? 0),
-          etagere.capacite_max ? escapeCSV(etagere.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité'
+          etagere.capacite_max ? escapeCSV(etagere.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité',
+          `emplacement:${etagere.id}:${etagere.code}`
         ])
 
         etagere.children?.forEach((boite) => {
@@ -201,7 +205,8 @@ function Emplacements() {
             escapeCSV(etagere.code),
             escapeCSV(boite.capacite_max ?? ''),
             escapeCSV(boite.quantite_utilisee ?? 0),
-            boite.capacite_max ? escapeCSV(boite.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité'
+            boite.capacite_max ? escapeCSV(boite.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité',
+            `emplacement:${boite.id}:${boite.code}`
           ])
         })
       })
