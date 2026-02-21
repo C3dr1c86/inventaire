@@ -169,44 +169,44 @@ function Emplacements() {
       return str
     }
 
-    // QR_Code contient exactement le même contenu que le QR code généré par le backend :
-    // "emplacement:{id}:{code}" — à utiliser dans Dymo Connect comme source de données QR
-    const rows = [['Code', 'Description', 'Niveau', 'Parent', 'Capacité max', 'Quantité utilisée', '% remplissage', 'QR_Code']]
+    // QR_Code en colonne 2 (visible immédiatement dans Dymo Connect sans scroller).
+    // Contenu : "emplacement:{id}:{code}" — identique au QR code généré par le backend.
+    const rows = [['Code', 'QR_Code', 'Description', 'Niveau', 'Parent', 'Capacité max', 'Quantité utilisée', '% remplissage']]
 
     emplacementsTree.forEach((zone) => {
       rows.push([
         escapeCSV(zone.code),
+        `emplacement:${zone.id}:${zone.code}`,
         escapeCSV(zone.description),
         'Zone',
         '',
         escapeCSV(zone.capacite_max ?? ''),
         escapeCSV(zone.quantite_utilisee ?? 0),
-        zone.capacite_max ? escapeCSV(zone.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité',
-        `emplacement:${zone.id}:${zone.code}`
+        zone.capacite_max ? escapeCSV(zone.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité'
       ])
 
       zone.children?.forEach((etagere) => {
         rows.push([
           escapeCSV(etagere.code),
+          `emplacement:${etagere.id}:${etagere.code}`,
           escapeCSV(etagere.description),
           'Étagère',
           escapeCSV(zone.code),
           escapeCSV(etagere.capacite_max ?? ''),
           escapeCSV(etagere.quantite_utilisee ?? 0),
-          etagere.capacite_max ? escapeCSV(etagere.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité',
-          `emplacement:${etagere.id}:${etagere.code}`
+          etagere.capacite_max ? escapeCSV(etagere.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité'
         ])
 
         etagere.children?.forEach((boite) => {
           rows.push([
             escapeCSV(boite.code),
+            `emplacement:${boite.id}:${boite.code}`,
             escapeCSV(boite.description),
             'Boîte',
             escapeCSV(etagere.code),
             escapeCSV(boite.capacite_max ?? ''),
             escapeCSV(boite.quantite_utilisee ?? 0),
-            boite.capacite_max ? escapeCSV(boite.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité',
-            `emplacement:${boite.id}:${boite.code}`
+            boite.capacite_max ? escapeCSV(boite.pourcentage_remplissage?.toFixed(0) + '%') : 'Illimité'
           ])
         })
       })
