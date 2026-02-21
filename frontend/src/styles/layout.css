@@ -453,6 +453,11 @@
 }
 
 @media (max-width: 576px) {
+  /* Le bottom-nav (4rem) couvre le bas de la sidebar — le padding pousse le footer vers le haut */
+  .sidebar {
+    padding-bottom: 4rem;
+  }
+
   .stats-grid {
     grid-template-columns: 1fr;
   }

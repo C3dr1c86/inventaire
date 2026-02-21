@@ -152,7 +152,7 @@
   --z-sticky:    200;
   --z-fixed:     300;
   --z-overlay:   400;
-  --z-modal:     500;
+  --z-modal:     1050; /* au-dessus du bottom-nav (1000) pour que le modal footer reste visible */
   --z-bottom-nav: 1000;
   --z-toast:     1100;
   --z-tooltip:   1200;
