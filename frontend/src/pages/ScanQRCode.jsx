@@ -110,11 +110,6 @@ function ScanQRCode() {
       // Ignorer silencieusement les scans vides (faux positifs caméra)
       if (!cleanText) return
 
-      // Diagnostic temporaire : affiche ce que la caméra a retourné
-      if (scanMode === 'camera') {
-        toast.info(`📷 Détecté : "${cleanText.substring(0, 60)}"`, { autoClose: 6000 })
-      }
-
       if (cleanText.startsWith('emplacement:')) {
         const parts = cleanText.split(':')
 
