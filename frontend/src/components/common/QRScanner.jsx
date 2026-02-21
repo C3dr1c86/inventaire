@@ -62,7 +62,9 @@ const QRScanner = ({ onScan, onError, onClose }) => {
       (decodedText) => {
         if (cancelled || hasScanned) return
         hasScanned = true // verrouiller immédiatement pour les frames suivantes
-        scanner.stop().catch(() => {})
+        // html5-qrcode peut lever une erreur SYNCHRONE si stop() est déjà en cours.
+        // On utilise try/catch (pas .catch) pour gérer les deux cas (sync + async).
+        try { scanner.stop().catch(() => {}) } catch(e) { /* déjà arrêté */ }
         // Effacer les styles inline injectés par html5-qrcode (sinon ils
         // écrasent la classe qr-scanner-inactive et la div reste visible)
         const el = document.getElementById('qr-reader')
@@ -83,7 +85,11 @@ const QRScanner = ({ onScan, onError, onClose }) => {
 
     return () => {
       cancelled = true
-      scanner.stop().catch(() => {})
+      // Ne pas stopper si le scan a déjà été traité (évite le double-stop qui
+      // lève "Cannot stop, scanner is not running or paused" de façon synchrone)
+      if (!hasScanned) {
+        try { scanner.stop().catch(() => {}) } catch(e) { /* déjà arrêté */ }
+      }
     }
   }, [isScanning, selectedCamera])
 
