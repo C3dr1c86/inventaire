@@ -69,9 +69,27 @@ data/
 .env
 docker-compose.override.yml
 
-# Backups
+# Backups et archives
 backup-*.tar.gz
+*.tar
+*.tar.gz
+inventaire-*.tar
+
+# Fichiers de test locaux (ne pas committer)
+backend/test_output*.txt
+backend/test_photo.jpg
+backend/fake_photo.txt
+backend/large_file.*
+backend/article.json
+
+# Couverture de tests frontend
+frontend/coverage/
+
+# Builds de la démo portable (trop volumineux pour git)
+deployment/portable-demo/build/
+deployment/portable-demo/build-complet/
+
+# Fichiers de configuration Claude locaux
 .claude/settings.local.json
 .claude/todos.json
 .claude/projects/
-inventaire-frontend-fixed.tar

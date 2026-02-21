@@ -7,6 +7,109 @@ et ce projet adhère au [Versioning Sémantique](https://semver.org/lang/fr/).
 
 ---
 
+## [2.0.6] - 2026-02-21
+
+### Maintenance
+
+#### Nettoyage du dépôt
+
+- Suppression des fichiers obsolètes référencés dans CLAUDE.md comme "fichiers à ignorer" :
+  - `backend/app/main.py.bak`, `main-cors-fix.py`, `main-nas.py`
+  - Copies identiques dans `deployment/portable-demo/build-complet/`
+- Suppression des fichiers de test du dépôt : `test_output*.txt`, `large_file.jpg`, `test_photo.jpg`, `fake_photo.txt`, `article.json`, `fix_flake8.py`
+- Suppression des notes de déploiement temporaires racine : `DEPLOY-FINAL-FIX-COMPLET.txt`, `DEPLOY-FINAL-V2.txt`, `DEPLOY-NAS-FINAL.txt`, `DEPLOYMENT.md`, `GITHUB_STATUS.md`
+- Suppression des fichiers redondants : `deployment/nas/DEPLOIEMENT-TAILSCALE-RAPIDE.pdf`, `docker-compose-tailscale-https.yml`, `frontend/coverage/coverage-final.json`
+- Suppression du build portable démo v1.1.0 du suivi git (212 MB libérés, scripts conservés dans `deployment/portable-demo/`)
+- Déplacement des docs de test vers `docs/tests/` (`GOOGLE-FORM-TESTS-STRUCTURE.md`, `TESTS-PHASE-REELLE.md`)
+
+#### .gitignore
+
+- Ajout de règles pour prévenir le retour des fichiers supprimés : archives `*.tar`, fichiers de test locaux, builds portables, coverage frontend
+
+---
+
+## [2.0.5] - 2026-02-21
+
+### Ajouté
+
+- **CSV DYMO pour les emplacements** (`Rapports.jsx`, `rapportService.js`, `rapports.py`) :
+  - Nouveau endpoint `POST /rapports/export/etiquettes-dymo-emplacements`
+  - Bouton "CSV DYMO (n)" dans l'onglet "Emplacements (QR codes)" de la page Rapports
+  - Colonnes : Code, Description, Code_QR, Niveau (Zone/Étagère/Boîte), Parent
+  - Compatible DYMO Connect / DYMO Label Software (UTF-8 BOM, séparateur `;`)
+
+### Corrigé
+
+- **Dark mode badges tags/fournisseurs** : ajout surcharge `[data-theme="dark"]` avec `color-gray-400` (fond visible) et `color-gray-800` (texte lisible), `TagInput.css`, `FournisseurInput.css`
+
+### Mise à jour
+
+- Version sidebar : `v2.0.0` → `v2.0.5`
+
+---
+
+## [2.0.4] - 2026-02-21
+
+### Corrigé
+
+- **Dark mode - texte invisible** (`TagInput.jsx`, `TagInput.css`, `FournisseurInput.css`, `ArticleForm.jsx`) :
+  - Badges non sélectionnés : suppression des couleurs inline hardcodées `#e0e0e0`/`#666` → remplacées par `var(--color-gray-100)` / `var(--color-text-secondary)`
+  - Fournisseur badge `.selected` : `#007bff` → `var(--color-primary-500)`, texte `var(--color-text-inverse)`
+  - Info-box "Astuce photos" dans `ArticleForm` : remplacement de `backgroundColor: '#e7f3ff'` inline par `className="alert alert-info"` (dark mode natif)
+
+---
+
+## [2.0.3] - 2026-02-21
+
+### Corrigé
+
+- **TagInput / FournisseurInput** : suppression des boutons de création inline (créer tag/fournisseur depuis ArticleForm). Sélection uniquement, lien vers la page dédiée si liste vide
+- **ArticleForm - emplacement parent non enregistré** : `handleZoneChange` définit maintenant `emplacement_id` immédiatement à la sélection de la zone, même si celle-ci a des sous-emplacements. Les sélections étagère/boîte écrasent la valeur progressivement
+- **Filtre articles par emplacement** (`crud.py`) : remplacement du filtre exact `== emplacement_id` par un filtre récursif utilisant `_get_all_children_emplacement_ids()` — sélectionner "Atelier" retourne tous les articles dans ses sous-emplacements
+
+### Ajouté
+
+- **Export CSV emplacements** (`Emplacements.jsx`) : bouton "Exporter CSV" dans les actions de la page. Colonnes : Code, Description, Niveau, Parent, Capacité max, Quantité utilisée, % remplissage. Hiérarchie Zone → Étagère → Boîte respectée
+
+---
+
+## [2.0.2] - 2026-02-21
+
+### Corrigé
+
+- **Scan QR code caméra mobile** (`QRScanner.jsx`) : la caméra était détectée mais le scan ne démarrait pas. Cause : `Html5Qrcode.start()` appelé alors que le `div#qr-reader` avait `display: none`. Fix : séparation du clic (toggle état) et du démarrage scanner via `useEffect([isScanning])` qui s'exécute après que le DOM est mis à jour (div visible). Ajout de `useRef` pour callbacks stables
+
+---
+
+## [2.0.1] - 2026-02-21
+
+### Corrigé
+
+- **Layout largeur** (`layout.css`) : pages "étroites" (Dashboard, Mouvements, Fournisseurs) n'occupaient pas toute la largeur disponible. Fix : ajout de `flex: 1; min-width: 0` sur `.main-content-wrapper`
+
+### Modifié
+
+- **Navigation** (`Layout.jsx`) : label "Dashboard" → "Tableau de bord", logo "Inventaire" → "Gestion de stock"
+- Version sidebar : `v1.9.16` → `v2.0.0`
+
+---
+
+## [2.0.0] - 2026-02-21
+
+### Ajouté — PWA & Mode hors-ligne
+
+- **Service Worker (Workbox)** via `vite-plugin-pwa` — cache `NetworkFirst` sur toutes les routes GET `/api/*` avec fallback 24h
+- **Manifest PWA** + 9 tailles d'icônes — installable sur iOS / Android / Desktop
+- **File d'attente hors-ligne IndexedDB** (`offlineQueue.js`) via **Dexie.js** — POST/PUT/DELETE en attente si réseau absent
+- **syncService.js** — replay automatique des opérations en attente à la reconnexion + invalidation React Query
+- **SyncButton** dans la sidebar — badge compteur d'opérations en attente + déclenchement sync manuelle
+- **OfflineBanner** — bannière rouge dès que `navigator.onLine === false`
+- Mouvements hors-ligne : toast informatif + sync automatique au retour en ligne
+
+> ⚠️ Le Service Worker n'est actif qu'en **build de prod** (`npm run build && npm run preview`), pas en développement.
+
+---
+
 ## [1.6.5] - 2026-02-15
 
 ### Corrigé
