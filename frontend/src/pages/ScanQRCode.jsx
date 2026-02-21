@@ -5,6 +5,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react'
+import { flushSync } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import QRScanner from '../components/common/QRScanner'
@@ -110,6 +111,11 @@ function ScanQRCode() {
       // Ignorer silencieusement les scans vides (faux positifs caméra)
       if (!cleanText) return
 
+      // Diagnostic temporaire : affiche ce que la caméra a retourné
+      if (scanMode === 'camera') {
+        toast.info(`📷 Détecté : "${cleanText.substring(0, 60)}"`, { autoClose: 6000 })
+      }
+
       if (cleanText.startsWith('emplacement:')) {
         const parts = cleanText.split(':')
 
@@ -126,16 +132,22 @@ function ScanQRCode() {
           return
         }
 
-        setScanType('emplacement')
-        setEmplacementId(id)
-        setArticleSku(null)
-        setShowScanner(false)
+        // flushSync force React à rendre synchronement depuis un callback caméra
+        // (le batching asynchrone de React 18 peut bloquer le rendu sur mobile)
+        flushSync(() => {
+          setScanType('emplacement')
+          setEmplacementId(id)
+          setArticleSku(null)
+          setShowScanner(false)
+        })
         toast.success('📍 QR code d\'emplacement scanné !')
       } else {
-        setScanType('article')
-        setArticleSku(cleanText)
-        setEmplacementId(null)
-        setShowScanner(false)
+        flushSync(() => {
+          setScanType('article')
+          setArticleSku(cleanText)
+          setEmplacementId(null)
+          setShowScanner(false)
+        })
         toast.success('📦 Code-barres d\'article scanné !')
       }
     } catch (error) {
