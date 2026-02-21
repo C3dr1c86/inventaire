@@ -53,13 +53,15 @@ const QRScanner = ({ onScan, onError, onClose }) => {
     if (!isScanning || !selectedCamera) return
 
     let cancelled = false
+    let hasScanned = false // verrou : empêche les callbacks multiples (10fps)
     const scanner = new Html5Qrcode('qr-reader')
 
     scanner.start(
       selectedCamera,
       { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
       (decodedText) => {
-        if (cancelled) return
+        if (cancelled || hasScanned) return
+        hasScanned = true // verrouiller immédiatement pour les frames suivantes
         scanner.stop().catch(() => {})
         setIsScanning(false)
         onScanRef.current(decodedText)

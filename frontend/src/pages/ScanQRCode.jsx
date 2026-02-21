@@ -105,7 +105,10 @@ function ScanQRCode() {
   // Gérer le résultat du scan
   const handleScan = (decodedText) => {
     try {
-      const cleanText = decodedText.trim()
+      const cleanText = (decodedText || '').trim()
+
+      // Ignorer silencieusement les scans vides (faux positifs caméra)
+      if (!cleanText) return
 
       if (cleanText.startsWith('emplacement:')) {
         const parts = cleanText.split(':')
@@ -296,6 +299,23 @@ function ScanQRCode() {
                 <li>La liste des articles de l&apos;emplacement s&apos;affichera</li>
               </ul>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* État de repli : scan détecté mais code non reconnu */}
+      {!showScanner && !emplacementId && !articleSku && (
+        <div className="card">
+          <div className="empty-state">
+            <AlertCircle size={48} className="empty-state-icon icon-warning" />
+            <p className="empty-state-title">Code non reconnu</p>
+            <p className="empty-state-description">
+              Le code scanné n&apos;a pas pu être identifié comme un emplacement ou un article.
+            </p>
+            <button className="btn btn-primary" onClick={handleRescan}>
+              <Camera size={18} />
+              Rescanner
+            </button>
           </div>
         </div>
       )}
