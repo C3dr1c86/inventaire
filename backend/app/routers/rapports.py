@@ -550,10 +550,18 @@ def export_etiquettes_dymo_emplacements(
     # séparateur virgule, QR_Code en col 2 avec contenu "emplacement:{id}:{code}"
     output = io.StringIO()
     writer = csv.writer(output, delimiter=",", quoting=csv.QUOTE_ALL)
-    writer.writerow([
-        "Code", "QR_Code", "Description", "Niveau", "Parent",
-        "Capacité max", "Quantité utilisée", "% remplissage"
-    ])
+    writer.writerow(
+        [
+            "Code",
+            "QR_Code",
+            "Description",
+            "Niveau",
+            "Parent",
+            "Capacité max",
+            "Quantité utilisée",
+            "% remplissage",
+        ]
+    )
 
     niveaux = {0: "Zone", 1: "Étagère", 2: "Boîte"}
 
@@ -565,22 +573,26 @@ def export_etiquettes_dymo_emplacements(
         )
         parent_code = emp.parent.code if emp.parent else ""
         capacite_max = emp.capacite_max if emp.capacite_max is not None else ""
-        quantite_utilisee = emp.quantite_utilisee if emp.quantite_utilisee is not None else 0
+        quantite_utilisee = (
+            emp.quantite_utilisee if emp.quantite_utilisee is not None else 0
+        )
         if emp.capacite_max and emp.capacite_max > 0:
             pct = f"{round(quantite_utilisee / emp.capacite_max * 100)}%"
         else:
             pct = "Illimité"
 
-        writer.writerow([
-            emp.code,
-            code_qr,
-            emp.description or "",
-            niveau_label,
-            parent_code,
-            capacite_max,
-            quantite_utilisee,
-            pct,
-        ])
+        writer.writerow(
+            [
+                emp.code,
+                code_qr,
+                emp.description or "",
+                niveau_label,
+                parent_code,
+                capacite_max,
+                quantite_utilisee,
+                pct,
+            ]
+        )
 
     csv_bytes = ("\ufeff" + output.getvalue()).encode("utf-8")
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
