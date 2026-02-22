@@ -7,7 +7,7 @@ echo.
 
 cd /d "%~dp0\.."
 
-set VERSION=1.1.0
+set VERSION=2.0.0
 set PYTHON_VERSION=3.11.8
 set OUTPUT_DIR=build-complet
 set PACKAGE_NAME=inventaire-portable-complet-v%VERSION%
@@ -39,23 +39,25 @@ echo import site
 echo OK
 
 echo [5/10] Installation pip...
-powershell -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri 'https://bootstrap.pypa.io/get-pip.py' -OutFile '%OUTPUT_DIR%\%PACKAGE_NAME%\python\get-pip.py'"
-cd "%OUTPUT_DIR%\%PACKAGE_NAME%\python"
-python.exe get-pip.py --no-warn-script-location 2>nul
-cd ..\..\..
+set PYTHON_EXE=%CD%\%OUTPUT_DIR%\%PACKAGE_NAME%\python\python.exe
+set GETPIP_FILE=%CD%\%OUTPUT_DIR%\%PACKAGE_NAME%\python\get-pip.py
+powershell -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri 'https://bootstrap.pypa.io/get-pip.py' -OutFile '%GETPIP_FILE%'"
+"%PYTHON_EXE%" "%GETPIP_FILE%" --no-warn-script-location
+if errorlevel 1 (
+    echo ERREUR installation pip !
+    goto error
+)
+del "%GETPIP_FILE%"
 echo OK
 
 echo [6/10] Installation dependances...
 copy "..\..\..\backend\requirements.txt" "%OUTPUT_DIR%\%PACKAGE_NAME%\requirements.txt" > nul
-cd "%OUTPUT_DIR%\%PACKAGE_NAME%"
-python\python.exe -m pip install --no-warn-script-location -q -r requirements.txt
+"%PYTHON_EXE%" -m pip install --no-warn-script-location -q -r "%OUTPUT_DIR%\%PACKAGE_NAME%\requirements.txt"
 if errorlevel 1 (
     echo ERREUR installation dependances !
-    cd ..\..
     goto error
 )
-del requirements.txt
-cd ..\..
+del "%OUTPUT_DIR%\%PACKAGE_NAME%\requirements.txt"
 echo OK
 
 echo [7/10] Copie backend...
