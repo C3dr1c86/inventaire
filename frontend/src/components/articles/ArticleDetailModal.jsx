@@ -2,6 +2,7 @@
  * Modal d'affichage des détails complets d'un article.
  *
  * Affiche toutes les informations de l'article dans une carte formatée.
+ * Utilise les variables CSS pour la compatibilité dark mode.
  */
 
 import { X } from 'lucide-react'
@@ -37,7 +38,7 @@ function ArticleDetailModal({ article, onClose }) {
                       width: '100%',
                       height: 'auto',
                       borderRadius: '8px',
-                      border: '1px solid #e0e0e0',
+                      border: '1px solid var(--color-border)',
                       objectFit: 'cover'
                     }}
                     onError={(e) => {
@@ -49,13 +50,13 @@ function ArticleDetailModal({ article, onClose }) {
                 <div style={{
                   width: '100%',
                   height: '200px',
-                  backgroundColor: '#f5f5f5',
+                  backgroundColor: 'var(--color-gray-50)',
                   borderRadius: '8px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: '1rem',
-                  color: '#999'
+                  color: 'var(--color-text-muted)'
                 }}>
                   Aucune photo
                 </div>
@@ -66,13 +67,13 @@ function ArticleDetailModal({ article, onClose }) {
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
                   {article.nom}
                 </h3>
-                <p style={{ color: '#6c757d', fontSize: '0.875rem', marginBottom: '1rem' }}>
+                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem', marginBottom: '1rem' }}>
                   SKU: <strong>{article.sku}</strong>
                 </p>
 
                 {article.description && (
                   <div style={{ marginBottom: '1rem' }}>
-                    <p style={{ fontSize: '0.875rem', lineHeight: '1.5', color: '#495057' }}>
+                    <p style={{ fontSize: '0.875rem', lineHeight: '1.5', color: 'var(--color-text-primary)' }}>
                       {article.description}
                     </p>
                   </div>
@@ -82,7 +83,7 @@ function ArticleDetailModal({ article, onClose }) {
               {/* Tags */}
               {article.tags && article.tags.length > 0 && (
                 <div className="detail-section" style={{ marginTop: '1rem' }}>
-                  <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: '#6c757d' }}>
+                  <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--color-text-secondary)' }}>
                     Tags
                   </h4>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -108,7 +109,7 @@ function ArticleDetailModal({ article, onClose }) {
               {/* Fournisseurs */}
               {article.fournisseurs && article.fournisseurs.length > 0 && (
                 <div className="detail-section" style={{ marginTop: '1rem' }}>
-                  <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: '#6c757d' }}>
+                  <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--color-text-secondary)' }}>
                     Fournisseurs
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -117,14 +118,14 @@ function ArticleDetailModal({ article, onClose }) {
                         key={fournisseur.id}
                         style={{
                           padding: '0.5rem',
-                          backgroundColor: '#f8f9fa',
+                          backgroundColor: 'var(--color-gray-50)',
                           borderRadius: '4px',
                           fontSize: '0.875rem'
                         }}
                       >
                         <strong>🚚 {fournisseur.nom}</strong>
                         {fournisseur.contact && (
-                          <div style={{ color: '#6c757d', fontSize: '0.75rem' }}>
+                          <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem' }}>
                             Contact: {fournisseur.contact}
                           </div>
                         )}
@@ -140,11 +141,11 @@ function ArticleDetailModal({ article, onClose }) {
               {/* Stock et Prix */}
               <div className="detail-section" style={{
                 padding: '1rem',
-                backgroundColor: '#f8f9fa',
+                backgroundColor: 'var(--color-gray-50)',
                 borderRadius: '8px',
                 marginBottom: '1rem'
               }}>
-                <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: '#6c757d' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--color-text-secondary)' }}>
                   Stock et Prix
                 </h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -153,7 +154,7 @@ function ArticleDetailModal({ article, onClose }) {
                     <strong style={{ fontSize: '0.875rem' }}>
                       {article.quantite}
                       {article.est_stock_bas && (
-                        <span style={{ color: '#dc3545', marginLeft: '0.5rem' }}>⚠️</span>
+                        <span style={{ color: 'var(--color-danger)', marginLeft: '0.5rem' }}>⚠️</span>
                       )}
                     </strong>
                   </div>
@@ -161,13 +162,13 @@ function ArticleDetailModal({ article, onClose }) {
                     <span style={{ fontSize: '0.875rem' }}>Stock minimum:</span>
                     <strong style={{ fontSize: '0.875rem' }}>{article.quantite_min}</strong>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid #dee2e6' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)' }}>
                     <span style={{ fontSize: '0.875rem' }}>Prix unitaire:</span>
                     <strong style={{ fontSize: '0.875rem' }}>{article.prix_unitaire.toFixed(2)} €</strong>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid #dee2e6' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)' }}>
                     <span style={{ fontSize: '0.875rem' }}>Valeur totale:</span>
-                    <strong style={{ fontSize: '1rem', color: '#28a745' }}>
+                    <strong style={{ fontSize: '1rem', color: 'var(--color-success)' }}>
                       {article.valeur_stock.toFixed(2)} €
                     </strong>
                   </div>
@@ -176,19 +177,19 @@ function ArticleDetailModal({ article, onClose }) {
 
               {/* Catégorie et Emplacement */}
               <div className="detail-section" style={{ marginBottom: '1rem' }}>
-                <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: '#6c757d' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--color-text-secondary)' }}>
                   Organisation
                 </h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <div>
-                    <span style={{ fontSize: '0.75rem', color: '#6c757d' }}>Catégorie</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Catégorie</span>
                     <div style={{ fontSize: '0.875rem', fontWeight: 500 }}>
                       {article.categorie ? article.categorie.nom_complet : 'Sans catégorie'}
                     </div>
                   </div>
                   {article.emplacement && (
                     <div>
-                      <span style={{ fontSize: '0.75rem', color: '#6c757d' }}>Emplacement</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>Emplacement</span>
                       <div style={{ fontSize: '0.875rem', fontWeight: 500 }}>
                         📍 {article.emplacement.code_complet}
                       </div>
@@ -201,11 +202,11 @@ function ArticleDetailModal({ article, onClose }) {
               {(article.prix_fournisseur || article.ref_fournisseur || article.delai_livraison) && (
                 <div className="detail-section" style={{
                   padding: '1rem',
-                  backgroundColor: '#f8f9fa',
+                  backgroundColor: 'var(--color-gray-50)',
                   borderRadius: '8px',
                   marginBottom: '1rem'
                 }}>
-                  <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: '#6c757d' }}>
+                  <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--color-text-secondary)' }}>
                     Informations fournisseur
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -232,7 +233,7 @@ function ArticleDetailModal({ article, onClose }) {
               )}
 
               {/* Métadonnées */}
-              <div className="detail-section" style={{ fontSize: '0.75rem', color: '#6c757d' }}>
+              <div className="detail-section" style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
                 <div style={{ marginBottom: '0.25rem' }}>
                   Créé le: {new Date(article.created_at).toLocaleDateString('fr-FR', {
                     day: '2-digit',

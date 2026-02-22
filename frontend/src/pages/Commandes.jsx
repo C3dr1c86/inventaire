@@ -95,24 +95,20 @@ const Commandes = () => {
     mutationFn: envoyerCommande,
     onSuccess: (data) => {
       queryClient.invalidateQueries(['commandes'])
-      toast.success('Commande envoyée avec succès')
+      toast.success('Demande de devis envoyée')
       setShowActionModal(false)
 
-      // Ouvrir un brouillon email pré-rempli si le fournisseur a un email
+      // Ouvrir un brouillon email de demande de devis si le fournisseur a un email
       if (data.fournisseur?.email) {
-        const subject = `Commande N°${data.numero_commande}`
+        const subject = `Demande de devis — ${data.fournisseur.nom}`
         let body = `Bonjour,\n\n`
-        body += `Veuillez trouver ci-dessous notre commande N°${data.numero_commande}.\n\n`
-        body += `Détail de la commande :\n${'─'.repeat(50)}\n`
+        body += `Pourriez-vous nous faire parvenir un devis pour les références suivantes ?\n\n`
         data.lignes.forEach(ligne => {
-          body += `• ${ligne.article.nom} : ${ligne.quantite_commandee} unité(s) à ${parseFloat(ligne.prix_unitaire).toFixed(2)} € = ${parseFloat(ligne.montant_ligne).toFixed(2)} €\n`
+          const ref = ligne.article?.ref_fournisseur
+          const refPart = ref ? `${ref} — ` : ''
+          body += `- ${refPart}${ligne.article.nom} — Qté : ${ligne.quantite_commandee}\n`
         })
-        body += `${'─'.repeat(50)}\nTOTAL TTC : ${parseFloat(data.montant_total).toFixed(2)} €\n`
-        if (data.date_reception_prevue) {
-          body += `\nDate de réception souhaitée : ${new Date(data.date_reception_prevue).toLocaleDateString('fr-FR')}\n`
-        }
-        if (data.notes) body += `\nNotes : ${data.notes}\n`
-        body += `\nCordialement,`
+        body += `\nMerci de préciser le délai de livraison pour chaque référence.\n\nBien cordialement,`
         window.open(`mailto:${data.fournisseur.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank')
       } else {
         toast.warning('Le fournisseur n\'a pas d\'adresse email configurée — aucun brouillon email ouvert.')
@@ -199,7 +195,7 @@ const Commandes = () => {
   const getActionMessage = () => {
     const { type, commande } = actionData
     switch (type) {
-      case 'envoyer': return `Envoyer la commande N°${commande?.numero_commande} au fournisseur ?`
+      case 'envoyer': return `Envoyer la demande de devis N°${commande?.numero_commande} au fournisseur ?`
       case 'recevoir': return `Réceptionner la commande N°${commande?.numero_commande} ? Le stock sera automatiquement mis à jour.`
       case 'annuler': return `Annuler la commande N°${commande?.numero_commande} ? Cette action est irréversible.`
       default: return ''
