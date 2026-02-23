@@ -22,7 +22,7 @@ fastapi-cors==0.0.6
 
 # Export et génération de documents
 reportlab==4.0.9
-openpyxl==3.1.2
+openpyxl==3.1.5
 
 # Génération de codes-barres et QR codes
 python-barcode==0.15.1
