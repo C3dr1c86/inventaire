@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.17.19",
-    "axios": "^1.6.5",
+    "axios": "^1.13.6",
     "date-fns": "^3.0.6",
     "dexie": "^4.3.0",
     "html5-qrcode": "^2.3.8",
