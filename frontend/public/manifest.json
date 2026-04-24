@@ -3,7 +3,7 @@
   "short_name": "Inventaire",
   "description": "Application de gestion d'inventaire avec mode hors-ligne",
   "start_url": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait-primary",
   "background_color": "#1a1f2e",
   "theme_color": "#3b82f6",
@@ -21,6 +21,12 @@
     { "src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "shortcuts": [
+    {
+      "name": "Mode TC57",
+      "short_name": "TC57",
+      "url": "/tc57",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
     {
       "name": "Nouveau mouvement",
       "short_name": "Mouvement",

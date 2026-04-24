@@ -1953,3 +1953,76 @@
     align-items: flex-start;
   }
 }
+
+/* ============================================================================
+   ZEBRA TC57 — Optimisations pour scanner Android industriel
+   Écran 5" (720x1280), usage entrepôt, possible utilisation avec gants
+   ============================================================================ */
+
+/* Indicateur "Prêt à scanner" — pulse animé sur le champ input */
+@keyframes scan-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(33, 136, 255, 0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(33, 136, 255, 0); }
+}
+
+.scan-reader-input:focus {
+  animation: scan-pulse 1.8s ease-in-out infinite;
+  border-color: var(--color-primary-500);
+}
+
+/* Champ de scan : plus grand et lisible sur écran entrepôt */
+.scan-reader-input {
+  min-height: 56px;
+  font-size: var(--font-size-xl);
+  letter-spacing: 0.05em;
+  padding: var(--space-4);
+}
+
+/* Bouton valider plus grand pour usage avec gants */
+.scan-submit-btn {
+  min-height: 52px;
+  font-size: var(--font-size-md);
+}
+
+/* Boutons de choix de mode scan : min 48px pour cibles tactiles */
+.scan-mode-btns .btn {
+  min-height: 48px;
+  font-size: var(--font-size-sm);
+}
+
+/* Info-valeur principale (quantité stock, prix) : grande police pour lecture rapide */
+.scan-info-value-lg {
+  font-size: var(--font-size-3xl);
+  line-height: 1.1;
+}
+
+/* Boutons d'action résultat scan : plus larges sur TC57 */
+.scan-result-actions .btn {
+  min-height: 48px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ===== Optimisations spécifiques écran 720px (TC57 portrait) ===== */
+@media (max-width: 768px) and (min-width: 577px) {
+  /* Grille info scan : 2 colonnes sur TC57 */
+  .scan-info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Boutons mode scan côte-à-côte */
+  .scan-mode-btns {
+    flex-direction: row;
+  }
+
+  /* Actions résultat : colonne pour TC57 */
+  .scan-result-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .scan-result-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

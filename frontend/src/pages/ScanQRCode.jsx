@@ -4,10 +4,11 @@
  * Supporte 2 modes : caméra (html5-qrcode) et lecteur physique (clavier)
  */
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import QRScanner from '../components/common/QRScanner'
+import { useBarcodeScanner } from '../hooks/useBarcodeScanner'
 import { getEmplacement, getArticlesByEmplacement } from '../services/emplacementService'
 import { getArticles } from '../services/articleService'
 import { MapPin, Package, AlertCircle, ArrowLeft, Camera, Keyboard, Barcode, Tag, Download } from 'lucide-react'
@@ -23,13 +24,16 @@ const getRemplissageClass = (pct) => {
 
 function ScanQRCode() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [scanType, setScanType] = useState(null) // 'emplacement' ou 'article'
   const [emplacementId, setEmplacementId] = useState(null)
   const [articleSku, setArticleSku] = useState(null)
   const [showScanner, setShowScanner] = useState(true)
   const [scanMode, setScanMode] = useState('reader') // 'camera' ou 'reader'
   const [manualInput, setManualInput] = useState('')
-  const inputRef = useRef(null)
+  const inputRef       = useRef(null)
+  // Ref stable vers handleScan pour les hooks (évite la dépendance circulaire)
+  const handleScanRef  = useRef(null)
 
   // Exporter les articles de l'emplacement en CSV
   const handleExportCSV = () => {
@@ -102,6 +106,36 @@ function ScanQRCode() {
     enabled: !!articleSku && scanType === 'article'
   })
 
+  // Hook Zebra TC57 : capture le scan même si le champ input a perdu le focus.
+  // La ref permet d'appeler handleScan (défini plus bas) sans dépendance circulaire.
+  useBarcodeScanner(
+    useCallback((code) => handleScanRef.current?.(code), []),
+    { enabled: scanMode === 'reader' && showScanner }
+  )
+
+  // Traiter automatiquement un code passé en paramètre URL
+  // (navigation depuis la capture globale dans Layout)
+  useEffect(() => {
+    const code = searchParams.get('code')
+    if (code) {
+      setSearchParams({}, { replace: true })
+      handleScanRef.current?.(decodeURIComponent(code))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Refocus automatique sur le champ input en mode lecteur physique
+  useEffect(() => {
+    if (scanMode !== 'reader' || !showScanner) return
+    const refocus = () => {
+      if (document.activeElement !== inputRef.current) {
+        inputRef.current?.focus()
+      }
+    }
+    document.addEventListener('click', refocus)
+    return () => document.removeEventListener('click', refocus)
+  }, [scanMode, showScanner])
+
   // Gérer le résultat du scan
   const handleScan = (decodedText) => {
     try {
@@ -144,6 +178,8 @@ function ScanQRCode() {
       setShowScanner(true)
     }
   }
+  // Maintenir la ref à jour à chaque rendu
+  handleScanRef.current = handleScan
 
   const handleError = (errorMessage) => {
     toast.error(errorMessage)

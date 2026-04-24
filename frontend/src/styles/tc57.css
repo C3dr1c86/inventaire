@@ -1,0 +1,471 @@
+/* ============================================================================
+   TC57 — Interface dédiée terminal Zebra TC57
+   Boutons larges (gants), visibilité entrepôt, navigation scan-first
+   ============================================================================ */
+
+/* ---- Shell ---- */
+.tc57-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--color-bg-app);
+  overflow: hidden;
+}
+
+/* ---- Header ---- */
+.tc57-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  padding: 0 var(--space-3);
+  background: var(--color-bg-sidebar);
+  color: var(--color-text-inverse);
+  flex-shrink: 0;
+  gap: var(--space-2);
+}
+
+.tc57-header-left,
+.tc57-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.tc57-header-title {
+  flex: 1;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-inverse);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tc57-header-user {
+  font-size: var(--font-size-sm);
+  color: var(--color-sidebar-text);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tc57-btn-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-base);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tc57-btn-icon:active {
+  background: var(--color-sidebar-bg-active);
+}
+
+/* ---- Contenu principal ---- */
+.tc57-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ---- Accueil ---- */
+.tc57-home {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: var(--space-2);
+}
+
+.tc57-alert-banner {
+  background: var(--color-warning-light);
+  color: var(--color-warning-dark);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-base);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+}
+
+[data-theme="dark"] .tc57-alert-banner {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--color-warning);
+  border-color: var(--color-warning);
+}
+
+.tc57-action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 150px;
+  border: none;
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  padding: var(--space-6);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  box-shadow: var(--shadow-md);
+  width: 100%;
+  text-align: center;
+}
+
+.tc57-action-card:active {
+  transform: scale(0.97);
+  box-shadow: var(--shadow-sm);
+}
+
+.tc57-action-scan {
+  background: var(--color-primary-600);
+  color: white;
+}
+
+.tc57-action-mouvement {
+  background: var(--color-success-dark);
+  color: white;
+}
+
+.tc57-action-label {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  display: block;
+}
+
+.tc57-action-sublabel {
+  font-size: var(--font-size-sm);
+  opacity: 0.85;
+  display: block;
+}
+
+/* ---- Zone de scan (état initial) ---- */
+.tc57-scan-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: var(--space-6);
+  width: 100%;
+}
+
+.tc57-scan-icon {
+  color: var(--color-primary-500);
+  opacity: 0.5;
+}
+
+.tc57-scan-hint {
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* ---- Inputs ---- */
+.tc57-input {
+  width: 100%;
+  min-height: 56px;
+  font-size: var(--font-size-lg);
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-base);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  outline: none;
+  box-sizing: border-box;
+  font-family: var(--font-family-base);
+}
+
+.tc57-input:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(33, 136, 255, 0.15);
+}
+
+.tc57-qty-input {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  min-height: 80px;
+}
+
+.tc57-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  align-self: flex-start;
+}
+
+/* ---- Boutons ---- */
+.tc57-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 64px;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  border: none;
+  border-radius: var(--radius-base);
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+  font-family: var(--font-family-base);
+}
+
+.tc57-btn:active {
+  opacity: 0.82;
+}
+
+.tc57-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tc57-btn-primary {
+  background: var(--color-primary-600);
+  color: white;
+}
+
+.tc57-btn-entree {
+  background: var(--color-success);
+  color: white;
+  font-size: var(--font-size-xl);
+}
+
+.tc57-btn-sortie {
+  background: var(--color-danger);
+  color: white;
+  font-size: var(--font-size-xl);
+}
+
+.tc57-btn-secondary {
+  background: var(--color-gray-200);
+  color: var(--color-gray-800);
+}
+
+[data-theme="dark"] .tc57-btn-secondary {
+  background: var(--color-gray-300);
+  color: var(--color-gray-900);
+}
+
+.tc57-btn-ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  min-height: 52px;
+  font-size: var(--font-size-base);
+}
+
+/* ---- Résultats ---- */
+.tc57-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+/* ---- Fiche article ---- */
+.tc57-article-card,
+.tc57-emplacement-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-base);
+}
+
+.tc57-article-nom {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-1);
+  line-height: var(--line-height-tight);
+}
+
+.tc57-article-sku {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-mono);
+  margin-bottom: var(--space-3);
+}
+
+.tc57-stock-qty {
+  font-size: 4rem;
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+}
+
+.tc57-stock-qty.ok    { color: var(--color-success); }
+.tc57-stock-qty.danger { color: var(--color-danger); }
+
+.tc57-stock-unit {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-secondary);
+}
+
+.tc57-stock-alert {
+  margin-top: var(--space-1);
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.tc57-article-emplacement {
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* ---- Formulaire mouvement ---- */
+.tc57-mouvement-btns {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.tc57-mouvement-form {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-base);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.tc57-mouvement-titre {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-base);
+}
+
+.tc57-mouvement-titre.entree {
+  background: var(--color-success-light);
+  color: var(--color-success-dark);
+}
+
+.tc57-mouvement-titre.sortie {
+  background: var(--color-danger-light);
+  color: var(--color-danger-dark);
+}
+
+[data-theme="dark"] .tc57-mouvement-titre.entree {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--color-success);
+}
+
+[data-theme="dark"] .tc57-mouvement-titre.sortie {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--color-danger);
+}
+
+/* ---- Liste articles d'un emplacement ---- */
+.tc57-emplacement-liste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tc57-article-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 60px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+
+.tc57-article-item:active {
+  background: var(--color-primary-50);
+}
+
+.tc57-article-item-nom {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  flex: 1;
+  padding-right: var(--space-3);
+}
+
+.tc57-article-item-qty {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  min-width: 48px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.tc57-article-item-qty.ok    { color: var(--color-success); }
+.tc57-article-item-qty.danger { color: var(--color-danger); }
+
+/* ---- Non trouvé ---- */
+.tc57-not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8);
+  color: var(--color-text-secondary);
+  text-align: center;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-base);
+}
+
+.tc57-not-found p {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.tc57-not-found small {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+}
+
+/* ---- Spinner ---- */
+.tc57-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-8);
+  color: var(--color-text-secondary);
+}
+
+.tc57-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--color-border);
+  border-top-color: var(--color-primary-500);
+  border-radius: 50%;
+  animation: tc57-spin 0.8s linear infinite;
+}
+
+@keyframes tc57-spin {
+  to { transform: rotate(360deg); }
+}

@@ -20,6 +20,7 @@ import './styles/variables.css'   // tokens design
 import './styles/base.css'        // reset + typo
 import './styles/layout.css'      // sidebar, header, grilles
 import './styles/components.css'  // composants
+import './styles/tc57.css'        // interface terminal TC57
 
 // Enregistrement du Service Worker PWA (actif uniquement en production)
 registerSW({

@@ -26,6 +26,8 @@ import Rapports from './pages/Rapports'
 import Commandes from './pages/Commandes'
 import NouvelleCommande from './pages/NouvelleCommande'
 import Users from './pages/Users'
+import TC57Home from './pages/tc57/TC57Home'
+import TC57Scan from './pages/tc57/TC57Scan'
 
 function App() {
   return (
@@ -186,6 +188,24 @@ function App() {
               <Layout>
                 <Users />
               </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Routes TC57 — layout dédié, sans sidebar */}
+        <Route
+          path="/tc57"
+          element={
+            <ProtectedRoute>
+              <TC57Home />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tc57/scan"
+          element={
+            <ProtectedRoute>
+              <TC57Scan />
             </ProtectedRoute>
           }
         />

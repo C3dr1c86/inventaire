@@ -7,6 +7,7 @@
 
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import SyncButton from '../common/SyncButton'
+import { useBarcodeScanner } from '../../hooks/useBarcodeScanner'
 import {
   LayoutDashboard,
   Package,
@@ -69,6 +70,15 @@ function Layout({ children }) {
   useEffect(() => {
     setSidebarOpen(false)
   }, [location.pathname])
+
+  // Capture globale des scans Zebra TC57 : depuis n'importe quelle page,
+  // un scan navigue vers /scan-qrcode avec le code en paramètre URL.
+  // Désactivé si l'utilisateur est déjà sur la page de scan (elle gère elle-même).
+  useBarcodeScanner((code) => {
+    if (location.pathname === '/scan-qrcode') return
+    if (location.pathname.startsWith('/tc57')) return // TC57Layout gère son propre scanner
+    navigate(`/scan-qrcode?code=${encodeURIComponent(code)}`)
+  })
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light')
