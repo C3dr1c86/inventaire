@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ScanLine, RotateCcw, Package, MapPin } from 'lucide-react'
 import { toast } from 'react-toastify'
@@ -20,7 +20,6 @@ const ETAT = {
 }
 
 function TC57Scan() {
-  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const queryClient = useQueryClient()
 
