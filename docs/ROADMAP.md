@@ -878,6 +878,7 @@ docker-compose up -d
 
 2. **Optimisations Performance** (5-7 jours)
    - Profiling et amélioration temps chargement
+   - Découpage du bundle frontend Vite/React par routes (`React.lazy` / `Suspense`) pour réduire le chunk JavaScript initial > 500 kB
    - Indexes database optimisés
    - Lazy loading images
    - Compression Gzip/Brotli

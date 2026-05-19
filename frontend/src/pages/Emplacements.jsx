@@ -31,6 +31,8 @@ function Emplacements() {
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [qrcodeEmplacement, setQrcodeEmplacement] = useState(null)
   const [qrcodeUrl, setQrcodeUrl] = useState(null)
+  const [initialParentId, setInitialParentId] = useState('')
+  const [creationType, setCreationType] = useState('emplacement')
 
   // Query pour récupérer l'arbre des emplacements
   const { data: emplacementsTree, isLoading } = useQuery({
@@ -51,6 +53,40 @@ function Emplacements() {
     },
     onError: (error) => {
       toast.error(error.response?.data?.detail || 'Erreur lors de la création')
+    }
+  })
+
+  const createBulkBoxesMutation = useMutation({
+    mutationFn: async ({ parent_id, prefix, start, count, capacite_max, description }) => {
+      const padding = Math.max(2, String(start + count - 1).length)
+      const created = []
+
+      for (let index = 0; index < count; index++) {
+        const number = start + index
+        const code = `${prefix}${String(number).padStart(padding, '0')}`
+        const boite = await createEmplacement({
+          code,
+          description,
+          capacite_max,
+          parent_id
+        })
+        created.push(boite)
+      }
+
+      return created
+    },
+    onSuccess: (created) => {
+      queryClient.invalidateQueries(['emplacements'])
+      queryClient.invalidateQueries(['emplacements-tree'])
+      queryClient.invalidateQueries(['emplacements-racines'])
+      queryClient.invalidateQueries(['articles'])
+      setIsModalOpen(false)
+      setInitialParentId('')
+      setCreationType('emplacement')
+      toast.success(`${created.length} boîte${created.length > 1 ? 's' : ''} créée${created.length > 1 ? 's' : ''} avec succès`)
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Erreur lors de la création des boîtes')
     }
   })
 
@@ -115,11 +151,22 @@ function Emplacements() {
   // Handlers
   const handleCreate = () => {
     setSelectedEmplacement(null)
+    setInitialParentId('')
+    setCreationType('emplacement')
+    setIsModalOpen(true)
+  }
+
+  const handleCreateChild = (parent, type = 'emplacement') => {
+    setSelectedEmplacement(null)
+    setInitialParentId(parent.id)
+    setCreationType(type)
     setIsModalOpen(true)
   }
 
   const handleEdit = (emplacement) => {
     setSelectedEmplacement(emplacement)
+    setInitialParentId('')
+    setCreationType('emplacement')
     setIsModalOpen(true)
   }
 
@@ -134,6 +181,11 @@ function Emplacements() {
   }
 
   const handleSubmit = (data) => {
+    if (data.mode === 'bulk_boxes') {
+      createBulkBoxesMutation.mutate(data)
+      return
+    }
+
     if (selectedEmplacement) {
       updateMutation.mutate({ id: selectedEmplacement.id, data })
     } else {
@@ -243,7 +295,7 @@ function Emplacements() {
           />
         </div>
         <span className="progress-label">
-          {emplacement.quantite_utilisee} / {emplacement.capacite_max} ({pourcentage.toFixed(0)}%)
+          {emplacement.quantite_utilisee} / {emplacement.capacite_max} ({pourcentage?.toFixed(0) ?? 0}%)
         </span>
       </div>
     )
@@ -349,6 +401,11 @@ function Emplacements() {
                               <Edit2 size={14} />
                             </button>
                           )}
+                          {canCreate('emplacements') && (
+                            <button onClick={() => handleCreateChild(zone)} className="btn btn-sm btn-primary" title="Ajouter une étagère dans cette zone">
+                              <Plus size={14} />
+                            </button>
+                          )}
                           <button onClick={() => handleQRCodeClick(zone)} className="btn btn-sm btn-ghost" title="Voir QR Code">
                             <QrCode size={14} />
                           </button>
@@ -382,6 +439,11 @@ function Emplacements() {
                               {canUpdate('emplacements') && (
                                 <button onClick={() => handleEdit(etagere)} className="btn btn-sm btn-secondary" title="Modifier l'étagère">
                                   <Edit2 size={14} />
+                                </button>
+                              )}
+                              {canCreate('emplacements') && (
+                                <button onClick={() => handleCreateChild(etagere, 'boites')} className="btn btn-sm btn-primary" title="Ajouter des boîtes dans cette étagère">
+                                  <Plus size={14} />
                                 </button>
                               )}
                               <button onClick={() => handleQRCodeClick(etagere)} className="btn btn-sm btn-ghost" title="Voir QR Code">
@@ -441,17 +503,23 @@ function Emplacements() {
         onClose={() => {
           setIsModalOpen(false)
           setSelectedEmplacement(null)
+          setInitialParentId('')
+          setCreationType('emplacement')
         }}
-        title={selectedEmplacement ? 'Modifier l\'emplacement' : 'Créer un emplacement'}
+        title={selectedEmplacement ? 'Modifier l\'emplacement' : creationType === 'boites' ? 'Créer des boîtes' : 'Créer un emplacement'}
       >
         <EmplacementForm
           emplacement={selectedEmplacement}
+          initialParentId={initialParentId}
+          creationType={creationType}
           onSubmit={handleSubmit}
           onCancel={() => {
             setIsModalOpen(false)
             setSelectedEmplacement(null)
+            setInitialParentId('')
+            setCreationType('emplacement')
           }}
-          isSubmitting={createMutation.isPending || updateMutation.isPending}
+          isSubmitting={createMutation.isPending || updateMutation.isPending || createBulkBoxesMutation.isPending}
         />
       </Modal>
 
