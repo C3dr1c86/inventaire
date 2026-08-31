@@ -27,7 +27,7 @@ openpyxl==3.1.2
 # Génération de codes-barres et QR codes
 python-barcode==0.15.1
 qrcode==7.4.2
-Pillow>=11.0.0
+Pillow>=12.3.0
 
 # Variables d'environnement
 python-dotenv==1.0.0
