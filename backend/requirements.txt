@@ -1,6 +1,6 @@
 # FastAPI et serveur ASGI
 fastapi>=0.115.0
-uvicorn[standard]>=0.30.0
+uvicorn[standard]>=0.52.4
 python-multipart>=0.0.9
 
 # Base de données et ORM
