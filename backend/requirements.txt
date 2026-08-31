@@ -40,5 +40,5 @@ pytest==7.4.4
 pytest-asyncio==0.23.3
 pytest-cov==4.1.0
 httpx==0.26.0
-faker==20.1.0
+faker==40.37.0
 freezegun==1.4.0
