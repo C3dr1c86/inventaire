@@ -14,7 +14,7 @@ bcrypt==4.0.1  # Version compatible avec passlib
 
 # Validation et configuration
 pydantic>=2.9.0
-pydantic-settings>=2.5.0
+pydantic-settings>=2.15.0
 email-validator>=2.0.0
 
 # CORS
